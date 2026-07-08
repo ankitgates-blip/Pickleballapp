@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "scorecard-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/ANKS/AppData/Local/Temp/claude/C--Users-ANKS-pickleball-project/d3611c6d-b0f9-4119-92af-e8b78ebf4074/scratchpad/static_server.js"],
+      "port": 4173
+    },
+    {
+      "name": "organizer-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "apps/organizer-web"],
+      "port": 3000
+    }
+  ]
+}
