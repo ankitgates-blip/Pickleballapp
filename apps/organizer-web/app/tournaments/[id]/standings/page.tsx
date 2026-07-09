@@ -1,6 +1,9 @@
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import { computeStandings } from '@/lib/tournament/standings';
 import type { MatchResult } from '@/lib/types';
+import OrganizerShell from '@/app/components/OrganizerShell';
+import TournamentNav from '@/app/components/TournamentNav';
+import { cardClass } from '@/app/components/ui';
 import CopyLinkButton from './CopyLinkButton';
 
 export default async function StandingsPage({
@@ -9,7 +12,7 @@ export default async function StandingsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase } = await requireOrganizer();
+  const { supabase, organizer } = await requireOrganizer();
 
   const { data: teams } = await supabase
     .from('teams')
@@ -45,29 +48,41 @@ export default async function StandingsPage({
   const standings = computeStandings(matchResults);
 
   return (
-    <main style={{ maxWidth: 600, margin: '2rem auto', fontFamily: 'sans-serif' }}>
-      <h1>Standings</h1>
-      <CopyLinkButton tournamentId={id} />
-      <table>
-        <thead>
-          <tr>
-            <th>Team</th>
-            <th>W</th>
-            <th>L</th>
-            <th>Point Diff</th>
-          </tr>
-        </thead>
-        <tbody>
-          {standings.map((s) => (
-            <tr key={s.teamId}>
-              <td>{teamById.get(s.teamId)}</td>
-              <td>{s.wins}</td>
-              <td>{s.losses}</td>
-              <td>{s.pointsFor - s.pointsAgainst}</td>
+    <OrganizerShell organizerName={organizer.name}>
+      <TournamentNav tournamentId={id} current="standings" />
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-extrabold text-slate-900">Standings</h1>
+        <CopyLinkButton tournamentId={id} />
+      </div>
+
+      <div className={`${cardClass} overflow-x-auto`}>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-slate-500 border-b border-slate-200">
+              <th className="pb-2 font-semibold">Team</th>
+              <th className="pb-2 font-semibold text-center">W</th>
+              <th className="pb-2 font-semibold text-center">L</th>
+              <th className="pb-2 font-semibold text-center">Point Diff</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </main>
+          </thead>
+          <tbody>
+            {standings.map((s, i) => (
+              <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
+                <td className="py-2 font-semibold text-slate-900">
+                  {i === 0 && <span className="mr-1">🏆</span>}
+                  {teamById.get(s.teamId)}
+                </td>
+                <td className="py-2 text-center text-teal-700 font-bold">{s.wins}</td>
+                <td className="py-2 text-center text-slate-500">{s.losses}</td>
+                <td className="py-2 text-center">
+                  {s.pointsFor - s.pointsAgainst > 0 ? '+' : ''}
+                  {s.pointsFor - s.pointsAgainst}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </OrganizerShell>
   );
 }

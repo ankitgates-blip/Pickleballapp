@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { computeStandings } from '@/lib/tournament/standings';
 import type { MatchResult } from '@/lib/types';
+import { cardClass } from '@/app/components/ui';
 
 export default async function PublicTournamentPage({
   params,
@@ -17,7 +18,11 @@ export default async function PublicTournamentPage({
     .single();
 
   if (!tournament) {
-    return <main style={{ maxWidth: 600, margin: '2rem auto' }}>Tournament not found.</main>;
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-slate-50">
+        <p className="text-slate-500">Tournament not found.</p>
+      </main>
+    );
   }
 
   const { data: teams } = await supabase
@@ -55,38 +60,64 @@ export default async function PublicTournamentPage({
   const standings = computeStandings(matchResults);
 
   return (
-    <main style={{ maxWidth: 600, margin: '2rem auto', fontFamily: 'sans-serif' }}>
-      <h1>{tournament.name}</h1>
-      <p>{tournament.date}</p>
-
-      <h2>Standings</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Team</th>
-            <th>W</th>
-            <th>L</th>
-          </tr>
-        </thead>
-        <tbody>
-          {standings.map((s) => (
-            <tr key={s.teamId}>
-              <td>{teamById.get(s.teamId)}</td>
-              <td>{s.wins}</td>
-              <td>{s.losses}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <h2>Schedule</h2>
-      {(matches ?? []).map((m, i) => (
-        <div key={i}>
-          Round {m.round}: {teamById.get(m.team_a_id!)} vs{' '}
-          {m.team_b_id ? teamById.get(m.team_b_id) : 'BYE'}
-          {m.status === 'complete' ? ` — ${m.score_a}-${m.score_b}` : ''}
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-teal-600 text-white">
+        <div className="max-w-2xl mx-auto px-4 py-6 text-center">
+          <div className="mx-auto mb-2 h-3 w-3 rounded-full bg-amber-400" />
+          <h1 className="text-2xl font-extrabold tracking-tight">{tournament.name}</h1>
+          <p className="text-teal-100 text-sm mt-1">{tournament.date}</p>
         </div>
-      ))}
-    </main>
+      </header>
+
+      <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+        <div className={cardClass}>
+          <h2 className="text-lg font-bold text-slate-900 mb-3">Standings</h2>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-slate-500 border-b border-slate-200">
+                <th className="pb-2 font-semibold">Team</th>
+                <th className="pb-2 font-semibold text-center">W</th>
+                <th className="pb-2 font-semibold text-center">L</th>
+              </tr>
+            </thead>
+            <tbody>
+              {standings.map((s, i) => (
+                <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
+                  <td className="py-2 font-semibold text-slate-900">
+                    {i === 0 && <span className="mr-1">🏆</span>}
+                    {teamById.get(s.teamId)}
+                  </td>
+                  <td className="py-2 text-center text-teal-700 font-bold">{s.wins}</td>
+                  <td className="py-2 text-center text-slate-500">{s.losses}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className={cardClass}>
+          <h2 className="text-lg font-bold text-slate-900 mb-3">Schedule</h2>
+          <ul className="space-y-2 text-sm">
+            {(matches ?? []).map((m, i) => (
+              <li key={i} className="flex items-center justify-between">
+                <span>
+                  <span className="text-slate-400 mr-2">R{m.round}</span>
+                  <span className="font-semibold">{teamById.get(m.team_a_id!)}</span>
+                  <span className="text-slate-400 mx-1">vs</span>
+                  <span className="font-semibold">
+                    {m.team_b_id ? teamById.get(m.team_b_id) : 'BYE'}
+                  </span>
+                </span>
+                {m.status === 'complete' && (
+                  <span className="font-bold text-teal-700">
+                    {m.score_a}-{m.score_b}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </main>
+    </div>
   );
 }

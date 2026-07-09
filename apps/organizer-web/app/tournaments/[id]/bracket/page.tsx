@@ -1,5 +1,8 @@
 import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
+import OrganizerShell from '@/app/components/OrganizerShell';
+import TournamentNav from '@/app/components/TournamentNav';
+import { cardClass, accentButtonClass, linkClass } from '@/app/components/ui';
 import { generateBracket } from './actions';
 
 export default async function BracketPage({
@@ -8,7 +11,7 @@ export default async function BracketPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase } = await requireOrganizer();
+  const { supabase, organizer } = await requireOrganizer();
 
   const { data: teams } = await supabase
     .from('teams')
@@ -38,37 +41,68 @@ export default async function BracketPage({
   const hasMatches = Boolean(matches && matches.length > 0);
   const teamCount = (teams ?? []).length;
 
+  type MatchRow = NonNullable<typeof matches>[number];
+  const rounds = new Map<number, MatchRow[]>();
+  for (const m of matches ?? []) {
+    const list = rounds.get(m.round) ?? [];
+    list.push(m);
+    rounds.set(m.round, list);
+  }
+
   return (
-    <main style={{ maxWidth: 600, margin: '2rem auto', fontFamily: 'sans-serif' }}>
-      <h1>Bracket</h1>
+    <OrganizerShell organizerName={organizer.name}>
+      <TournamentNav tournamentId={id} current="bracket" />
+      <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Bracket</h1>
 
       {!hasMatches && teamCount < 2 && (
-        <p style={{ color: 'red' }}>
+        <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
           Need at least 2 teams to generate a bracket — you have {teamCount}. Go back and
           pair more teams first.
-        </p>
+        </div>
       )}
 
       {!hasMatches && teamCount >= 2 && (
-        <form action={generateBracketWithId}>
-          <button type="submit">Generate Round Robin Bracket</button>
+        <form action={generateBracketWithId} className={`${cardClass} text-center mb-6`}>
+          <p className="text-slate-600 mb-4">
+            {teamCount} teams ready. Generate a round-robin schedule.
+          </p>
+          <button type="submit" className={accentButtonClass}>
+            Generate Round Robin Bracket
+          </button>
         </form>
       )}
 
-      {(matches ?? []).map((m) => (
-        <div key={m.id}>
-          Round {m.round}: {teamById.get(m.team_a_id!) ?? 'Bye'} vs{' '}
-          {m.team_b_id ? teamById.get(m.team_b_id) : 'BYE'}
-        </div>
-      ))}
+      <div className="space-y-4">
+        {Array.from(rounds.entries()).map(([round, roundMatches]) => (
+          <div key={round} className={cardClass}>
+            <h2 className="text-sm font-bold text-teal-700 uppercase tracking-wide mb-2">
+              Round {round}
+            </h2>
+            <ul className="space-y-2">
+              {roundMatches.map((m) => (
+                <li key={m.id} className="text-sm text-slate-800 flex items-center gap-2">
+                  <span className="font-semibold">{teamById.get(m.team_a_id!) ?? 'Bye'}</span>
+                  <span className="text-slate-400">vs</span>
+                  <span className="font-semibold">
+                    {m.team_b_id ? teamById.get(m.team_b_id) : 'BYE'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
 
       {hasMatches && (
-        <p>
-          <Link href={`/tournaments/${id}/matches`}>Enter scores →</Link>
-          {' | '}
-          <Link href={`/tournaments/${id}/standings`}>View standings →</Link>
+        <p className="mt-6 flex gap-4">
+          <Link href={`/tournaments/${id}/matches`} className={linkClass}>
+            Enter scores →
+          </Link>
+          <Link href={`/tournaments/${id}/standings`} className={linkClass}>
+            View standings →
+          </Link>
         </p>
       )}
-    </main>
+    </OrganizerShell>
   );
 }
