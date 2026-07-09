@@ -30,15 +30,23 @@ export async function pairTeam(tournamentId: string, formData: FormData) {
 export async function shuffleRemaining(tournamentId: string) {
   const { supabase } = await requireOrganizer();
 
-  const { data: players } = await supabase
+  const { data: players, error: playersError } = await supabase
     .from('players')
     .select('id')
     .eq('tournament_id', tournamentId);
 
-  const { data: teams } = await supabase
+  if (playersError) {
+    throw new Error(playersError.message);
+  }
+
+  const { data: teams, error: teamsError } = await supabase
     .from('teams')
     .select('player_1_id, player_2_id')
     .eq('tournament_id', tournamentId);
+
+  if (teamsError) {
+    throw new Error(teamsError.message);
+  }
 
   const pairedPlayerIds = new Set(
     (teams ?? []).flatMap((t) => [t.player_1_id, t.player_2_id])
