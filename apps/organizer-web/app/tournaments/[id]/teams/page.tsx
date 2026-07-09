@@ -1,8 +1,8 @@
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
-import { cardClass, primaryButtonClass, pillClass } from '@/app/components/ui';
-import { pairTeam } from './actions';
+import { cardClass, primaryButtonClass, accentButtonClass, pillClass } from '@/app/components/ui';
+import { pairTeam, shuffleRemaining, removeTeam } from './actions';
 
 export default async function TeamsPage({
   params,
@@ -30,6 +30,7 @@ export default async function TeamsPage({
   const playerById = new Map((players ?? []).map((p) => [p.id, p.name]));
 
   const pairTeamWithId = pairTeam.bind(null, id);
+  const shuffleRemainingWithId = shuffleRemaining.bind(null, id);
   const selectClass =
     'rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 flex-1';
 
@@ -37,6 +38,20 @@ export default async function TeamsPage({
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="teams" />
       <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Pair Teams</h1>
+
+      {unpairedPlayers.length >= 2 && (
+        <div className={`${cardClass} mb-6 text-center`}>
+          <p className="text-slate-600 mb-3">
+            {unpairedPlayers.length} players unpaired. Shuffle them into random teams, or
+            pair manually below.
+          </p>
+          <form action={shuffleRemainingWithId}>
+            <button type="submit" className={accentButtonClass}>
+              Shuffle Remaining Players
+            </button>
+          </form>
+        </div>
+      )}
 
       <div className={`${cardClass} mb-6`}>
         <form action={pairTeamWithId} className="flex flex-col sm:flex-row gap-3">
@@ -61,15 +76,28 @@ export default async function TeamsPage({
       <div className={`${cardClass} mb-6`}>
         <h2 className="text-lg font-bold text-slate-900 mb-3">Teams ({(teams ?? []).length})</h2>
         <ul className="space-y-2">
-          {(teams ?? []).map((t) => (
-            <li
-              key={t.id}
-              className="flex items-center gap-2 rounded-lg bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-900"
-            >
-              <span className="h-2 w-2 rounded-full bg-amber-400" />
-              {playerById.get(t.player_1_id)} / {playerById.get(t.player_2_id)}
-            </li>
-          ))}
+          {(teams ?? []).map((t) => {
+            const removeTeamForTeam = removeTeam.bind(null, id, t.id);
+            return (
+              <li
+                key={t.id}
+                className="flex items-center justify-between gap-2 rounded-lg bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-900"
+              >
+                <span className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-amber-400" />
+                  {playerById.get(t.player_1_id)} / {playerById.get(t.player_2_id)}
+                </span>
+                <form action={removeTeamForTeam}>
+                  <button
+                    type="submit"
+                    className="text-xs font-semibold text-teal-700 hover:text-red-600 transition-colors"
+                  >
+                    Remove
+                  </button>
+                </form>
+              </li>
+            );
+          })}
         </ul>
       </div>
 
