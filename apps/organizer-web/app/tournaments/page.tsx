@@ -1,14 +1,16 @@
+// apps/organizer-web/app/tournaments/page.tsx
 import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, vibrantCardClass, accentButtonClass } from '@/app/components/ui';
+import { timeslotLabel } from '@/lib/tournament/timeslots';
 
 export default async function TournamentsPage() {
   const { supabase, organizer } = await requireOrganizer();
 
   const { data: tournaments } = await supabase
     .from('tournaments')
-    .select('id, name, date, completed_at, venues(name)')
+    .select('id, name, date, timeslot, completed_at, venues(name)')
     .eq('organizer_id', organizer.id)
     .order('date', { ascending: false });
 
@@ -28,22 +30,14 @@ export default async function TournamentsPage() {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const in14Days = new Date(today);
-  in14Days.setDate(in14Days.getDate() + 14);
 
   const upcoming = (tournaments ?? [])
-    .filter((t) => {
-      const d = new Date(`${t.date}T00:00:00`);
-      return d >= today && d <= in14Days;
-    })
+    .filter((t) => new Date(`${t.date}T00:00:00`) >= today)
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 
-  const sevenDaysAgo = new Date(today);
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
   const recentlyCompleted = (tournaments ?? [])
-    .filter((t) => t.completed_at && new Date(t.completed_at) >= sevenDaysAgo)
-    .sort((a, b) => (a.completed_at! < b.completed_at! ? 1 : -1));
+    .filter((t) => new Date(`${t.date}T00:00:00`) < today)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
 
   const venueNameFor = (t: { venues: unknown }) => {
     const venue = t.venues as { name: string } | { name: string }[] | null;
@@ -53,6 +47,19 @@ export default async function TournamentsPage() {
 
   return (
     <OrganizerShell organizerName={organizer.name}>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-extrabold text-slate-900">Tournaments</h1>
+        <Link href="/tournaments/new" className={accentButtonClass}>
+          + New Tournament
+        </Link>
+      </div>
+
+      {(tournaments ?? []).length === 0 && (
+        <div className={`${cardClass} text-center text-slate-500`}>
+          No tournaments yet — create your first one.
+        </div>
+      )}
+
       {upcoming.length > 0 && (
         <div className="mb-8">
           <h2 className="text-lg font-extrabold text-slate-900 mb-3 flex items-center gap-2">
@@ -78,6 +85,7 @@ export default async function TournamentsPage() {
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-600">
                       <span>📍 {venueNameFor(t)}</span>
+                      <span>🕐 {timeslotLabel(t.timeslot)}</span>
                       <span>👥 {playerCount} player{playerCount === 1 ? '' : 's'}</span>
                       <span>📅 {t.date}</span>
                     </div>
@@ -111,6 +119,7 @@ export default async function TournamentsPage() {
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-600">
                       <span>📍 {venueNameFor(t)}</span>
+                      <span>🕐 {timeslotLabel(t.timeslot)}</span>
                       <span>👥 {playerCount} player{playerCount === 1 ? '' : 's'}</span>
                       <span>📅 {t.date}</span>
                     </div>
@@ -121,33 +130,6 @@ export default async function TournamentsPage() {
           </ul>
         </div>
       )}
-
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-extrabold text-slate-900">Your Tournaments</h1>
-        <Link href="/tournaments/new" className={accentButtonClass}>
-          + New Tournament
-        </Link>
-      </div>
-
-      {(tournaments ?? []).length === 0 && (
-        <div className={`${cardClass} text-center text-slate-500`}>
-          No tournaments yet — create your first one.
-        </div>
-      )}
-
-      <ul className="space-y-3">
-        {(tournaments ?? []).map((t) => (
-          <li key={t.id}>
-            <Link
-              href={`/tournaments/${t.id}/roster`}
-              className={`${cardClass} flex items-center justify-between hover:border-teal-400 transition-colors block`}
-            >
-              <span className="font-semibold text-slate-900">{t.name}</span>
-              <span className="text-sm text-slate-500">{t.date}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
     </OrganizerShell>
   );
 }
