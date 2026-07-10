@@ -11,12 +11,8 @@ export async function createTournament(formData: FormData) {
   const targetScore = Number(formData.get('targetScore'));
   const winBy = Number(formData.get('winBy'));
   const format = formData.get('format') as string;
-
-  const { data: venue } = await supabase
-    .from('venues')
-    .select('id')
-    .eq('name', 'Pickle Turf')
-    .single();
+  const venueId = formData.get('venueId') as string;
+  const timeslot = formData.get('timeslot') as string;
 
   const { data: tournament, error } = await supabase
     .from('tournaments')
@@ -27,7 +23,8 @@ export async function createTournament(formData: FormData) {
       win_by: winBy,
       format,
       organizer_id: organizer.id,
-      venue_id: venue!.id,
+      venue_id: venueId,
+      timeslot,
     })
     .select('id')
     .single();

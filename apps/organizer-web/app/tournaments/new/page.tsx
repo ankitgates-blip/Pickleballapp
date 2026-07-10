@@ -2,10 +2,13 @@ import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, inputClass, accentButtonClass } from '@/app/components/ui';
 import { TOURNAMENT_FORMATS } from '@/lib/tournament/formats';
+import { TIME_SLOTS } from '@/lib/tournament/timeslots';
 import { createTournament } from './actions';
 
 export default async function NewTournamentPage() {
-  const { organizer } = await requireOrganizer();
+  const { supabase, organizer } = await requireOrganizer();
+
+  const { data: venues } = await supabase.from('venues').select('id, name').order('name');
 
   return (
     <OrganizerShell organizerName={organizer.name}>
@@ -28,6 +31,32 @@ export default async function NewTournamentPage() {
               {TOURNAMENT_FORMATS.map((f) => (
                 <option key={f.value} value={f.value}>
                   {f.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Location</label>
+            <select name="venueId" required defaultValue="" className={inputClass}>
+              <option value="" disabled>
+                Select a location
+              </option>
+              {(venues ?? []).map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Timeslot</label>
+            <select name="timeslot" required defaultValue="" className={inputClass}>
+              <option value="" disabled>
+                Select a timeslot
+              </option>
+              {TIME_SLOTS.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
                 </option>
               ))}
             </select>
