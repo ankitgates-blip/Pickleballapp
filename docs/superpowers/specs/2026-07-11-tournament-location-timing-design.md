@@ -20,8 +20,13 @@ is removed).
 - **Dashboard windows widen, not disappear**: with "Your Tournaments"
   removed, Upcoming Matches becomes "every tournament with `date >= today`"
   (previously capped at the next 14 days) and Recently Completed becomes
-  "every completed tournament" (previously capped at the last 7 days) — so
-  no tournament ever becomes unreachable from the dashboard.
+  "every tournament with `date < today`" (previously capped at completed
+  tournaments from the last 7 days) — so no tournament ever becomes
+  unreachable from the dashboard. Recently Completed is keyed on date, not
+  on `completed_at`, specifically so a past tournament whose scores were
+  never fully entered still shows up somewhere (its Results page just
+  won't show a champion banner, since that's already gated on
+  `completed_at`).
 - **Upcoming detail view**: clicking a card continues to open the existing
   public share-link page (`/t/[id]`), which gains a "Players" section and
   the Location/Timeslot in its header. No new page.
@@ -84,8 +89,9 @@ is removed).
 - **Upcoming Matches**: filter changes from `date >= today && date <=
   today+14` to just `date >= today`. Sort remains soonest-first.
 - **Recently Completed**: filter changes from `completed_at &&
-  completed_at >= today-7` to just `completed_at` (i.e., any completed
-  tournament at all). Sort remains most-recent-first.
+  completed_at >= today-7` to `date < today` (i.e., every tournament whose
+  date has passed, whether or not it's been fully scored). Sort by date,
+  most-recent-first.
 - Both queries add `timeslot` to their `select(...)` list (venue name is
   already selected via the `venues(name)` join).
 
