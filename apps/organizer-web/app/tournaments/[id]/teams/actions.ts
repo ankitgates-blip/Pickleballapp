@@ -1,8 +1,11 @@
+// apps/organizer-web/app/tournaments/[id]/teams/actions.ts
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import { shuffleIntoTeams } from '@/lib/tournament/shuffle';
+
+const LEAGUE_PLAYOFFS_TEAM_CAP = 8;
 
 export async function pairTeam(tournamentId: string, formData: FormData) {
   const { supabase } = await requireOrganizer();
@@ -12,6 +15,31 @@ export async function pairTeam(tournamentId: string, formData: FormData) {
 
   if (!player1Id || !player2Id || player1Id === player2Id) {
     throw new Error('Select two different players to pair');
+  }
+
+  const { data: tournament, error: tournamentError } = await supabase
+    .from('tournaments')
+    .select('format')
+    .eq('id', tournamentId)
+    .single();
+
+  if (tournamentError) {
+    throw new Error(tournamentError.message);
+  }
+
+  if (tournament?.format === 'league_playoffs') {
+    const { count, error: countError } = await supabase
+      .from('teams')
+      .select('id', { count: 'exact', head: true })
+      .eq('tournament_id', tournamentId);
+
+    if (countError) {
+      throw new Error(countError.message);
+    }
+
+    if ((count ?? 0) >= LEAGUE_PLAYOFFS_TEAM_CAP) {
+      throw new Error('This format allows a maximum of 8 teams');
+    }
   }
 
   const { error } = await supabase.from('teams').insert({
@@ -51,12 +79,37 @@ export async function shuffleRemaining(tournamentId: string) {
   const pairedPlayerIds = new Set(
     (teams ?? []).flatMap((t) => [t.player_1_id, t.player_2_id])
   );
-  const unpairedIds = (players ?? [])
+  let unpairedIds = (players ?? [])
     .map((p) => p.id)
     .filter((id) => !pairedPlayerIds.has(id));
 
   if (unpairedIds.length < 2) {
     return;
+  }
+
+  const { data: tournament, error: tournamentError } = await supabase
+    .from('tournaments')
+    .select('format')
+    .eq('id', tournamentId)
+    .single();
+
+  if (tournamentError) {
+    throw new Error(tournamentError.message);
+  }
+
+  if (tournament?.format === 'league_playoffs') {
+    const existingTeamCount = (teams ?? []).length;
+    const remainingSlots = LEAGUE_PLAYOFFS_TEAM_CAP - existingTeamCount;
+
+    if (remainingSlots <= 0) {
+      return;
+    }
+
+    unpairedIds = unpairedIds.slice(0, remainingSlots * 2);
+
+    if (unpairedIds.length < 2) {
+      return;
+    }
   }
 
   const newTeams = shuffleIntoTeams(unpairedIds);

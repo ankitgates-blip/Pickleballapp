@@ -4,6 +4,8 @@ import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass, primaryButtonClass, accentButtonClass, pillClass } from '@/app/components/ui';
 import { pairTeam, shuffleRemaining, removeTeam } from './actions';
 
+const LEAGUE_PLAYOFFS_TEAM_CAP = 8;
+
 export default async function TeamsPage({
   params,
 }: {
@@ -11,6 +13,14 @@ export default async function TeamsPage({
 }) {
   const { id } = await params;
   const { supabase, organizer } = await requireOrganizer();
+
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('format')
+    .eq('id', id)
+    .single();
+
+  const isLeaguePlayoffs = tournament?.format === 'league_playoffs';
 
   const { data: players } = await supabase
     .from('players')
@@ -22,6 +32,9 @@ export default async function TeamsPage({
     .from('teams')
     .select('id, player_1_id, player_2_id')
     .eq('tournament_id', id);
+
+  const teamCount = (teams ?? []).length;
+  const atCap = isLeaguePlayoffs && teamCount >= LEAGUE_PLAYOFFS_TEAM_CAP;
 
   const pairedPlayerIds = new Set(
     (teams ?? []).flatMap((t) => [t.player_1_id, t.player_2_id])
@@ -37,41 +50,56 @@ export default async function TeamsPage({
   return (
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="teams" />
-      <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Pair Teams</h1>
-
-      {unpairedPlayers.length >= 2 && (
-        <div className={`${cardClass} mb-6 text-center`}>
-          <p className="text-slate-600 mb-3">
-            {unpairedPlayers.length} players unpaired. Shuffle them into random teams, or
-            pair manually below.
-          </p>
-          <form action={shuffleRemainingWithId}>
-            <button type="submit" className={accentButtonClass}>
-              Shuffle Remaining Players
-            </button>
-          </form>
-        </div>
-      )}
-
-      <div className={`${cardClass} mb-6`}>
-        <form action={pairTeamWithId} className="flex flex-col sm:flex-row gap-3">
-          <select name="player1Id" required defaultValue="" className={selectClass}>
-            <option value="" disabled>Player 1</option>
-            {unpairedPlayers.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-          <select name="player2Id" required defaultValue="" className={selectClass}>
-            <option value="" disabled>Player 2</option>
-            {unpairedPlayers.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-          <button type="submit" className={primaryButtonClass}>
-            Pair
-          </button>
-        </form>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-extrabold text-slate-900">Pair Teams</h1>
+        {isLeaguePlayoffs && (
+          <span className="text-sm font-semibold text-teal-700 bg-teal-50 rounded-full px-3 py-1">
+            {teamCount}/{LEAGUE_PLAYOFFS_TEAM_CAP} teams
+          </span>
+        )}
       </div>
+
+      {atCap ? (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6">
+          8/8 teams — maximum reached for this format.
+        </div>
+      ) : (
+        <>
+          {unpairedPlayers.length >= 2 && (
+            <div className={`${cardClass} mb-6 text-center`}>
+              <p className="text-slate-600 mb-3">
+                {unpairedPlayers.length} players unpaired. Shuffle them into random teams, or
+                pair manually below.
+              </p>
+              <form action={shuffleRemainingWithId}>
+                <button type="submit" className={accentButtonClass}>
+                  Shuffle Remaining Players
+                </button>
+              </form>
+            </div>
+          )}
+
+          <div className={`${cardClass} mb-6`}>
+            <form action={pairTeamWithId} className="flex flex-col sm:flex-row gap-3">
+              <select name="player1Id" required defaultValue="" className={selectClass}>
+                <option value="" disabled>Player 1</option>
+                {unpairedPlayers.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              <select name="player2Id" required defaultValue="" className={selectClass}>
+                <option value="" disabled>Player 2</option>
+                {unpairedPlayers.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              <button type="submit" className={primaryButtonClass}>
+                Pair
+              </button>
+            </form>
+          </div>
+        </>
+      )}
 
       <div className={`${cardClass} mb-6`}>
         <h2 className="text-lg font-bold text-slate-900 mb-3">Teams ({(teams ?? []).length})</h2>
