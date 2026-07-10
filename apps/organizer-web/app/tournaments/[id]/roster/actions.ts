@@ -11,6 +11,40 @@ export async function startAddPlayers(tournamentId: string, formData: FormData) 
   redirect(`/tournaments/${tournamentId}/roster?pendingNames=${encodeURIComponent(raw)}`);
 }
 
+export async function addExistingPeople(tournamentId: string, formData: FormData) {
+  const { supabase, organizer } = await requireOrganizer();
+
+  const personIds = formData.getAll('personIds') as string[];
+  if (personIds.length === 0) {
+    redirect(`/tournaments/${tournamentId}/roster`);
+  }
+
+  const { data: people, error: peopleError } = await supabase
+    .from('people')
+    .select('id, name')
+    .eq('organizer_id', organizer.id)
+    .in('id', personIds);
+
+  if (peopleError) {
+    throw new Error(peopleError.message);
+  }
+
+  const { error: playersError } = await supabase.from('players').insert(
+    (people ?? []).map((p) => ({
+      tournament_id: tournamentId,
+      name: p.name,
+      person_id: p.id,
+    }))
+  );
+
+  if (playersError) {
+    throw new Error(playersError.message);
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}/roster`);
+  redirect(`/tournaments/${tournamentId}/roster`);
+}
+
 export async function confirmAddPlayers(tournamentId: string, formData: FormData) {
   const { supabase, organizer } = await requireOrganizer();
 

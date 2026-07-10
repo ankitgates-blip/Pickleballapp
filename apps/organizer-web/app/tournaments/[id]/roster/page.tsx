@@ -5,7 +5,7 @@ import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass, primaryButtonClass, accentButtonClass, pillClass, linkClass } from '@/app/components/ui';
 import { matchNamesToPeople } from '@/lib/people/matchNames';
-import { startAddPlayers, confirmAddPlayers } from './actions';
+import { startAddPlayers, confirmAddPlayers, addExistingPeople } from './actions';
 
 export default async function RosterPage({
   params,
@@ -20,9 +20,20 @@ export default async function RosterPage({
 
   const { data: players } = await supabase
     .from('players')
-    .select('id, name')
+    .select('id, name, person_id')
     .eq('tournament_id', id)
     .order('created_at', { ascending: true });
+
+  const { data: allPeople } = await supabase
+    .from('people')
+    .select('id, name')
+    .eq('organizer_id', organizer.id)
+    .order('name', { ascending: true });
+
+  const personIdsOnRoster = new Set(
+    (players ?? []).map((p) => p.person_id).filter((personId): personId is string => Boolean(personId))
+  );
+  const availablePeople = (allPeople ?? []).filter((p) => !personIdsOnRoster.has(p.id));
 
   const nameCounts = new Map<string, number>();
   for (const p of players ?? []) {
@@ -92,13 +103,40 @@ export default async function RosterPage({
   }
 
   const startAddPlayersWithId = startAddPlayers.bind(null, id);
+  const addExistingPeopleWithId = addExistingPeople.bind(null, id);
 
   return (
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="roster" />
       <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Roster</h1>
 
+      {availablePeople.length > 0 && (
+        <div className={`${cardClass} mb-6`}>
+          <h2 className="text-lg font-bold text-slate-900 mb-2">Add Existing Players</h2>
+          <p className="text-sm text-slate-500 mb-3">
+            Select players you've added before — no need to retype their names.
+          </p>
+          <form action={addExistingPeopleWithId} className="space-y-3">
+            <div className="flex flex-wrap gap-3 max-h-48 overflow-y-auto">
+              {availablePeople.map((p) => (
+                <label
+                  key={p.id}
+                  className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm cursor-pointer hover:border-teal-400"
+                >
+                  <input type="checkbox" name="personIds" value={p.id} className="accent-teal-600" />
+                  {p.name}
+                </label>
+              ))}
+            </div>
+            <button type="submit" className={primaryButtonClass}>
+              Add Selected
+            </button>
+          </form>
+        </div>
+      )}
+
       <div className={`${cardClass} mb-6`}>
+        <h2 className="text-lg font-bold text-slate-900 mb-2">Add New Players</h2>
         <form action={startAddPlayersWithId} className="space-y-3">
           <textarea
             name="names"
