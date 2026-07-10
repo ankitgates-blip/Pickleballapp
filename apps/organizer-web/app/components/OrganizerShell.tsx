@@ -1,3 +1,4 @@
+// apps/organizer-web/app/components/OrganizerShell.tsx
 import Link from 'next/link';
 import { signOut } from '@/app/login/actions';
 
@@ -12,10 +13,15 @@ export default function OrganizerShell({
     <div className="min-h-screen flex flex-col">
       <header className="bg-teal-600 text-white shadow-md">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/tournaments" className="flex items-center gap-2 font-extrabold text-lg tracking-tight">
-            <span className="inline-block h-3 w-3 rounded-full bg-amber-400" />
-            Pickle Turf Organizer
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link href="/tournaments" className="flex items-center gap-2 font-extrabold text-lg tracking-tight">
+              <span className="inline-block h-3 w-3 rounded-full bg-amber-400" />
+              Pickle Turf Organizer
+            </Link>
+            <Link href="/people" className="text-sm font-semibold text-teal-50 hover:text-white">
+              People
+            </Link>
+          </div>
           {organizerName && (
             <form action={signOut} className="flex items-center gap-3">
               <span className="text-sm text-teal-50 hidden sm:inline">
