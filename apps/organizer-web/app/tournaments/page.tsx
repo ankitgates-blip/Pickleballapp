@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
-import { cardClass, accentButtonClass } from '@/app/components/ui';
+import { cardClass, vibrantCardClass, accentButtonClass } from '@/app/components/ui';
 
 export default async function TournamentsPage() {
   const { supabase, organizer } = await requireOrganizer();
@@ -48,18 +48,27 @@ export default async function TournamentsPage() {
     <OrganizerShell organizerName={organizer.name}>
       {upcoming.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-lg font-bold text-slate-900 mb-3">Upcoming Matches</h2>
+          <h2 className="text-lg font-extrabold text-slate-900 mb-3 flex items-center gap-2">
+            <span>🔥</span> Upcoming Matches
+          </h2>
           <ul className="space-y-3">
             {upcoming.map((t) => {
               const playerCount = playerCountByTournament.get(t.id) ?? 0;
+              const daysAway = Math.round(
+                (new Date(`${t.date}T00:00:00`).getTime() - today.getTime()) / 86400000
+              );
               return (
-                <li key={t.id} className={`${cardClass} border-l-4 border-l-amber-400`}>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-slate-900">{t.name}</span>
-                    <span className="text-sm text-slate-500">{t.date}</span>
+                <li key={t.id} className={vibrantCardClass}>
+                  <span className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-extrabold px-3 py-1 rounded-bl-xl rounded-tr-2xl tracking-wide">
+                    {daysAway === 0 ? 'TODAY' : `${daysAway} DAY${daysAway === 1 ? '' : 'S'}`}
+                  </span>
+                  <div className="font-extrabold text-base text-slate-900 mb-1.5">
+                    🏆 {t.name}
                   </div>
-                  <div className="text-sm text-slate-500 mt-1">
-                    {venueNameFor(t)} — {playerCount} player{playerCount === 1 ? '' : 's'} registered
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-600">
+                    <span>📍 {venueNameFor(t)}</span>
+                    <span>👥 {playerCount} player{playerCount === 1 ? '' : 's'}</span>
+                    <span>📅 {t.date}</span>
                   </div>
                 </li>
               );

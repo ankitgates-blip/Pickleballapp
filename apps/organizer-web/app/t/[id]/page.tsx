@@ -61,11 +61,18 @@ export default async function PublicTournamentPage({
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-teal-600 text-white">
-        <div className="max-w-2xl mx-auto px-4 py-6 text-center">
-          <div className="mx-auto mb-2 h-3 w-3 rounded-full bg-amber-400" />
+      <header className="relative overflow-hidden bg-gradient-to-br from-emerald-800 via-teal-600 to-cyan-600 text-white">
+        <div
+          aria-hidden
+          className="ball-texture absolute -top-8 -right-6 h-32 w-32 rounded-full opacity-90"
+          style={{ background: 'radial-gradient(circle at 35% 35%, #eaff00, #c9e800)' }}
+        />
+        <div className="relative max-w-2xl mx-auto px-4 py-6 text-center">
+          <span className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-lime-300 text-xl shadow-md -rotate-6">
+            🏓
+          </span>
           <h1 className="text-2xl font-extrabold tracking-tight">{tournament.name}</h1>
-          <p className="text-teal-100 text-sm mt-1">{tournament.date}</p>
+          <p className="text-teal-50 text-sm mt-1 font-medium">{tournament.date}</p>
         </div>
       </header>
 
@@ -81,16 +88,19 @@ export default async function PublicTournamentPage({
               </tr>
             </thead>
             <tbody>
-              {standings.map((s, i) => (
-                <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
-                  <td className="py-2 font-semibold text-slate-900">
-                    {i === 0 && <span className="mr-1">🏆</span>}
-                    {teamById.get(s.teamId)}
-                  </td>
-                  <td className="py-2 text-center text-teal-700 font-bold">{s.wins}</td>
-                  <td className="py-2 text-center text-slate-500">{s.losses}</td>
-                </tr>
-              ))}
+              {standings.map((s, i) => {
+                const medal = ['🥇', '🥈', '🥉'][i];
+                return (
+                  <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
+                    <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
+                      {medal && <span className="mr-1.5">{medal}</span>}
+                      {teamById.get(s.teamId)}
+                    </td>
+                    <td className="py-2 text-center text-teal-700 font-extrabold">{s.wins}</td>
+                    <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

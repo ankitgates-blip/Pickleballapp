@@ -9,14 +9,24 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-600 to-teal-800 px-4 py-12">
-      <div className="w-full max-w-md space-y-6">
+    <main className="relative min-h-screen overflow-hidden flex items-center justify-center bg-gradient-to-br from-emerald-800 via-teal-600 to-cyan-600 px-4 py-12">
+      <div
+        aria-hidden
+        className="ball-texture absolute -top-10 -right-10 h-64 w-64 rounded-full opacity-90 shadow-2xl"
+        style={{ background: 'radial-gradient(circle at 35% 35%, #eaff00, #c9e800)' }}
+      />
+      <div
+        aria-hidden
+        className="ball-texture absolute -bottom-16 -left-16 h-72 w-72 rounded-full opacity-20"
+        style={{ background: 'radial-gradient(circle at 35% 35%, #eaff00, #c9e800)' }}
+      />
+      <div className="relative w-full max-w-md space-y-6">
         <div className="text-center text-white">
-          <div className="mx-auto mb-3 h-14 w-14 rounded-full bg-amber-400 flex items-center justify-center text-2xl font-black text-teal-900 shadow-lg">
-            PT
+          <div className="mx-auto mb-3 h-16 w-16 rounded-2xl bg-lime-300 flex items-center justify-center text-3xl shadow-lg -rotate-6">
+            🏓
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Pickle Turf Organizer</h1>
-          <p className="text-teal-100 text-sm mt-1">Run your tournaments, not a spreadsheet.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight">Pickle Turf Organizer</h1>
+          <p className="text-teal-50 text-sm mt-1 font-medium">Run your tournaments, not a spreadsheet.</p>
         </div>
 
         {error && (
