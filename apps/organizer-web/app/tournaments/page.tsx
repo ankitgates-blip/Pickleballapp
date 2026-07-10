@@ -8,12 +8,66 @@ export default async function TournamentsPage() {
 
   const { data: tournaments } = await supabase
     .from('tournaments')
-    .select('id, name, date')
+    .select('id, name, date, venues(name)')
     .eq('organizer_id', organizer.id)
     .order('date', { ascending: false });
 
+  const tournamentIds = (tournaments ?? []).map((t) => t.id);
+
+  const { data: players } = tournamentIds.length
+    ? await supabase.from('players').select('tournament_id').in('tournament_id', tournamentIds)
+    : { data: [] };
+
+  const playerCountByTournament = new Map<string, number>();
+  for (const p of players ?? []) {
+    playerCountByTournament.set(
+      p.tournament_id,
+      (playerCountByTournament.get(p.tournament_id) ?? 0) + 1
+    );
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const in14Days = new Date(today);
+  in14Days.setDate(in14Days.getDate() + 14);
+
+  const upcoming = (tournaments ?? [])
+    .filter((t) => {
+      const d = new Date(`${t.date}T00:00:00`);
+      return d >= today && d <= in14Days;
+    })
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+
+  const venueNameFor = (t: { venues: unknown }) => {
+    const venue = t.venues as { name: string } | { name: string }[] | null;
+    if (!venue) return 'Pickle Turf';
+    return Array.isArray(venue) ? (venue[0]?.name ?? 'Pickle Turf') : venue.name;
+  };
+
   return (
     <OrganizerShell organizerName={organizer.name}>
+      {upcoming.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-lg font-bold text-slate-900 mb-3">Upcoming Matches</h2>
+          <ul className="space-y-3">
+            {upcoming.map((t) => {
+              const playerCount = playerCountByTournament.get(t.id) ?? 0;
+              return (
+                <li key={t.id} className={`${cardClass} border-l-4 border-l-amber-400`}>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-slate-900">{t.name}</span>
+                    <span className="text-sm text-slate-500">{t.date}</span>
+                  </div>
+                  <div className="text-sm text-slate-500 mt-1">
+                    {venueNameFor(t)} — {playerCount} player{playerCount === 1 ? '' : 's'} registered
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-extrabold text-slate-900">Your Tournaments</h1>
         <Link href="/tournaments/new" className={accentButtonClass}>
