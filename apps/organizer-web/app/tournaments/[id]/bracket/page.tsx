@@ -3,6 +3,7 @@ import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass, accentButtonClass, linkClass } from '@/app/components/ui';
+import { formatLabel } from '@/lib/tournament/formats';
 import { generateBracket } from './actions';
 
 export default async function BracketPage({
@@ -12,6 +13,14 @@ export default async function BracketPage({
 }) {
   const { id } = await params;
   const { supabase, organizer } = await requireOrganizer();
+
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('format')
+    .eq('id', id)
+    .single();
+
+  const format = tournament?.format ?? 'round_robin';
 
   const { data: teams } = await supabase
     .from('teams')
@@ -49,19 +58,33 @@ export default async function BracketPage({
     rounds.set(m.round, list);
   }
 
+  const isRoundRobin = format === 'round_robin';
+
   return (
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="bracket" />
-      <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Bracket</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-extrabold text-slate-900">Bracket</h1>
+        <span className="text-sm font-semibold text-teal-700 bg-teal-50 rounded-full px-3 py-1">
+          {formatLabel(format)}
+        </span>
+      </div>
 
-      {!hasMatches && teamCount < 2 && (
+      {!isRoundRobin && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6">
+          {formatLabel(format)} isn't available yet — bracket generation for this format is
+          coming soon. Round Robin is the only format that works today.
+        </div>
+      )}
+
+      {isRoundRobin && !hasMatches && teamCount < 2 && (
         <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
           Need at least 2 teams to generate a bracket — you have {teamCount}. Go back and
           pair more teams first.
         </div>
       )}
 
-      {!hasMatches && teamCount >= 2 && (
+      {isRoundRobin && !hasMatches && teamCount >= 2 && (
         <form action={generateBracketWithId} className={`${cardClass} text-center mb-6`}>
           <p className="text-slate-600 mb-4">
             {teamCount} teams ready. Generate a round-robin schedule.

@@ -1,6 +1,7 @@
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, inputClass, accentButtonClass } from '@/app/components/ui';
+import { TOURNAMENT_FORMATS } from '@/lib/tournament/formats';
 import { createTournament } from './actions';
 
 export default async function NewTournamentPage() {
@@ -20,6 +21,16 @@ export default async function NewTournamentPage() {
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1">Date</label>
             <input name="date" type="date" required className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Format</label>
+            <select name="format" required defaultValue="round_robin" className={inputClass}>
+              {TOURNAMENT_FORMATS.map((f) => (
+                <option key={f.value} value={f.value}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

@@ -10,6 +10,7 @@ export async function createTournament(formData: FormData) {
   const date = formData.get('date') as string;
   const targetScore = Number(formData.get('targetScore'));
   const winBy = Number(formData.get('winBy'));
+  const format = formData.get('format') as string;
 
   const { data: venue } = await supabase
     .from('venues')
@@ -24,6 +25,7 @@ export async function createTournament(formData: FormData) {
       date,
       target_score: targetScore,
       win_by: winBy,
+      format,
       organizer_id: organizer.id,
       venue_id: venue!.id,
     })
