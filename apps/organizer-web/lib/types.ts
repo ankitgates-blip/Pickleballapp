@@ -26,3 +26,9 @@ export type RoundRobinPairing = {
   teamAId: string;
   teamBId: string | null; // null = bye
 };
+
+export type CompletionCheckMatch = {
+  stage: 'league' | 'semifinal' | 'final';
+  status: 'pending' | 'complete';
+  teamBId: string | null;
+};
