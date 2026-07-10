@@ -128,6 +128,13 @@ export default async function PersonDetailPage({
   const stats = computePersonStats(records, tournamentsWon);
   const nameFor = (personId: string) => personNameById.get(personId) ?? 'Unknown';
 
+  const currentMonthKey = new Date().toISOString().slice(0, 7);
+  const thisMonth = stats.monthly.find((m) => m.period === currentMonthKey) ?? {
+    gamesWon: 0,
+    gamesLost: 0,
+    tournamentsWon: 0,
+  };
+
   return (
     <OrganizerShell organizerName={organizer.name}>
       <h1 className="text-2xl font-extrabold text-slate-900 mb-6">{person.name}</h1>
@@ -137,19 +144,19 @@ export default async function PersonDetailPage({
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <div className="text-2xl font-extrabold text-teal-700">
-              {stats.monthly[0]?.gamesWon ?? 0}
+              {thisMonth.gamesWon}
             </div>
             <div className="text-xs text-slate-500">Games won</div>
           </div>
           <div>
             <div className="text-2xl font-extrabold text-slate-500">
-              {stats.monthly[0]?.gamesLost ?? 0}
+              {thisMonth.gamesLost}
             </div>
             <div className="text-xs text-slate-500">Games lost</div>
           </div>
           <div>
             <div className="text-2xl font-extrabold text-amber-500">
-              {stats.monthly[0]?.tournamentsWon ?? 0}
+              {thisMonth.tournamentsWon}
             </div>
             <div className="text-xs text-slate-500">Tournaments won</div>
           </div>
