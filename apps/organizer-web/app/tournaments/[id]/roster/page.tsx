@@ -1,15 +1,21 @@
+// apps/organizer-web/app/tournaments/[id]/roster/page.tsx
+import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
-import { cardClass, primaryButtonClass, pillClass } from '@/app/components/ui';
-import { addPlayers } from './actions';
+import { cardClass, primaryButtonClass, accentButtonClass, pillClass, linkClass } from '@/app/components/ui';
+import { matchNamesToPeople } from '@/lib/people/matchNames';
+import { startAddPlayers, confirmAddPlayers } from './actions';
 
 export default async function RosterPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ pendingNames?: string }>;
 }) {
   const { id } = await params;
+  const { pendingNames } = await searchParams;
   const { supabase, organizer } = await requireOrganizer();
 
   const { data: players } = await supabase
@@ -17,8 +23,6 @@ export default async function RosterPage({
     .select('id, name')
     .eq('tournament_id', id)
     .order('created_at', { ascending: true });
-
-  const addPlayersWithId = addPlayers.bind(null, id);
 
   const nameCounts = new Map<string, number>();
   for (const p of players ?? []) {
@@ -31,13 +35,71 @@ export default async function RosterPage({
       .filter((name) => (nameCounts.get(name.trim().toLowerCase()) ?? 0) > 1)
   );
 
+  if (pendingNames) {
+    const names = pendingNames
+      .split('\n')
+      .map((n) => n.trim())
+      .filter((n) => n.length > 0);
+
+    const { data: existingPeople } = await supabase
+      .from('people')
+      .select('id, name')
+      .eq('organizer_id', organizer.id);
+
+    const { matched, newNames } = matchNamesToPeople(names, existingPeople ?? []);
+    const confirmAddPlayersWithId = confirmAddPlayers.bind(null, id);
+
+    return (
+      <OrganizerShell organizerName={organizer.name}>
+        <TournamentNav tournamentId={id} current="roster" />
+        <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Review Roster Additions</h1>
+
+        <div className={`${cardClass} mb-6`}>
+          <h2 className="text-lg font-bold text-slate-900 mb-2">
+            Matched to existing person ({matched.length})
+          </h2>
+          <ul className="flex flex-wrap gap-2 mb-4">
+            {matched.map((m, i) => (
+              <li key={i} className={`${pillClass} bg-teal-50 text-teal-800`}>
+                {m.name}
+              </li>
+            ))}
+            {matched.length === 0 && <li className="text-sm text-slate-400">None</li>}
+          </ul>
+
+          <h2 className="text-lg font-bold text-slate-900 mb-2">New people ({newNames.length})</h2>
+          <ul className="flex flex-wrap gap-2 mb-4">
+            {newNames.map((name, i) => (
+              <li key={i} className={`${pillClass} bg-amber-50 text-amber-800`}>
+                {name}
+              </li>
+            ))}
+            {newNames.length === 0 && <li className="text-sm text-slate-400">None</li>}
+          </ul>
+
+          <form action={confirmAddPlayersWithId} className="flex items-center gap-4">
+            <input type="hidden" name="names" value={pendingNames} />
+            <button type="submit" className={accentButtonClass}>
+              Confirm
+            </button>
+            <Link href={`/tournaments/${id}/roster`} className={linkClass}>
+              Cancel
+            </Link>
+          </form>
+        </div>
+      </OrganizerShell>
+    );
+  }
+
+  const startAddPlayersWithId = startAddPlayers.bind(null, id);
+
   return (
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="roster" />
       <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Roster</h1>
 
       <div className={`${cardClass} mb-6`}>
-        <form action={addPlayersWithId} className="space-y-3">
+        <form action={startAddPlayersWithId} className="space-y-3">
           <textarea
             name="names"
             rows={8}
@@ -69,6 +131,12 @@ export default async function RosterPage({
           ))}
         </ul>
       </div>
+
+      <p className="mt-6">
+        <Link href={`/tournaments/${id}/teams`} className={linkClass}>
+          Next: pair teams →
+        </Link>
+      </p>
     </OrganizerShell>
   );
 }
