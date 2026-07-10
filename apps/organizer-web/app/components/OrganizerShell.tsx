@@ -19,7 +19,7 @@ export default function OrganizerShell({
               Pickle Turf Organizer
             </Link>
             <Link href="/people" className="text-sm font-semibold text-teal-50 hover:text-white">
-              People
+              Player Profile
             </Link>
           </div>
           {organizerName && (

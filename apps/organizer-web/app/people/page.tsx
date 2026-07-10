@@ -78,7 +78,7 @@ export default async function PeopleListPage() {
 
   return (
     <OrganizerShell organizerName={organizer.name}>
-      <h1 className="text-2xl font-extrabold text-slate-900 mb-6">People</h1>
+      <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Player Profiles</h1>
 
       {summaries.length === 0 && (
         <div className={`${cardClass} text-center text-slate-500`}>
