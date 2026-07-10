@@ -22,6 +22,32 @@ export async function enterScore(
     throw new Error(error.message);
   }
 
+  const { data: allMatches, error: matchesError } = await supabase
+    .from('matches')
+    .select('status')
+    .eq('tournament_id', tournamentId)
+    .not('team_b_id', 'is', null);
+
+  if (matchesError) {
+    throw new Error(matchesError.message);
+  }
+
+  const allComplete =
+    (allMatches ?? []).length > 0 && (allMatches ?? []).every((m) => m.status === 'complete');
+
+  if (allComplete) {
+    const { error: completeError } = await supabase
+      .from('tournaments')
+      .update({ completed_at: new Date().toISOString() })
+      .eq('id', tournamentId)
+      .is('completed_at', null);
+
+    if (completeError) {
+      throw new Error(completeError.message);
+    }
+  }
+
   revalidatePath(`/tournaments/${tournamentId}/matches`);
   revalidatePath(`/tournaments/${tournamentId}/standings`);
+  revalidatePath('/tournaments');
 }
