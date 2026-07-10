@@ -1,7 +1,14 @@
+// apps/organizer-web/app/t/[id]/page.tsx
 import { createClient } from '@/lib/supabase/server';
 import { computeStandings } from '@/lib/tournament/standings';
 import type { MatchResult } from '@/lib/types';
 import { cardClass } from '@/app/components/ui';
+
+const STAGE_LABELS: Record<string, string> = {
+  league: 'League',
+  semifinal: 'Semifinal',
+  final: 'Final',
+};
 
 export default async function PublicTournamentPage({
   params,
@@ -13,7 +20,7 @@ export default async function PublicTournamentPage({
 
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('name, date')
+    .select('name, date, format')
     .eq('id', id)
     .single();
 
@@ -37,7 +44,7 @@ export default async function PublicTournamentPage({
 
   const { data: matches } = await supabase
     .from('matches')
-    .select('round, team_a_id, team_b_id, score_a, score_b, status')
+    .select('round, stage, team_a_id, team_b_id, score_a, score_b, status')
     .eq('tournament_id', id)
     .order('round', { ascending: true });
 
@@ -49,7 +56,10 @@ export default async function PublicTournamentPage({
     ])
   );
 
-  const matchResults: MatchResult[] = (matches ?? []).map((m) => ({
+  const isLeaguePlayoffs = tournament.format === 'league_playoffs';
+  const leagueMatches = (matches ?? []).filter((m) => m.stage === 'league');
+
+  const matchResults: MatchResult[] = leagueMatches.map((m) => ({
     teamAId: m.team_a_id!,
     teamBId: m.team_b_id,
     scoreA: m.score_a,
@@ -58,6 +68,7 @@ export default async function PublicTournamentPage({
   }));
 
   const standings = computeStandings(matchResults);
+  const stages: Array<'league' | 'semifinal' | 'final'> = ['league', 'semifinal', 'final'];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -78,7 +89,9 @@ export default async function PublicTournamentPage({
 
       <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
         <div className={cardClass}>
-          <h2 className="text-lg font-bold text-slate-900 mb-3">Standings</h2>
+          <h2 className="text-lg font-bold text-slate-900 mb-3">
+            {isLeaguePlayoffs ? 'League Standings' : 'Standings'}
+          </h2>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-slate-500 border-b border-slate-200">
@@ -105,28 +118,39 @@ export default async function PublicTournamentPage({
           </table>
         </div>
 
-        <div className={cardClass}>
-          <h2 className="text-lg font-bold text-slate-900 mb-3">Schedule</h2>
-          <ul className="space-y-2 text-sm">
-            {(matches ?? []).map((m, i) => (
-              <li key={i} className="flex items-center justify-between">
-                <span>
-                  <span className="text-slate-400 mr-2">R{m.round}</span>
-                  <span className="font-semibold">{teamById.get(m.team_a_id!)}</span>
-                  <span className="text-slate-400 mx-1">vs</span>
-                  <span className="font-semibold">
-                    {m.team_b_id ? teamById.get(m.team_b_id) : 'BYE'}
-                  </span>
-                </span>
-                {m.status === 'complete' && (
-                  <span className="font-bold text-teal-700">
-                    {m.score_a}-{m.score_b}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
+        {stages.map((stage) => {
+          const stageMatches = (matches ?? []).filter((m) => m.stage === stage);
+          if (stageMatches.length === 0) return null;
+
+          return (
+            <div key={stage} className={cardClass}>
+              <h2 className="text-lg font-bold text-slate-900 mb-3">
+                {isLeaguePlayoffs ? STAGE_LABELS[stage] : 'Schedule'}
+              </h2>
+              <ul className="space-y-2 text-sm">
+                {stageMatches.map((m, i) => (
+                  <li key={i} className="flex items-center justify-between">
+                    <span>
+                      {stage === 'league' && (
+                        <span className="text-slate-400 mr-2">R{m.round}</span>
+                      )}
+                      <span className="font-semibold">{teamById.get(m.team_a_id!)}</span>
+                      <span className="text-slate-400 mx-1">vs</span>
+                      <span className="font-semibold">
+                        {m.team_b_id ? teamById.get(m.team_b_id) : 'BYE'}
+                      </span>
+                    </span>
+                    {m.status === 'complete' && (
+                      <span className="font-bold text-teal-700">
+                        {m.score_a}-{m.score_b}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </main>
     </div>
   );

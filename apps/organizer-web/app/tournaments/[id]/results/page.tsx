@@ -74,11 +74,13 @@ export default async function ResultsPage({
 
   const isLeaguePlayoffs = tournament.format === 'league_playoffs';
   const finalMatch = finalMatches[0];
-  const championTeamId = finalMatch
-    ? (finalMatch.score_a ?? 0) > (finalMatch.score_b ?? 0)
-      ? finalMatch.team_a_id
-      : finalMatch.team_b_id
-    : standings[0]?.teamId;
+  const championTeamId = tournament.completed_at
+    ? finalMatch
+      ? (finalMatch.score_a ?? 0) > (finalMatch.score_b ?? 0)
+        ? finalMatch.team_a_id
+        : finalMatch.team_b_id
+      : standings[0]?.teamId
+    : undefined;
 
   const renderMatch = (m: NonNullable<typeof matches>[number]) => {
     const teamAName = teamById.get(m.team_a_id!) ?? 'Unknown';
