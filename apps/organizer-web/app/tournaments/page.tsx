@@ -65,18 +65,26 @@ export default async function TournamentsPage() {
                 (new Date(`${t.date}T00:00:00`).getTime() - today.getTime()) / 86400000
               );
               return (
-                <li key={t.id} className={vibrantCardClass}>
-                  <span className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-extrabold px-3 py-1 rounded-bl-xl rounded-tr-2xl tracking-wide">
-                    {daysAway === 0 ? 'TODAY' : `${daysAway} DAY${daysAway === 1 ? '' : 'S'}`}
-                  </span>
-                  <div className="font-extrabold text-base text-slate-900 mb-1.5">
-                    🏆 {t.name}
-                  </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-600">
-                    <span>📍 {venueNameFor(t)}</span>
-                    <span>👥 {playerCount} player{playerCount === 1 ? '' : 's'}</span>
-                    <span>📅 {t.date}</span>
-                  </div>
+                <li key={t.id}>
+                  <Link
+                    href={`/t/${t.id}`}
+                    className={`${vibrantCardClass} block hover:-translate-y-0.5 transition-transform`}
+                  >
+                    <span className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-extrabold px-3 py-1 rounded-bl-xl rounded-tr-2xl tracking-wide">
+                      {daysAway === 0 ? 'TODAY' : `${daysAway} DAY${daysAway === 1 ? '' : 'S'}`}
+                    </span>
+                    <div className="font-extrabold text-base text-slate-900 mb-1.5">
+                      🏆 {t.name}
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-600">
+                      <span>📍 {venueNameFor(t)}</span>
+                      <span>👥 {playerCount} player{playerCount === 1 ? '' : 's'}</span>
+                      <span>📅 {t.date}</span>
+                    </div>
+                    <div className="text-xs font-bold text-teal-700 mt-2">
+                      View who&apos;s playing →
+                    </div>
+                  </Link>
                 </li>
               );
             })}
