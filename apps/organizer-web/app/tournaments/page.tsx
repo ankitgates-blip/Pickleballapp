@@ -4,6 +4,8 @@ import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, vibrantCardClass, accentButtonClass } from '@/app/components/ui';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
+import { cancelTournament } from './actions';
+import CancelTournamentButton from './CancelTournamentButton';
 
 export default async function TournamentsPage() {
   const { supabase, organizer } = await requireOrganizer();
@@ -74,10 +76,7 @@ export default async function TournamentsPage() {
               const isOverdue = daysAway < 0;
               return (
                 <li key={t.id}>
-                  <Link
-                    href={`/tournaments/${t.id}/roster`}
-                    className={`${vibrantCardClass} block hover:-translate-y-0.5 transition-transform`}
-                  >
+                  <div className={vibrantCardClass}>
                     <span
                       className={`absolute top-0 right-0 ${
                         isOverdue ? 'bg-red-600' : 'bg-orange-500'
@@ -98,10 +97,19 @@ export default async function TournamentsPage() {
                       <span>👥 {playerCount} player{playerCount === 1 ? '' : 's'}</span>
                       <span>📅 {t.date}</span>
                     </div>
-                    <div className="text-xs font-bold text-teal-700 mt-2">
-                      Manage tournament →
+                    <div className="flex items-center justify-between mt-2">
+                      <Link
+                        href={`/tournaments/${t.id}/roster`}
+                        className="text-xs font-bold text-teal-700 hover:underline"
+                      >
+                        Manage tournament →
+                      </Link>
+                      <CancelTournamentButton
+                        tournamentName={t.name}
+                        cancelAction={cancelTournament.bind(null, t.id)}
+                      />
                     </div>
-                  </Link>
+                  </div>
                 </li>
               );
             })}
