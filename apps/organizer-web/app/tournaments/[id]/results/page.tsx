@@ -48,7 +48,8 @@ export default async function ResultsPage({
   const { data: players } = await supabase
     .from('players')
     .select('id, name, person_id')
-    .eq('tournament_id', id);
+    .eq('tournament_id', id)
+    .order('created_at', { ascending: true });
 
   const { data: matches } = await supabase
     .from('matches')
