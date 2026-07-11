@@ -1,5 +1,6 @@
 // apps/organizer-web/app/components/OrganizerShell.tsx
 import Link from 'next/link';
+import Image from 'next/image';
 import { signOut } from '@/app/login/actions';
 
 export default function OrganizerShell({
@@ -20,11 +21,9 @@ export default function OrganizerShell({
         <div className="relative max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/tournaments" className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-lime-300 text-lg shadow-md -rotate-6">
-                🏓
-              </span>
+              <Image src="/logo.png" alt="PicklerAlly DXB" width={36} height={36} className="rounded-full" />
               <span className="font-heading font-extrabold text-lg tracking-tight leading-none">
-                Pickle Turf Organizer
+                PICKLERALLY DXB
               </span>
             </Link>
             <Link href="/people" className="text-sm font-semibold text-teal-50 hover:text-white">

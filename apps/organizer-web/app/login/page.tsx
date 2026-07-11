@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { signIn, signUp } from './actions';
 import { cardClass, inputClass, primaryButtonClass, accentButtonClass } from '@/app/components/ui';
 
@@ -22,10 +23,8 @@ export default async function LoginPage({
       />
       <div className="relative w-full max-w-md space-y-6">
         <div className="text-center text-white">
-          <div className="mx-auto mb-3 h-16 w-16 rounded-2xl bg-lime-300 flex items-center justify-center text-3xl shadow-lg -rotate-6">
-            🏓
-          </div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Pickle Turf Organizer</h1>
+          <Image src="/logo.png" alt="PicklerAlly DXB" width={64} height={64} className="mx-auto mb-3 rounded-full" />
+          <h1 className="text-3xl font-extrabold tracking-tight">PICKLERALLY DXB</h1>
           <p className="text-teal-50 text-sm mt-1 font-medium">Run your tournaments, not a spreadsheet.</p>
         </div>
 

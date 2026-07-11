@@ -19,8 +19,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Pickleball Organizer",
-  description: "Run pickleball tournaments at Pickle Turf",
+  title: "PICKLERALLY DXB",
+  description: "Run pickleball tournaments in Dubai",
 };
 
 export default function RootLayout({

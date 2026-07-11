@@ -1,4 +1,5 @@
 // apps/organizer-web/app/p/[id]/page.tsx
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computePersonStats } from '@/lib/stats/personStats';
@@ -151,9 +152,7 @@ export default async function PublicPersonPage({
           style={{ background: 'radial-gradient(circle at 35% 35%, #eaff00, #c9e800)' }}
         />
         <div className="relative max-w-2xl mx-auto px-4 py-6 text-center">
-          <span className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-lime-300 text-xl shadow-md -rotate-6">
-            🏓
-          </span>
+          <Image src="/logo.png" alt="PicklerAlly DXB" width={40} height={40} className="mx-auto mb-2 rounded-full" />
           <h1 className="text-2xl font-extrabold tracking-tight">{person.name}</h1>
           <p className="text-teal-50 text-sm mt-1 font-medium">
             {stats.lastPlayedDate ? `Last played: ${stats.lastPlayedDate}` : 'No matches played yet'}
