@@ -52,6 +52,7 @@ export default function OrganizerShell({
             className="ball-texture absolute -top-6 -right-3 h-28 w-28 rounded-full opacity-90 shadow-lg"
             style={{ background: 'radial-gradient(circle at 35% 35%, #eaff00, #c9e800)' }}
           />
+          {/* pl-[130px] clears the overlapping logo: left-[30px] + 100px width below */}
           <div className="relative max-w-3xl mx-auto px-4 pt-4 pb-2 pl-[130px] min-h-[110px] flex flex-col justify-center">
             <span
               className="font-brand text-lg tracking-wide leading-none"
@@ -93,7 +94,10 @@ export default function OrganizerShell({
       <main className="flex-1 w-full max-w-3xl mx-auto px-4 pt-14 pb-24">{children}</main>
       <nav
         className="fixed bottom-0 left-0 right-0 flex text-white shadow-[0_-4px_12px_rgba(0,0,0,0.15)] z-20"
-        style={{ backgroundImage: 'linear-gradient(120deg, #065f46, #0d9488 55%, #0891b2)' }}
+        style={{
+          backgroundImage: 'linear-gradient(120deg, #065f46, #0d9488 55%, #0891b2)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
       >
         <Link
           href="/people"
