@@ -1,4 +1,5 @@
 // apps/organizer-web/app/tournaments/[id]/results/page.tsx
+import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import { computeStandings } from '@/lib/tournament/standings';
 import { formatLabel } from '@/lib/tournament/formats';
@@ -46,7 +47,7 @@ export default async function ResultsPage({
 
   const { data: players } = await supabase
     .from('players')
-    .select('id, name')
+    .select('id, name, person_id')
     .eq('tournament_id', id);
 
   const { data: matches } = await supabase
@@ -143,6 +144,33 @@ export default async function ResultsPage({
           </div>
         </div>
       )}
+
+      <div className={`${cardClass} mb-6`}>
+        <h2 className="text-lg font-bold text-slate-900 mb-3">
+          Players ({(players ?? []).length})
+        </h2>
+        <ul className="space-y-2">
+          {(players ?? []).map((p) =>
+            p.person_id ? (
+              <li key={p.id}>
+                <Link
+                  href={`/p/${p.person_id}`}
+                  className="block rounded-lg bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-100 transition-colors"
+                >
+                  {p.name}
+                </Link>
+              </li>
+            ) : (
+              <li
+                key={p.id}
+                className="rounded-lg bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600"
+              >
+                {p.name}
+              </li>
+            )
+          )}
+        </ul>
+      </div>
 
       <div className={`${cardClass} mb-6 overflow-x-auto`}>
         <h2 className="text-lg font-bold text-slate-900 mb-3">
