@@ -4,6 +4,7 @@ import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, vibrantCardClass, accentButtonClass } from '@/app/components/ui';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
+import { formatLabel } from '@/lib/tournament/formats';
 import { cancelTournament } from './actions';
 import CancelTournamentButton from './CancelTournamentButton';
 
@@ -12,7 +13,7 @@ export default async function TournamentsPage() {
 
   const { data: tournaments } = await supabase
     .from('tournaments')
-    .select('id, name, date, timeslot, completed_at, venues(name)')
+    .select('id, name, date, timeslot, completed_at, format, venues(name)')
     .eq('organizer_id', organizer.id)
     .order('date', { ascending: false });
 
@@ -96,6 +97,7 @@ export default async function TournamentsPage() {
                       <span>🕐 {timeslotLabel(t.timeslot)}</span>
                       <span>👥 {playerCount} player{playerCount === 1 ? '' : 's'}</span>
                       <span>📅 {t.date}</span>
+                      <span>🎯 {formatLabel(t.format)}</span>
                     </div>
                     <div className="flex items-center justify-between mt-2">
                       <Link
@@ -139,6 +141,7 @@ export default async function TournamentsPage() {
                       <span>🕐 {timeslotLabel(t.timeslot)}</span>
                       <span>👥 {playerCount} player{playerCount === 1 ? '' : 's'}</span>
                       <span>📅 {t.date}</span>
+                      <span>🎯 {formatLabel(t.format)}</span>
                     </div>
                   </Link>
                 </li>
