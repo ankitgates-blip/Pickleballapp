@@ -159,9 +159,16 @@ export default async function PublicPersonPage({
             {stats.lastPlayedDate ? `Last played: ${stats.lastPlayedDate}` : 'No matches played yet'}
           </p>
           <p className="text-teal-50 text-sm font-medium">
-            {stats.winPercentage !== null
-              ? `Win rate: ${stats.winPercentage}% ${renderStars(starRating(stats.winPercentage))}`
-              : 'No matches played yet'}
+            {stats.winPercentage !== null ? (
+              <>
+                Win rate: {stats.winPercentage}%{' '}
+                <span className="text-green-600">
+                  {renderStars(starRating(stats.winPercentage))}
+                </span>
+              </>
+            ) : (
+              'No matches played yet'
+            )}
           </p>
         </div>
       </header>
@@ -204,7 +211,10 @@ export default async function PublicPersonPage({
                         {l.count} match{l.count === 1 ? '' : 'es'}
                       </span>
                       <span className="block text-xs text-slate-500">
-                        {locationWinPercentage}% {renderStars(starRating(locationWinPercentage))}
+                        {locationWinPercentage}%{' '}
+                        <span className="text-green-600">
+                          {renderStars(starRating(locationWinPercentage))}
+                        </span>
                       </span>
                     </span>
                   </li>

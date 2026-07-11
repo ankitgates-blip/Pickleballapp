@@ -154,9 +154,16 @@ export default async function PersonDetailPage({
         {stats.lastPlayedDate ? `Last played: ${stats.lastPlayedDate}` : 'No matches played yet'}
       </p>
       <p className="text-sm text-slate-500 mb-6">
-        {stats.winPercentage !== null
-          ? `Win rate: ${stats.winPercentage}% ${renderStars(starRating(stats.winPercentage))}`
-          : 'No matches played yet'}
+        {stats.winPercentage !== null ? (
+          <>
+            Win rate: {stats.winPercentage}%{' '}
+            <span className="text-green-600">
+              {renderStars(starRating(stats.winPercentage))}
+            </span>
+          </>
+        ) : (
+          'No matches played yet'
+        )}
       </p>
 
       <div className={`${cardClass} mb-6`}>
@@ -200,7 +207,10 @@ export default async function PersonDetailPage({
                       {l.count} match{l.count === 1 ? '' : 'es'}
                     </span>
                     <span className="block text-xs text-slate-500">
-                      {locationWinPercentage}% {renderStars(starRating(locationWinPercentage))}
+                      {locationWinPercentage}%{' '}
+                      <span className="text-green-600">
+                        {renderStars(starRating(locationWinPercentage))}
+                      </span>
                     </span>
                   </span>
                 </li>
