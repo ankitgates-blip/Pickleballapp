@@ -101,19 +101,31 @@ describe('computePersonStats', () => {
     expect(computePersonStats([], []).lastPlayedDate).toBeNull();
   });
 
-  it('counts matches by location, sorted by count descending', () => {
+  it('counts matches and wins by location, sorted by count descending', () => {
     const matches: PersonMatchRecord[] = [
       { tournamentId: 't1', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
-      { tournamentId: 't2', tournamentDate: '2026-07-13', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 9, won: true },
+      { tournamentId: 't2', tournamentDate: '2026-07-13', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 6, scoreAgainst: 11, won: false },
       { tournamentId: 't3', tournamentDate: '2026-07-20', venueName: 'Picklers', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 3, won: true },
     ];
 
     const stats = computePersonStats(matches, []);
 
     expect(stats.matchesByLocation).toEqual([
-      { location: 'Pickle Turf', count: 2 },
-      { location: 'Picklers', count: 1 },
+      { location: 'Pickle Turf', count: 2, wins: 1 },
+      { location: 'Picklers', count: 1, wins: 1 },
     ]);
     expect(computePersonStats([], []).matchesByLocation).toEqual([]);
+  });
+
+  it('computes overall win percentage, rounded, or null with no matches', () => {
+    const matches: PersonMatchRecord[] = [
+      { tournamentId: 't1', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
+      { tournamentId: 't2', tournamentDate: '2026-07-13', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 6, scoreAgainst: 11, won: false },
+      { tournamentId: 't3', tournamentDate: '2026-07-20', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 3, won: true },
+    ];
+
+    // 2 wins out of 3 matches = 66.67%, rounds to 67
+    expect(computePersonStats(matches, []).winPercentage).toBe(67);
+    expect(computePersonStats([], []).winPercentage).toBeNull();
   });
 });

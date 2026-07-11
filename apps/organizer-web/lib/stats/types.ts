@@ -48,6 +48,7 @@ export type HeadToHeadRecord = {
 export type LocationCount = {
   location: string;
   count: number;
+  wins: number;
 };
 
 export type PersonStats = {
@@ -59,4 +60,5 @@ export type PersonStats = {
   bestPartner: HeadToHeadRecord | null;
   lastPlayedDate: string | null;
   matchesByLocation: LocationCount[];
+  winPercentage: number | null;
 };

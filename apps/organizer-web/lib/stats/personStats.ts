@@ -124,12 +124,17 @@ function findBestPartner(matches: PersonMatchRecord[]): HeadToHeadRecord | null 
 }
 
 function countMatchesByLocation(matches: PersonMatchRecord[]): LocationCount[] {
-  const table = new Map<string, number>();
+  const table = new Map<string, { count: number; wins: number }>();
   for (const m of matches) {
-    table.set(m.venueName, (table.get(m.venueName) ?? 0) + 1);
+    const row = table.get(m.venueName) ?? { count: 0, wins: 0 };
+    row.count += 1;
+    if (m.won) {
+      row.wins += 1;
+    }
+    table.set(m.venueName, row);
   }
   return Array.from(table.entries())
-    .map(([location, count]) => ({ location, count }))
+    .map(([location, { count, wins }]) => ({ location, count, wins }))
     .sort((a, b) => b.count - a.count);
 }
 
@@ -150,5 +155,9 @@ export function computePersonStats(
     bestPartner: findBestPartner(matches),
     lastPlayedDate: sortedHistory[0]?.tournamentDate ?? null,
     matchesByLocation: countMatchesByLocation(matches),
+    winPercentage:
+      matches.length > 0
+        ? Math.round((matches.filter((m) => m.won).length / matches.length) * 100)
+        : null,
   };
 }
