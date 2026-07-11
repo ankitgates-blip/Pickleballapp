@@ -6,6 +6,7 @@ import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computePersonStats } from '@/lib/stats/personStats';
 import { starRating, renderStars } from '@/lib/stats/starRating';
 import { computeStandings } from '@/lib/tournament/standings';
+import { renderTrend, trendColorClass } from '@/lib/stats/trend';
 import type { RawMatch, RawTeam, TournamentWon } from '@/lib/stats/types';
 import type { MatchResult } from '@/lib/types';
 
@@ -205,6 +206,73 @@ export default async function PersonDetailPage({
                 </li>
               );
             })}
+          </ul>
+        ) : (
+          <p className="text-slate-400 text-sm">No matches played yet.</p>
+        )}
+      </div>
+
+      <div className={`${cardClass} mb-6`}>
+        <h2 className="text-lg font-bold text-slate-900 mb-3">Win Rate Trend</h2>
+
+        <h3 className="text-sm font-bold text-slate-700 mb-2">Weekly</h3>
+        {stats.weekly.length > 0 ? (
+          <ul className="space-y-1 text-sm mb-4">
+            {stats.weekly.slice(0, 4).map((p) => (
+              <li key={p.period} className="flex items-center justify-between">
+                <span className="text-slate-600">{p.period}</span>
+                <span>
+                  <span className="font-semibold text-slate-900">
+                    {p.winPercentage !== null ? `${p.winPercentage}%` : 'No matches'}
+                  </span>{' '}
+                  <span className={`text-xs font-semibold ${trendColorClass(p.trend)}`}>
+                    {renderTrend(p.trend, p.trendPointsChange)}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-slate-400 text-sm mb-4">No matches played yet.</p>
+        )}
+
+        <h3 className="text-sm font-bold text-slate-700 mb-2">Monthly</h3>
+        {stats.monthly.length > 0 ? (
+          <ul className="space-y-1 text-sm mb-4">
+            {stats.monthly.slice(0, 6).map((p) => (
+              <li key={p.period} className="flex items-center justify-between">
+                <span className="text-slate-600">{p.period}</span>
+                <span>
+                  <span className="font-semibold text-slate-900">
+                    {p.winPercentage !== null ? `${p.winPercentage}%` : 'No matches'}
+                  </span>{' '}
+                  <span className={`text-xs font-semibold ${trendColorClass(p.trend)}`}>
+                    {renderTrend(p.trend, p.trendPointsChange)}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-slate-400 text-sm mb-4">No matches played yet.</p>
+        )}
+
+        <h3 className="text-sm font-bold text-slate-700 mb-2">Yearly</h3>
+        {stats.yearly.length > 0 ? (
+          <ul className="space-y-1 text-sm">
+            {stats.yearly.map((p) => (
+              <li key={p.period} className="flex items-center justify-between">
+                <span className="text-slate-600">{p.period}</span>
+                <span>
+                  <span className="font-semibold text-slate-900">
+                    {p.winPercentage !== null ? `${p.winPercentage}%` : 'No matches'}
+                  </span>{' '}
+                  <span className={`text-xs font-semibold ${trendColorClass(p.trend)}`}>
+                    {renderTrend(p.trend, p.trendPointsChange)}
+                  </span>
+                </span>
+              </li>
+            ))}
           </ul>
         ) : (
           <p className="text-slate-400 text-sm">No matches played yet.</p>
