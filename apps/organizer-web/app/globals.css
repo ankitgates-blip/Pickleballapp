@@ -11,6 +11,8 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-poppins);
+  --font-brand: var(--font-black-ops-one);
+  --font-script: var(--font-dancing-script);
 }
 
 body {

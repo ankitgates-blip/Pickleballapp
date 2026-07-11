@@ -1,7 +1,28 @@
 // apps/organizer-web/app/components/OrganizerShell.tsx
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { signOut } from '@/app/login/actions';
+
+function PersonIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21v-1a7 7 0 0 1 14 0v1" />
+    </svg>
+  );
+}
+
+function MapPinIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+      <path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </svg>
+  );
+}
 
 export default function OrganizerShell({
   children,
@@ -10,31 +31,43 @@ export default function OrganizerShell({
   children: React.ReactNode;
   organizerName?: string;
 }) {
+  const pathname = usePathname();
+  const isPlayerProfileActive = pathname.startsWith('/people');
+  const isLocationsActive = pathname.startsWith('/locations');
+
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="relative overflow-hidden bg-gradient-to-br from-emerald-800 via-teal-600 to-cyan-600 text-white shadow-lg">
-        <div
-          aria-hidden
-          className="ball-texture absolute -top-6 -right-3 h-28 w-28 rounded-full opacity-90 shadow-lg"
-          style={{ background: 'radial-gradient(circle at 35% 35%, #eaff00, #c9e800)' }}
-        />
-        <div className="relative max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/tournaments" className="flex items-center gap-2.5">
-              <Image src="/logo.png" alt="PicklerAlly DXB" width={36} height={36} className="rounded-full" />
-              <span className="font-heading font-extrabold text-lg tracking-tight leading-none">
-                PICKLERALLY DXB
-              </span>
-            </Link>
-            <Link href="/people" className="text-sm font-semibold text-teal-50 hover:text-white">
-              Player Profile
-            </Link>
-            <Link href="/locations" className="text-sm font-semibold text-teal-50 hover:text-white">
-              Locations
-            </Link>
+      <div className="relative">
+        <header
+          className="relative overflow-hidden text-white shadow-lg"
+          style={{
+            backgroundImage:
+              "linear-gradient(120deg, rgba(6,95,70,0.88), rgba(13,148,136,0.75) 55%, rgba(8,145,178,0.7)), url('/header-bg.png')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div
+            aria-hidden
+            className="ball-texture absolute -top-6 -right-3 h-28 w-28 rounded-full opacity-90 shadow-lg"
+            style={{ background: 'radial-gradient(circle at 35% 35%, #eaff00, #c9e800)' }}
+          />
+          <div className="relative max-w-3xl mx-auto px-4 pt-4 pb-2 pl-[130px] min-h-[110px] flex flex-col justify-center">
+            <span
+              className="font-brand text-lg tracking-wide leading-none"
+              style={{ textShadow: '0 2px 6px rgba(0,0,0,0.4)' }}
+            >
+              PICKLERALLY DXB
+            </span>
+            <span
+              className="font-script italic text-lg text-lime-200 mt-1"
+              style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}
+            >
+              Premier Dubai Pickle League App
+            </span>
           </div>
           {organizerName && (
-            <form action={signOut} className="flex items-center gap-3">
+            <form action={signOut} className="absolute top-3 right-4 flex items-center gap-3">
               <span className="text-sm text-teal-50 hidden sm:inline">
                 Hi, {organizerName}
               </span>
@@ -46,9 +79,41 @@ export default function OrganizerShell({
               </button>
             </form>
           )}
-        </div>
-      </header>
-      <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-8">{children}</main>
+        </header>
+        <Link href="/tournaments" className="absolute z-10 left-[30px] top-[110px] -translate-y-1/2">
+          <Image
+            src="/logo.png"
+            alt="PicklerAlly DXB"
+            width={100}
+            height={100}
+            className="rounded-full border-4 border-white shadow-xl"
+          />
+        </Link>
+      </div>
+      <main className="flex-1 w-full max-w-3xl mx-auto px-4 pt-14 pb-24">{children}</main>
+      <nav
+        className="fixed bottom-0 left-0 right-0 flex text-white shadow-[0_-4px_12px_rgba(0,0,0,0.15)] z-20"
+        style={{ backgroundImage: 'linear-gradient(120deg, #065f46, #0d9488 55%, #0891b2)' }}
+      >
+        <Link
+          href="/people"
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-bold ${
+            isPlayerProfileActive ? 'text-lime-300' : 'text-teal-50'
+          }`}
+        >
+          <PersonIcon />
+          Player Profile
+        </Link>
+        <Link
+          href="/locations"
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-bold ${
+            isLocationsActive ? 'text-lime-300' : 'text-teal-50'
+          }`}
+        >
+          <MapPinIcon />
+          Locations
+        </Link>
+      </nav>
     </div>
   );
 }
