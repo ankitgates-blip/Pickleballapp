@@ -1,6 +1,7 @@
 // apps/organizer-web/app/t/[id]/page.tsx
 import { createClient } from '@/lib/supabase/server';
 import { computeStandings } from '@/lib/tournament/standings';
+import { timeslotLabel } from '@/lib/tournament/timeslots';
 import type { MatchResult } from '@/lib/types';
 import { cardClass } from '@/app/components/ui';
 
@@ -20,7 +21,7 @@ export default async function PublicTournamentPage({
 
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('name, date, format')
+    .select('name, date, format, timeslot, venues(name)')
     .eq('id', id)
     .single();
 
@@ -40,7 +41,8 @@ export default async function PublicTournamentPage({
   const { data: players } = await supabase
     .from('players')
     .select('id, name')
-    .eq('tournament_id', id);
+    .eq('tournament_id', id)
+    .order('created_at', { ascending: true });
 
   const { data: matches } = await supabase
     .from('matches')
@@ -55,6 +57,9 @@ export default async function PublicTournamentPage({
       `${playerById.get(t.player_1_id)} / ${playerById.get(t.player_2_id)}`,
     ])
   );
+
+  const venue = tournament.venues as { name: string } | { name: string }[] | null;
+  const venueName = Array.isArray(venue) ? (venue[0]?.name ?? 'Pickle Turf') : (venue?.name ?? 'Pickle Turf');
 
   const isLeaguePlayoffs = tournament.format === 'league_playoffs';
   const leagueMatches = (matches ?? []).filter((m) => m.stage === 'league');
@@ -83,11 +88,29 @@ export default async function PublicTournamentPage({
             🏓
           </span>
           <h1 className="text-2xl font-extrabold tracking-tight">{tournament.name}</h1>
-          <p className="text-teal-50 text-sm mt-1 font-medium">{tournament.date}</p>
+          <p className="text-teal-50 text-sm mt-1 font-medium">
+            {tournament.date} · 📍 {venueName} · 🕐 {timeslotLabel(tournament.timeslot)}
+          </p>
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+        <div className={cardClass}>
+          <h2 className="text-lg font-bold text-slate-900 mb-3">
+            Players ({(players ?? []).length})
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {(players ?? []).map((p) => (
+              <li
+                key={p.id}
+                className="rounded-full bg-teal-50 px-3 py-1 text-sm font-semibold text-teal-800"
+              >
+                {p.name}
+              </li>
+            ))}
+          </ul>
+        </div>
+
         <div className={cardClass}>
           <h2 className="text-lg font-bold text-slate-900 mb-3">
             {isLeaguePlayoffs ? 'League Standings' : 'Standings'}
