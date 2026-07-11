@@ -30,11 +30,20 @@ export default async function PublicPersonPage({
 
   const { data: tournaments } = await supabase
     .from('tournaments')
-    .select('id, name, date')
+    .select('id, name, date, venues(name)')
     .eq('organizer_id', person.organizer_id);
 
   const tournamentIds = (tournaments ?? []).map((t) => t.id);
   const tournamentDateById = new Map((tournaments ?? []).map((t) => [t.id, t.date]));
+  const venueNameByTournamentId = new Map(
+    (tournaments ?? []).map((t) => {
+      const venue = t.venues as { name: string } | { name: string }[] | null;
+      const name = Array.isArray(venue)
+        ? (venue[0]?.name ?? 'Pickle Turf')
+        : (venue?.name ?? 'Pickle Turf');
+      return [t.id, name];
+    })
+  );
 
   const { data: players } = tournamentIds.length
     ? await supabase
@@ -83,6 +92,7 @@ export default async function PublicPersonPage({
     .map((m) => ({
       tournamentId: m.tournament_id,
       tournamentDate: tournamentDateById.get(m.tournament_id) ?? '',
+      venueName: venueNameByTournamentId.get(m.tournament_id) ?? '',
       teamAId: m.team_a_id!,
       teamBId: m.team_b_id!,
       scoreA: m.score_a ?? 0,
