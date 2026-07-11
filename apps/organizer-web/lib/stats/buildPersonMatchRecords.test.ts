@@ -13,6 +13,7 @@ describe('buildPersonMatchRecords', () => {
       {
         tournamentId: 't1',
         tournamentDate: '2026-07-06',
+        venueName: 'Pickle Turf',
         teamAId: 'team-ab',
         teamBId: 'team-cd',
         scoreA: 11,
@@ -26,6 +27,7 @@ describe('buildPersonMatchRecords', () => {
       {
         tournamentId: 't1',
         tournamentDate: '2026-07-06',
+        venueName: 'Pickle Turf',
         partnerId: 'bob',
         opponentIds: ['carol', 'dave'],
         scoreFor: 11,
@@ -39,6 +41,7 @@ describe('buildPersonMatchRecords', () => {
       {
         tournamentId: 't1',
         tournamentDate: '2026-07-06',
+        venueName: 'Pickle Turf',
         partnerId: 'dave',
         opponentIds: ['alice', 'bob'],
         scoreFor: 7,
@@ -53,6 +56,7 @@ describe('buildPersonMatchRecords', () => {
       {
         tournamentId: 't1',
         tournamentDate: '2026-07-06',
+        venueName: 'Pickle Turf',
         teamAId: 'team-ab',
         teamBId: 'team-cd',
         scoreA: 0,
@@ -69,6 +73,7 @@ describe('buildPersonMatchRecords', () => {
       {
         tournamentId: 't1',
         tournamentDate: '2026-07-06',
+        venueName: 'Pickle Turf',
         teamAId: 'team-ab',
         teamBId: 'team-cd',
         scoreA: 11,

@@ -8,6 +8,7 @@ export type RawTeam = {
 export type RawMatch = {
   tournamentId: string;
   tournamentDate: string; // ISO date, e.g. '2026-07-15'
+  venueName: string;
   teamAId: string;
   teamBId: string;
   scoreA: number;
@@ -18,6 +19,7 @@ export type RawMatch = {
 export type PersonMatchRecord = {
   tournamentId: string;
   tournamentDate: string;
+  venueName: string;
   partnerId: string;
   opponentIds: [string, string];
   scoreFor: number;
