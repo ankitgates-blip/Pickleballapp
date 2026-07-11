@@ -32,11 +32,11 @@ export default async function TournamentsPage() {
   today.setHours(0, 0, 0, 0);
 
   const upcoming = (tournaments ?? [])
-    .filter((t) => new Date(`${t.date}T00:00:00`) >= today)
+    .filter((t) => !t.completed_at)
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 
   const recentlyCompleted = (tournaments ?? [])
-    .filter((t) => new Date(`${t.date}T00:00:00`) < today)
+    .filter((t) => Boolean(t.completed_at))
     .sort((a, b) => (a.date < b.date ? 1 : -1));
 
   const venueNameFor = (t: { venues: unknown }) => {
@@ -71,14 +71,23 @@ export default async function TournamentsPage() {
               const daysAway = Math.round(
                 (new Date(`${t.date}T00:00:00`).getTime() - today.getTime()) / 86400000
               );
+              const isOverdue = daysAway < 0;
               return (
                 <li key={t.id}>
                   <Link
                     href={`/tournaments/${t.id}/roster`}
                     className={`${vibrantCardClass} block hover:-translate-y-0.5 transition-transform`}
                   >
-                    <span className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-extrabold px-3 py-1 rounded-bl-xl rounded-tr-2xl tracking-wide">
-                      {daysAway === 0 ? 'TODAY' : `${daysAway} DAY${daysAway === 1 ? '' : 'S'}`}
+                    <span
+                      className={`absolute top-0 right-0 ${
+                        isOverdue ? 'bg-red-600' : 'bg-orange-500'
+                      } text-white text-[10px] font-extrabold px-3 py-1 rounded-bl-xl rounded-tr-2xl tracking-wide`}
+                    >
+                      {isOverdue
+                        ? 'OVERDUE'
+                        : daysAway === 0
+                          ? 'TODAY'
+                          : `${daysAway} DAY${daysAway === 1 ? '' : 'S'}`}
                     </span>
                     <div className="font-extrabold text-base text-slate-900 mb-1.5">
                       🏆 {t.name}
