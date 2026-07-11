@@ -2,6 +2,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computePersonStats } from '@/lib/stats/personStats';
+import { starRating, renderStars } from '@/lib/stats/starRating';
 import { computeStandings } from '@/lib/tournament/standings';
 import type { RawMatch, RawTeam, TournamentWon } from '@/lib/stats/types';
 import type { MatchResult } from '@/lib/types';
@@ -156,6 +157,11 @@ export default async function PublicPersonPage({
           <p className="text-teal-50 text-sm mt-1 font-medium">
             {stats.lastPlayedDate ? `Last played: ${stats.lastPlayedDate}` : 'No matches played yet'}
           </p>
+          <p className="text-teal-50 text-sm font-medium">
+            {stats.winPercentage !== null
+              ? `Win rate: ${stats.winPercentage}% ${renderStars(starRating(stats.winPercentage))}`
+              : 'No matches played yet'}
+          </p>
         </div>
       </header>
 
@@ -184,15 +190,25 @@ export default async function PublicPersonPage({
           <h2 className="text-lg font-bold text-slate-900 mb-3">By Location</h2>
           {stats.matchesByLocation.length > 0 ? (
             <ul className="space-y-2 text-sm">
-              {stats.matchesByLocation.map((l) => (
-                <li
-                  key={l.location}
-                  className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0"
-                >
-                  <span className="font-semibold text-slate-900">{l.location}</span>
-                  <span className="font-bold text-teal-700">{l.count}</span>
-                </li>
-              ))}
+              {stats.matchesByLocation.map((l) => {
+                const locationWinPercentage = Math.round((l.wins / l.count) * 100);
+                return (
+                  <li
+                    key={l.location}
+                    className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0"
+                  >
+                    <span className="font-semibold text-slate-900">{l.location}</span>
+                    <span className="text-right">
+                      <span className="font-bold text-teal-700">
+                        {l.count} match{l.count === 1 ? '' : 'es'}
+                      </span>
+                      <span className="block text-xs text-slate-500">
+                        {locationWinPercentage}% {renderStars(starRating(locationWinPercentage))}
+                      </span>
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="text-slate-400 text-sm">No matches played yet.</p>
