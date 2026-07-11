@@ -1,4 +1,5 @@
 // apps/organizer-web/app/t/[id]/page.tsx
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { computeStandings } from '@/lib/tournament/standings';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
@@ -40,7 +41,7 @@ export default async function PublicTournamentPage({
 
   const { data: players } = await supabase
     .from('players')
-    .select('id, name')
+    .select('id, name, person_id')
     .eq('tournament_id', id)
     .order('created_at', { ascending: true });
 
@@ -99,15 +100,26 @@ export default async function PublicTournamentPage({
           <h2 className="text-lg font-bold text-slate-900 mb-3">
             Players ({(players ?? []).length})
           </h2>
-          <ul className="flex flex-wrap gap-2">
-            {(players ?? []).map((p) => (
-              <li
-                key={p.id}
-                className="rounded-full bg-teal-50 px-3 py-1 text-sm font-semibold text-teal-800"
-              >
-                {p.name}
-              </li>
-            ))}
+          <ul className="space-y-2">
+            {(players ?? []).map((p) =>
+              p.person_id ? (
+                <li key={p.id}>
+                  <Link
+                    href={`/p/${p.person_id}`}
+                    className="block rounded-lg bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-100 transition-colors"
+                  >
+                    {p.name}
+                  </Link>
+                </li>
+              ) : (
+                <li
+                  key={p.id}
+                  className="rounded-lg bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600"
+                >
+                  {p.name}
+                </li>
+              )
+            )}
           </ul>
         </div>
 
