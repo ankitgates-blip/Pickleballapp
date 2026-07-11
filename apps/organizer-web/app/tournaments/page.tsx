@@ -74,7 +74,7 @@ export default async function TournamentsPage() {
               return (
                 <li key={t.id}>
                   <Link
-                    href={`/t/${t.id}`}
+                    href={`/tournaments/${t.id}/roster`}
                     className={`${vibrantCardClass} block hover:-translate-y-0.5 transition-transform`}
                   >
                     <span className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-extrabold px-3 py-1 rounded-bl-xl rounded-tr-2xl tracking-wide">
@@ -90,7 +90,7 @@ export default async function TournamentsPage() {
                       <span>📅 {t.date}</span>
                     </div>
                     <div className="text-xs font-bold text-teal-700 mt-2">
-                      View who&apos;s playing →
+                      Manage tournament →
                     </div>
                   </Link>
                 </li>
