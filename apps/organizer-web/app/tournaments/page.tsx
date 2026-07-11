@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
-import { cardClass, vibrantCardClass, accentButtonClass } from '@/app/components/ui';
+import { cardClass, vibrantCardClass } from '@/app/components/ui';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
 import { formatLabel } from '@/lib/tournament/formats';
 import { cancelTournament } from './actions';
@@ -50,12 +50,7 @@ export default async function TournamentsPage() {
 
   return (
     <OrganizerShell organizerName={organizer.name}>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-extrabold text-slate-900">Tournaments</h1>
-        <Link href="/tournaments/new" className={accentButtonClass}>
-          + New Tournament
-        </Link>
-      </div>
+      <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Tournaments</h1>
 
       {(tournaments ?? []).length === 0 && (
         <div className={`${cardClass} text-center text-slate-500`}>

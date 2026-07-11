@@ -108,6 +108,14 @@ export default function OrganizerShell({
           <PersonIcon />
           Player Profile
         </Link>
+        <Link href="/tournaments/new" className="relative flex-1 flex flex-col items-center">
+          <span className="absolute -top-[18px] flex h-[52px] w-[52px] items-center justify-center rounded-full bg-yellow-500 border-[3px] border-white shadow-lg">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1e293b" strokeWidth={3} strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </span>
+          <span className="mt-9 text-[10px] font-extrabold text-white">Create Tournament</span>
+        </Link>
         <Link
           href="/locations"
           className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-bold ${
