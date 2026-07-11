@@ -30,6 +30,9 @@ export default function OrganizerShell({
             <Link href="/people" className="text-sm font-semibold text-teal-50 hover:text-white">
               Player Profile
             </Link>
+            <Link href="/locations" className="text-sm font-semibold text-teal-50 hover:text-white">
+              Locations
+            </Link>
           </div>
           {organizerName && (
             <form action={signOut} className="flex items-center gap-3">
