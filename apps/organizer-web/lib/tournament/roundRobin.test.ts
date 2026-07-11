@@ -28,4 +28,26 @@ describe('generateRoundRobin', () => {
     const realMatches = pairings.filter((p) => p.teamBId !== null);
     expect(realMatches).toHaveLength(3); // C(3,2)
   });
+
+  it('guarantees every team plays teamCount - 1 real matches (8 teams -> 7, 9 teams -> 8)', () => {
+    const eightTeams = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    const eightPairings = generateRoundRobin(eightTeams);
+    const eightRounds = new Set(eightPairings.map((p) => p.round)).size;
+    expect(eightRounds).toBe(7);
+    for (const team of eightTeams) {
+      const realMatches = eightPairings.filter(
+        (p) => p.teamBId !== null && (p.teamAId === team || p.teamBId === team)
+      );
+      expect(realMatches).toHaveLength(7);
+    }
+
+    const nineTeams = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
+    const ninePairings = generateRoundRobin(nineTeams);
+    for (const team of nineTeams) {
+      const realMatches = ninePairings.filter(
+        (p) => p.teamBId !== null && (p.teamAId === team || p.teamBId === team)
+      );
+      expect(realMatches).toHaveLength(8);
+    }
+  });
 });
