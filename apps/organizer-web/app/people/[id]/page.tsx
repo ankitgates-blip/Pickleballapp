@@ -1,7 +1,7 @@
 // apps/organizer-web/app/people/[id]/page.tsx
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
-import { cardClass } from '@/app/components/ui';
+import { cardClass, pillClass } from '@/app/components/ui';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computePersonStats } from '@/lib/stats/personStats';
 import { starRating, renderStars } from '@/lib/stats/starRating';
@@ -319,8 +319,13 @@ export default async function PersonDetailPage({
                   {nameFor(m.opponentIds[0])} / {nameFor(m.opponentIds[1])}
                 </span>
               </span>
-              <span className={m.won ? 'font-bold text-teal-700' : 'font-bold text-slate-400'}>
-                {m.scoreFor}-{m.scoreAgainst}
+              <span className="flex items-center gap-2">
+                <span className={`${pillClass} ${m.won ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  {m.won ? 'W' : 'L'}
+                </span>
+                <span className={m.won ? 'font-bold text-teal-700' : 'font-bold text-slate-400'}>
+                  {m.scoreFor}-{m.scoreAgainst}
+                </span>
               </span>
             </li>
           ))}

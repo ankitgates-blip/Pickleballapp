@@ -7,7 +7,7 @@ import { renderTrend, trendColorClass } from '@/lib/stats/trend';
 import { computeStandings } from '@/lib/tournament/standings';
 import type { RawMatch, RawTeam, TournamentWon } from '@/lib/stats/types';
 import type { MatchResult } from '@/lib/types';
-import { cardClass } from '@/app/components/ui';
+import { cardClass, pillClass } from '@/app/components/ui';
 
 export default async function PublicPersonPage({
   params,
@@ -326,8 +326,13 @@ export default async function PublicPersonPage({
                     {nameFor(m.opponentIds[0])} / {nameFor(m.opponentIds[1])}
                   </span>
                 </span>
-                <span className={m.won ? 'font-bold text-teal-700' : 'font-bold text-slate-400'}>
-                  {m.scoreFor}-{m.scoreAgainst}
+                <span className="flex items-center gap-2">
+                  <span className={`${pillClass} ${m.won ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    {m.won ? 'W' : 'L'}
+                  </span>
+                  <span className={m.won ? 'font-bold text-teal-700' : 'font-bold text-slate-400'}>
+                    {m.scoreFor}-{m.scoreAgainst}
+                  </span>
                 </span>
               </li>
             ))}
