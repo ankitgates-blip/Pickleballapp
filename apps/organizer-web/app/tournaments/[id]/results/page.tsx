@@ -2,6 +2,7 @@
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import { computeStandings } from '@/lib/tournament/standings';
 import { formatLabel } from '@/lib/tournament/formats';
+import { timeslotLabel } from '@/lib/tournament/timeslots';
 import type { MatchResult } from '@/lib/types';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass } from '@/app/components/ui';
@@ -22,7 +23,7 @@ export default async function ResultsPage({
 
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('name, date, format, completed_at')
+    .select('name, date, format, timeslot, completed_at, venues(name)')
     .eq('id', id)
     .eq('organizer_id', organizer.id)
     .single();
@@ -34,6 +35,9 @@ export default async function ResultsPage({
       </OrganizerShell>
     );
   }
+
+  const venue = tournament.venues as { name: string } | { name: string }[] | null;
+  const venueName = Array.isArray(venue) ? (venue[0]?.name ?? 'Pickle Turf') : (venue?.name ?? 'Pickle Turf');
 
   const { data: teams } = await supabase
     .from('teams')
@@ -122,7 +126,7 @@ export default async function ResultsPage({
     <OrganizerShell organizerName={organizer.name}>
       <h1 className="text-2xl font-extrabold text-slate-900 mb-1">{tournament.name}</h1>
       <p className="text-sm text-slate-500 mb-6">
-        {tournament.date} · {formatLabel(tournament.format)}
+        {tournament.date} · 📍 {venueName} · 🕐 {timeslotLabel(tournament.timeslot)} · {formatLabel(tournament.format)}
         {tournament.completed_at && (
           <> · Completed {new Date(tournament.completed_at).toLocaleDateString()}</>
         )}
