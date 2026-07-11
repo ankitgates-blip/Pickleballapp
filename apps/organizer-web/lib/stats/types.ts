@@ -45,6 +45,11 @@ export type HeadToHeadRecord = {
   losses: number;
 };
 
+export type LocationCount = {
+  location: string;
+  count: number;
+};
+
 export type PersonStats = {
   weekly: PeriodStats[];
   monthly: PeriodStats[];
@@ -52,4 +57,6 @@ export type PersonStats = {
   matchHistory: PersonMatchRecord[];
   toughestOpponent: HeadToHeadRecord | null;
   bestPartner: HeadToHeadRecord | null;
+  lastPlayedDate: string | null;
+  matchesByLocation: LocationCount[];
 };

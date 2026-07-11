@@ -8,6 +8,7 @@ describe('computePersonStats', () => {
       {
         tournamentId: 't1',
         tournamentDate: '2026-07-06', // a Monday
+        venueName: 'Pickle Turf',
         partnerId: 'p-bob',
         opponentIds: ['p-carol', 'p-dave'],
         scoreFor: 11,
@@ -17,6 +18,7 @@ describe('computePersonStats', () => {
       {
         tournamentId: 't2',
         tournamentDate: '2026-07-13', // the following Monday
+        venueName: 'Pickle Turf',
         partnerId: 'p-bob',
         opponentIds: ['p-carol', 'p-dave'],
         scoreFor: 6,
@@ -50,9 +52,9 @@ describe('computePersonStats', () => {
 
   it('identifies the toughest opponent by worst win rate, tie-broken by match count', () => {
     const matches: PersonMatchRecord[] = [
-      { tournamentId: 't1', tournamentDate: '2026-07-06', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
-      { tournamentId: 't1', tournamentDate: '2026-07-06', partnerId: 'p-bob', opponentIds: ['p-eve', 'p-frank'], scoreFor: 4, scoreAgainst: 11, won: false },
-      { tournamentId: 't2', tournamentDate: '2026-07-13', partnerId: 'p-bob', opponentIds: ['p-eve', 'p-frank'], scoreFor: 6, scoreAgainst: 11, won: false },
+      { tournamentId: 't1', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
+      { tournamentId: 't1', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-eve', 'p-frank'], scoreFor: 4, scoreAgainst: 11, won: false },
+      { tournamentId: 't2', tournamentDate: '2026-07-13', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-eve', 'p-frank'], scoreFor: 6, scoreAgainst: 11, won: false },
     ];
 
     const stats = computePersonStats(matches, []);
@@ -62,9 +64,9 @@ describe('computePersonStats', () => {
 
   it('identifies the best partner by highest win rate, tie-broken by match count', () => {
     const matches: PersonMatchRecord[] = [
-      { tournamentId: 't1', tournamentDate: '2026-07-06', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
-      { tournamentId: 't2', tournamentDate: '2026-07-13', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 9, won: true },
-      { tournamentId: 't3', tournamentDate: '2026-07-20', partnerId: 'p-zara', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 3, won: true },
+      { tournamentId: 't1', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
+      { tournamentId: 't2', tournamentDate: '2026-07-13', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 9, won: true },
+      { tournamentId: 't3', tournamentDate: '2026-07-20', venueName: 'Pickle Turf', partnerId: 'p-zara', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 3, won: true },
     ];
 
     const stats = computePersonStats(matches, []);
@@ -81,11 +83,37 @@ describe('computePersonStats', () => {
 
   it('sorts match history newest first', () => {
     const matches: PersonMatchRecord[] = [
-      { tournamentId: 't1', tournamentDate: '2026-07-06', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
-      { tournamentId: 't2', tournamentDate: '2026-07-20', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 9, won: true },
+      { tournamentId: 't1', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
+      { tournamentId: 't2', tournamentDate: '2026-07-20', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 9, won: true },
     ];
 
     const stats = computePersonStats(matches, []);
     expect(stats.matchHistory.map((m) => m.tournamentId)).toEqual(['t2', 't1']);
+  });
+
+  it('returns the most recent match date as lastPlayedDate, or null with no matches', () => {
+    const matches: PersonMatchRecord[] = [
+      { tournamentId: 't1', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
+      { tournamentId: 't2', tournamentDate: '2026-07-20', venueName: 'Picklers', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 9, won: true },
+    ];
+
+    expect(computePersonStats(matches, []).lastPlayedDate).toBe('2026-07-20');
+    expect(computePersonStats([], []).lastPlayedDate).toBeNull();
+  });
+
+  it('counts matches by location, sorted by count descending', () => {
+    const matches: PersonMatchRecord[] = [
+      { tournamentId: 't1', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
+      { tournamentId: 't2', tournamentDate: '2026-07-13', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 9, won: true },
+      { tournamentId: 't3', tournamentDate: '2026-07-20', venueName: 'Picklers', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 3, won: true },
+    ];
+
+    const stats = computePersonStats(matches, []);
+
+    expect(stats.matchesByLocation).toEqual([
+      { location: 'Pickle Turf', count: 2 },
+      { location: 'Picklers', count: 1 },
+    ]);
+    expect(computePersonStats([], []).matchesByLocation).toEqual([]);
   });
 });

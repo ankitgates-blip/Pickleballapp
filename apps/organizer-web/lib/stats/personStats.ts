@@ -1,5 +1,6 @@
 import type {
   HeadToHeadRecord,
+  LocationCount,
   PeriodStats,
   PersonMatchRecord,
   PersonStats,
@@ -122,6 +123,16 @@ function findBestPartner(matches: PersonMatchRecord[]): HeadToHeadRecord | null 
   return result;
 }
 
+function countMatchesByLocation(matches: PersonMatchRecord[]): LocationCount[] {
+  const table = new Map<string, number>();
+  for (const m of matches) {
+    table.set(m.venueName, (table.get(m.venueName) ?? 0) + 1);
+  }
+  return Array.from(table.entries())
+    .map(([location, count]) => ({ location, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
 export function computePersonStats(
   matches: PersonMatchRecord[],
   tournamentsWon: TournamentWon[]
@@ -137,5 +148,7 @@ export function computePersonStats(
     matchHistory: sortedHistory,
     toughestOpponent: findToughestOpponent(matches),
     bestPartner: findBestPartner(matches),
+    lastPlayedDate: sortedHistory[0]?.tournamentDate ?? null,
+    matchesByLocation: countMatchesByLocation(matches),
   };
 }
