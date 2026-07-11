@@ -1,3 +1,4 @@
+// apps/organizer-web/app/p/[id]/page.tsx
 import { createClient } from '@/lib/supabase/server';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computePersonStats } from '@/lib/stats/personStats';
@@ -152,6 +153,9 @@ export default async function PublicPersonPage({
             🏓
           </span>
           <h1 className="text-2xl font-extrabold tracking-tight">{person.name}</h1>
+          <p className="text-teal-50 text-sm mt-1 font-medium">
+            {stats.lastPlayedDate ? `Last played: ${stats.lastPlayedDate}` : 'No matches played yet'}
+          </p>
         </div>
       </header>
 
@@ -174,6 +178,25 @@ export default async function PublicPersonPage({
               <div className="text-xs text-slate-500">Tournaments won</div>
             </div>
           </div>
+        </div>
+
+        <div className={cardClass}>
+          <h2 className="text-lg font-bold text-slate-900 mb-3">By Location</h2>
+          {stats.matchesByLocation.length > 0 ? (
+            <ul className="space-y-2 text-sm">
+              {stats.matchesByLocation.map((l) => (
+                <li
+                  key={l.location}
+                  className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0"
+                >
+                  <span className="font-semibold text-slate-900">{l.location}</span>
+                  <span className="font-bold text-teal-700">{l.count}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-slate-400 text-sm">No matches played yet.</p>
+          )}
         </div>
 
         <div className={cardClass}>
