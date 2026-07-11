@@ -5,7 +5,7 @@ import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass, primaryButtonClass, accentButtonClass, pillClass, linkClass } from '@/app/components/ui';
 import { matchNamesToPeople } from '@/lib/people/matchNames';
-import { startAddPlayers, confirmAddPlayers, addExistingPeople } from './actions';
+import { startAddPlayers, confirmAddPlayers, addExistingPeople, removePlayer } from './actions';
 
 export default async function RosterPage({
   params,
@@ -17,6 +17,14 @@ export default async function RosterPage({
   const { id } = await params;
   const { pendingNames } = await searchParams;
   const { supabase, organizer } = await requireOrganizer();
+
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('completed_at')
+    .eq('id', id)
+    .single();
+
+  const isCompleted = Boolean(tournament?.completed_at);
 
   const { data: players } = await supabase
     .from('players')
@@ -110,7 +118,7 @@ export default async function RosterPage({
       <TournamentNav tournamentId={id} current="roster" />
       <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Roster</h1>
 
-      {availablePeople.length > 0 && (
+      {!isCompleted && availablePeople.length > 0 && (
         <div className={`${cardClass} mb-6`}>
           <h2 className="text-lg font-bold text-slate-900 mb-2">Add Existing Players</h2>
           <p className="text-sm text-slate-500 mb-3">
@@ -135,21 +143,23 @@ export default async function RosterPage({
         </div>
       )}
 
-      <div className={`${cardClass} mb-6`}>
-        <h2 className="text-lg font-bold text-slate-900 mb-2">Add New Players</h2>
-        <form action={startAddPlayersWithId} className="space-y-3">
-          <textarea
-            name="names"
-            rows={8}
-            placeholder="One player name per line"
-            required
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-          />
-          <button type="submit" className={primaryButtonClass}>
-            Add Players
-          </button>
-        </form>
-      </div>
+      {!isCompleted && (
+        <div className={`${cardClass} mb-6`}>
+          <h2 className="text-lg font-bold text-slate-900 mb-2">Add New Players</h2>
+          <form action={startAddPlayersWithId} className="space-y-3">
+            <textarea
+              name="names"
+              rows={8}
+              placeholder="One player name per line"
+              required
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            />
+            <button type="submit" className={primaryButtonClass}>
+              Add Players
+            </button>
+          </form>
+        </div>
+      )}
 
       <div className={cardClass}>
         <h2 className="text-lg font-bold text-slate-900 mb-2">
@@ -161,12 +171,28 @@ export default async function RosterPage({
             {Array.from(duplicateNames).join(', ')}
           </p>
         )}
-        <ul className="flex flex-wrap gap-2">
-          {(players ?? []).map((p) => (
-            <li key={p.id} className={`${pillClass} bg-teal-50 text-teal-800`}>
-              {p.name}
-            </li>
-          ))}
+        <ul className="space-y-2">
+          {(players ?? []).map((p) => {
+            const removePlayerForPlayer = removePlayer.bind(null, id, p.id);
+            return (
+              <li
+                key={p.id}
+                className="flex items-center justify-between gap-2 rounded-lg bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-900"
+              >
+                <span>{p.name}</span>
+                {!isCompleted && (
+                  <form action={removePlayerForPlayer}>
+                    <button
+                      type="submit"
+                      className="text-xs font-semibold text-teal-700 hover:text-red-600 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </form>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </div>
 

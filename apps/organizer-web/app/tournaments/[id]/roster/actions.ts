@@ -102,3 +102,16 @@ export async function confirmAddPlayers(tournamentId: string, formData: FormData
   revalidatePath(`/tournaments/${tournamentId}/roster`);
   redirect(`/tournaments/${tournamentId}/roster`);
 }
+
+export async function removePlayer(tournamentId: string, playerId: string) {
+  const { supabase } = await requireOrganizer();
+
+  const { error } = await supabase.from('players').delete().eq('id', playerId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}/roster`);
+  revalidatePath(`/tournaments/${tournamentId}/teams`);
+}
