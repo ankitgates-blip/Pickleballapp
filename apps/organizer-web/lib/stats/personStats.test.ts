@@ -30,14 +30,14 @@ describe('computePersonStats', () => {
     const stats = computePersonStats(matches, []);
 
     expect(stats.weekly).toEqual([
-      { period: '2026-07-13', gamesWon: 0, gamesLost: 1, tournamentsWon: 0 },
-      { period: '2026-07-06', gamesWon: 1, gamesLost: 0, tournamentsWon: 0 },
+      { period: '2026-07-13', gamesWon: 0, gamesLost: 1, tournamentsWon: 0, winPercentage: 0, trend: 'down', trendPointsChange: -100 },
+      { period: '2026-07-06', gamesWon: 1, gamesLost: 0, tournamentsWon: 0, winPercentage: 100, trend: null, trendPointsChange: null },
     ]);
     expect(stats.monthly).toEqual([
-      { period: '2026-07', gamesWon: 1, gamesLost: 1, tournamentsWon: 0 },
+      { period: '2026-07', gamesWon: 1, gamesLost: 1, tournamentsWon: 0, winPercentage: 50, trend: null, trendPointsChange: null },
     ]);
     expect(stats.yearly).toEqual([
-      { period: '2026', gamesWon: 1, gamesLost: 1, tournamentsWon: 0 },
+      { period: '2026', gamesWon: 1, gamesLost: 1, tournamentsWon: 0, winPercentage: 50, trend: null, trendPointsChange: null },
     ]);
   });
 
@@ -46,7 +46,7 @@ describe('computePersonStats', () => {
     const stats = computePersonStats([], tournamentsWon);
 
     expect(stats.monthly).toEqual([
-      { period: '2026-07', gamesWon: 0, gamesLost: 0, tournamentsWon: 1 },
+      { period: '2026-07', gamesWon: 0, gamesLost: 0, tournamentsWon: 1, winPercentage: null, trend: null, trendPointsChange: null },
     ]);
   });
 
@@ -127,5 +127,45 @@ describe('computePersonStats', () => {
     // 2 wins out of 3 matches = 66.67%, rounds to 67
     expect(computePersonStats(matches, []).winPercentage).toBe(67);
     expect(computePersonStats([], []).winPercentage).toBeNull();
+  });
+
+  it('computes win percentage and trend per period, comparing to the next most recent period with data', () => {
+    const matches: PersonMatchRecord[] = [
+      // Week 1 (oldest): 2026-06-22, 1W 1L = 50%
+      { tournamentId: 't1', tournamentDate: '2026-06-22', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
+      { tournamentId: 't1', tournamentDate: '2026-06-22', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 5, scoreAgainst: 11, won: false },
+      // Week 2: 2026-06-29, 3W 1L = 75% (up from 50%)
+      { tournamentId: 't2', tournamentDate: '2026-06-29', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
+      { tournamentId: 't2', tournamentDate: '2026-06-29', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
+      { tournamentId: 't2', tournamentDate: '2026-06-29', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
+      { tournamentId: 't2', tournamentDate: '2026-06-29', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 5, scoreAgainst: 11, won: false },
+      // Week 3 (most recent): 2026-07-06, 1W 3L = 25% (down from 75%)
+      { tournamentId: 't3', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
+      { tournamentId: 't3', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 5, scoreAgainst: 11, won: false },
+      { tournamentId: 't3', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 5, scoreAgainst: 11, won: false },
+      { tournamentId: 't3', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 5, scoreAgainst: 11, won: false },
+    ];
+
+    const stats = computePersonStats(matches, []);
+
+    expect(stats.weekly).toEqual([
+      { period: '2026-07-06', gamesWon: 1, gamesLost: 3, tournamentsWon: 0, winPercentage: 25, trend: 'down', trendPointsChange: -50 },
+      { period: '2026-06-29', gamesWon: 3, gamesLost: 1, tournamentsWon: 0, winPercentage: 75, trend: 'up', trendPointsChange: 25 },
+      { period: '2026-06-22', gamesWon: 1, gamesLost: 1, tournamentsWon: 0, winPercentage: 50, trend: null, trendPointsChange: null },
+    ]);
+  });
+
+  it('marks trend as flat when win percentage is unchanged between periods', () => {
+    const matches: PersonMatchRecord[] = [
+      { tournamentId: 't1', tournamentDate: '2026-06-29', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
+      { tournamentId: 't1', tournamentDate: '2026-06-29', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 5, scoreAgainst: 11, won: false },
+      { tournamentId: 't2', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },
+      { tournamentId: 't2', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 5, scoreAgainst: 11, won: false },
+    ];
+
+    const stats = computePersonStats(matches, []);
+
+    expect(stats.weekly[0].trend).toBe('flat');
+    expect(stats.weekly[0].trendPointsChange).toBe(0);
   });
 });

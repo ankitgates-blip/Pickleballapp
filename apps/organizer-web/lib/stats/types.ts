@@ -37,6 +37,9 @@ export type PeriodStats = {
   gamesWon: number;
   gamesLost: number;
   tournamentsWon: number;
+  winPercentage: number | null;
+  trend: 'up' | 'down' | 'flat' | null;
+  trendPointsChange: number | null;
 };
 
 export type HeadToHeadRecord = {

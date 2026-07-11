@@ -23,14 +23,26 @@ function getYearKey(dateStr: string): string {
   return dateStr.slice(0, 4);
 }
 
+type PeriodTotals = {
+  period: string;
+  gamesWon: number;
+  gamesLost: number;
+  tournamentsWon: number;
+};
+
+function periodWinPercentage(row: PeriodTotals): number | null {
+  const totalGames = row.gamesWon + row.gamesLost;
+  return totalGames > 0 ? Math.round((row.gamesWon / totalGames) * 100) : null;
+}
+
 function buildPeriods(
   matches: PersonMatchRecord[],
   tournamentsWon: TournamentWon[],
   keyFn: (date: string) => string
 ): PeriodStats[] {
-  const table = new Map<string, PeriodStats>();
+  const table = new Map<string, PeriodTotals>();
 
-  const ensure = (period: string): PeriodStats => {
+  const ensure = (period: string): PeriodTotals => {
     let row = table.get(period);
     if (!row) {
       row = { period, gamesWon: 0, gamesLost: 0, tournamentsWon: 0 };
@@ -52,7 +64,25 @@ function buildPeriods(
     ensure(keyFn(t.date)).tournamentsWon += 1;
   }
 
-  return Array.from(table.values()).sort((a, b) => (a.period < b.period ? 1 : -1));
+  const sorted = Array.from(table.values()).sort((a, b) => (a.period < b.period ? 1 : -1));
+
+  return sorted.map((row, i) => {
+    const winPercentage = periodWinPercentage(row);
+    const previous = sorted[i + 1];
+
+    let trend: 'up' | 'down' | 'flat' | null = null;
+    let trendPointsChange: number | null = null;
+
+    if (previous) {
+      const previousWinPercentage = periodWinPercentage(previous);
+      if (winPercentage !== null && previousWinPercentage !== null) {
+        trendPointsChange = winPercentage - previousWinPercentage;
+        trend = trendPointsChange > 0 ? 'up' : trendPointsChange < 0 ? 'down' : 'flat';
+      }
+    }
+
+    return { ...row, winPercentage, trend, trendPointsChange };
+  });
 }
 
 function winRate(record: { wins: number; losses: number }): number {
