@@ -115,3 +115,22 @@ export async function removePlayer(tournamentId: string, playerId: string) {
   revalidatePath(`/tournaments/${tournamentId}/roster`);
   revalidatePath(`/tournaments/${tournamentId}/teams`);
 }
+
+export async function updateTournamentDetails(tournamentId: string, formData: FormData) {
+  const { supabase } = await requireOrganizer();
+
+  const venueId = formData.get('venueId') as string;
+  const timeslot = formData.get('timeslot') as string;
+
+  const { error } = await supabase
+    .from('tournaments')
+    .update({ venue_id: venueId, timeslot })
+    .eq('id', tournamentId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}/roster`);
+  revalidatePath('/tournaments');
+}

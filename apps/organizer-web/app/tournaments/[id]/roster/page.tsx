@@ -5,7 +5,15 @@ import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass, primaryButtonClass, accentButtonClass, pillClass, linkClass } from '@/app/components/ui';
 import { matchNamesToPeople } from '@/lib/people/matchNames';
-import { startAddPlayers, confirmAddPlayers, addExistingPeople, removePlayer } from './actions';
+import { TIME_SLOTS } from '@/lib/tournament/timeslots';
+import CopyLinkButton from '../standings/CopyLinkButton';
+import {
+  startAddPlayers,
+  confirmAddPlayers,
+  addExistingPeople,
+  removePlayer,
+  updateTournamentDetails,
+} from './actions';
 
 export default async function RosterPage({
   params,
@@ -20,11 +28,13 @@ export default async function RosterPage({
 
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('completed_at')
+    .select('completed_at, venue_id, timeslot')
     .eq('id', id)
     .single();
 
   const isCompleted = Boolean(tournament?.completed_at);
+
+  const { data: venues } = await supabase.from('venues').select('id, name').order('name');
 
   const { data: players } = await supabase
     .from('players')
@@ -112,11 +122,50 @@ export default async function RosterPage({
 
   const startAddPlayersWithId = startAddPlayers.bind(null, id);
   const addExistingPeopleWithId = addExistingPeople.bind(null, id);
+  const updateTournamentDetailsWithId = updateTournamentDetails.bind(null, id);
 
   return (
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="roster" />
-      <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Roster</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-extrabold text-slate-900">Roster</h1>
+        <CopyLinkButton tournamentId={id} />
+      </div>
+
+      {!isCompleted && (
+        <div className={`${cardClass} mb-6`}>
+          <h2 className="text-lg font-bold text-slate-900 mb-2">Tournament Details</h2>
+          <form action={updateTournamentDetailsWithId} className="flex flex-col sm:flex-row gap-3">
+            <select
+              name="venueId"
+              required
+              defaultValue={tournament?.venue_id ?? ''}
+              className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            >
+              {(venues ?? []).map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))}
+            </select>
+            <select
+              name="timeslot"
+              required
+              defaultValue={tournament?.timeslot ?? ''}
+              className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            >
+              {TIME_SLOTS.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+            <button type="submit" className={primaryButtonClass}>
+              Save
+            </button>
+          </form>
+        </div>
+      )}
 
       {!isCompleted && availablePeople.length > 0 && (
         <div className={`${cardClass} mb-6`}>
