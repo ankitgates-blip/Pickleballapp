@@ -7,7 +7,7 @@ import { cardClass, accentButtonClass, linkClass } from '@/app/components/ui';
 import { formatLabel } from '@/lib/tournament/formats';
 import { computeStandings } from '@/lib/tournament/standings';
 import type { MatchResult } from '@/lib/types';
-import { generateBracket, generatePopcornBracket, generateSemifinalMatches, generateFinalMatch } from './actions';
+import { generateBracket, generatePopcornBracket, advanceGauntletRound, generateSemifinalMatches, generateFinalMatch } from './actions';
 
 export default async function BracketPage({
   params,
@@ -19,7 +19,7 @@ export default async function BracketPage({
 
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('format, popcorn_rounds')
+    .select('format, popcorn_rounds, gauntlet_rounds')
     .eq('id', id)
     .single();
 
@@ -28,7 +28,9 @@ export default async function BracketPage({
   const isLeaguePlayoffs = format === 'league_playoffs';
   const isDoubleHeader = format === 'double_header';
   const isPopcorn = format === 'popcorn';
-  const isSupported = isRoundRobin || isLeaguePlayoffs || isDoubleHeader || isPopcorn;
+  const isGauntlet = format === 'gauntlet';
+  const isSupported =
+    isRoundRobin || isLeaguePlayoffs || isDoubleHeader || isPopcorn || isGauntlet;
 
   const { data: teams } = await supabase
     .from('teams')
@@ -71,8 +73,21 @@ export default async function BracketPage({
 
   const generateBracketWithId = generateBracket.bind(null, id);
   const generatePopcornBracketWithId = generatePopcornBracket.bind(null, id);
+  const advanceGauntletRoundWithId = advanceGauntletRound.bind(null, id);
   const generateSemifinalMatchesWithId = generateSemifinalMatches.bind(null, id);
   const generateFinalMatchWithId = generateFinalMatch.bind(null, id);
+
+  const gauntletRounds = tournament?.gauntlet_rounds ?? 5;
+  const currentGauntletRound =
+    leagueMatches.length > 0 ? Math.max(...leagueMatches.map((m) => m.round)) : 0;
+  const currentGauntletRoundMatches = leagueMatches.filter(
+    (m) => m.round === currentGauntletRound
+  );
+  const currentGauntletRoundComplete =
+    currentGauntletRoundMatches.length > 0 &&
+    currentGauntletRoundMatches.every((m) => m.status === 'complete');
+  const showGenerateNextGauntletRound =
+    isGauntlet && hasLeagueMatches && currentGauntletRoundComplete && currentGauntletRound < gauntletRounds;
 
   const showGenerateSemifinals =
     isLeaguePlayoffs && allLeagueComplete && semifinalMatches.length === 0 && teamCount >= 4;
@@ -130,8 +145,8 @@ export default async function BracketPage({
       {!isSupported && (
         <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6">
           {formatLabel(format)} isn't available yet — bracket generation for this format is
-          coming soon. Round Robin, League + Playoffs, Double Header, and Popcorn are the only
-          formats that work today.
+          coming soon. Round Robin, League + Playoffs, Double Header, Popcorn, and Gauntlet are
+          the only formats that work today.
         </div>
       )}
 
@@ -153,14 +168,44 @@ export default async function BracketPage({
         </form>
       )}
 
-      {isSupported && !hasLeagueMatches && !isPopcorn && teamCount < 2 && (
+      {isSupported && !hasLeagueMatches && isGauntlet && playerCount < 4 && (
+        <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
+          Need at least 4 players to generate a Gauntlet round — you have {playerCount}. Go
+          back and add more players first.
+        </div>
+      )}
+
+      {isSupported && !hasLeagueMatches && isGauntlet && playerCount >= 4 && (
+        <form action={advanceGauntletRoundWithId} className={`${cardClass} text-center mb-6`}>
+          <p className="text-slate-600 mb-4">
+            {playerCount} players ready. Generate Round 1 of {gauntletRounds}.
+          </p>
+          <button type="submit" className={accentButtonClass}>
+            Generate Round 1
+          </button>
+        </form>
+      )}
+
+      {showGenerateNextGauntletRound && (
+        <form action={advanceGauntletRoundWithId} className={`${cardClass} text-center mb-6`}>
+          <p className="text-slate-600 mb-4">
+            Round {currentGauntletRound} complete. Generate Round {currentGauntletRound + 1} of{' '}
+            {gauntletRounds}.
+          </p>
+          <button type="submit" className={accentButtonClass}>
+            Generate Round {currentGauntletRound + 1}
+          </button>
+        </form>
+      )}
+
+      {isSupported && !hasLeagueMatches && !isPopcorn && !isGauntlet && teamCount < 2 && (
         <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
           Need at least 2 teams to generate a bracket — you have {teamCount}. Go back and
           pair more teams first.
         </div>
       )}
 
-      {isSupported && !hasLeagueMatches && !isPopcorn && teamCount >= 2 && (
+      {isSupported && !hasLeagueMatches && !isPopcorn && !isGauntlet && teamCount >= 2 && (
         <form action={generateBracketWithId} className={`${cardClass} text-center mb-6`}>
           <p className="text-slate-600 mb-4">
             {teamCount} teams ready. Generate a round-robin league schedule.
