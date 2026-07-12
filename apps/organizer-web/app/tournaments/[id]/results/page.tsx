@@ -80,6 +80,8 @@ export default async function ResultsPage({
 
   const isLeaguePlayoffs = tournament.format === 'league_playoffs';
   const isPopcorn = tournament.format === 'popcorn';
+  const isGauntlet = tournament.format === 'gauntlet';
+  const isIndividualFormat = isPopcorn || isGauntlet;
 
   const teamsForIndividual: Team[] = (teams ?? []).map((t) => ({
     id: t.id,
@@ -87,12 +89,12 @@ export default async function ResultsPage({
     player1Id: t.player_1_id,
     player2Id: t.player_2_id,
   }));
-  const individualStandings = isPopcorn
+  const individualStandings = isIndividualFormat
     ? computeIndividualStandings(leagueMatchResults, teamsForIndividual)
     : [];
 
   const finalMatch = finalMatches[0];
-  const championTeamId = !isPopcorn && tournament.completed_at
+  const championTeamId = !isIndividualFormat && tournament.completed_at
     ? finalMatch
       ? (finalMatch.score_a ?? 0) > (finalMatch.score_b ?? 0)
         ? finalMatch.team_a_id
@@ -100,7 +102,7 @@ export default async function ResultsPage({
       : standings[0]?.teamId
     : undefined;
   const championPlayerId =
-    isPopcorn && tournament.completed_at ? individualStandings[0]?.playerId : undefined;
+    isIndividualFormat && tournament.completed_at ? individualStandings[0]?.playerId : undefined;
 
   const renderMatch = (m: NonNullable<typeof matches>[number]) => {
     const teamAName = teamById.get(m.team_a_id!) ?? 'Unknown';
@@ -189,19 +191,23 @@ export default async function ResultsPage({
 
       <div className={`${cardClass} mb-6 overflow-x-auto`}>
         <h2 className="text-lg font-bold text-slate-900 mb-3">
-          {isPopcorn ? 'Individual Standings' : isLeaguePlayoffs ? 'League Standings' : 'Final Standings'}
+          {isIndividualFormat
+            ? 'Individual Standings'
+            : isLeaguePlayoffs
+              ? 'League Standings'
+              : 'Final Standings'}
         </h2>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-slate-500 border-b border-slate-200">
-              <th className="pb-2 font-semibold">{isPopcorn ? 'Player' : 'Team'}</th>
+              <th className="pb-2 font-semibold">{isIndividualFormat ? 'Player' : 'Team'}</th>
               <th className="pb-2 font-semibold text-center">W</th>
               <th className="pb-2 font-semibold text-center">L</th>
               <th className="pb-2 font-semibold text-center">Point Diff</th>
             </tr>
           </thead>
           <tbody>
-            {isPopcorn
+            {isIndividualFormat
               ? individualStandings.map((s, i) => {
                   const medal = ['🥇', '🥈', '🥉'][i];
                   return (
