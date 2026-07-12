@@ -13,6 +13,7 @@ export async function createTournament(formData: FormData) {
   const format = formData.get('format') as string;
   const venueId = formData.get('venueId') as string;
   const timeslot = formData.get('timeslot') as string;
+  const popcornRounds = format === 'popcorn' ? Number(formData.get('popcornRounds')) : null;
 
   const { data: tournament, error } = await supabase
     .from('tournaments')
@@ -25,6 +26,7 @@ export async function createTournament(formData: FormData) {
       organizer_id: organizer.id,
       venue_id: venueId,
       timeslot,
+      popcorn_rounds: popcornRounds,
     })
     .select('id')
     .single();
