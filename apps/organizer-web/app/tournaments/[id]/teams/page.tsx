@@ -2,6 +2,7 @@ import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass, primaryButtonClass, accentButtonClass, pillClass } from '@/app/components/ui';
+import { formatLabel } from '@/lib/tournament/formats';
 import { pairTeam, shuffleRemaining, removeTeam } from './actions';
 
 const LEAGUE_PLAYOFFS_TEAM_CAP = 8;
@@ -22,6 +23,8 @@ export default async function TeamsPage({
 
   const isLeaguePlayoffs = tournament?.format === 'league_playoffs';
   const isPopcorn = tournament?.format === 'popcorn';
+  const isGauntlet = tournament?.format === 'gauntlet';
+  const isAutoPaired = isPopcorn || isGauntlet;
 
   const { data: players } = await supabase
     .from('players')
@@ -60,9 +63,10 @@ export default async function TeamsPage({
         )}
       </div>
 
-      {isPopcorn ? (
+      {isAutoPaired ? (
         <div className="rounded-lg bg-teal-50 border border-teal-200 text-teal-800 text-sm px-4 py-3 mb-6">
-          Popcorn auto-generates partners each round — head to Bracket to generate the schedule.
+          {formatLabel(tournament?.format ?? '')} auto-generates partners each round — head to
+          Bracket to generate the schedule.
         </div>
       ) : atCap ? (
         <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6">
