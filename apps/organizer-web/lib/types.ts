@@ -32,3 +32,17 @@ export type CompletionCheckMatch = {
   status: 'pending' | 'complete';
   teamBId: string | null;
 };
+
+export type PopcornPairing = {
+  round: number;
+  teamAPlayerIds: [string, string];
+  teamBPlayerIds: [string, string];
+};
+
+export type IndividualStandingsRow = {
+  playerId: string;
+  wins: number;
+  losses: number;
+  pointsFor: number;
+  pointsAgainst: number;
+};
