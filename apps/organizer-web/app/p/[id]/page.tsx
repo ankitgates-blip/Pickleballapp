@@ -34,11 +34,12 @@ export default async function PublicPersonPage({
 
   const { data: tournaments } = await supabase
     .from('tournaments')
-    .select('id, name, date, venues(name)')
+    .select('id, name, date, format, venues(name)')
     .eq('organizer_id', person.organizer_id);
 
   const tournamentIds = (tournaments ?? []).map((t) => t.id);
   const tournamentDateById = new Map((tournaments ?? []).map((t) => [t.id, t.date]));
+  const tournamentFormatById = new Map((tournaments ?? []).map((t) => [t.id, t.format]));
   const venueNameByTournamentId = new Map(
     (tournaments ?? []).map((t) => {
       const venue = t.venues as { name: string } | { name: string }[] | null;
@@ -108,6 +109,8 @@ export default async function PublicPersonPage({
 
   const tournamentsWon: TournamentWon[] = [];
   for (const tournamentId of tournamentIds) {
+    if (tournamentFormatById.get(tournamentId) === 'popcorn') continue;
+
     const tournamentTeams = teams.filter((t) => t.tournamentId === tournamentId);
     const myTeam = tournamentTeams.find(
       (t) => t.player1PersonId === person.id || t.player2PersonId === person.id
