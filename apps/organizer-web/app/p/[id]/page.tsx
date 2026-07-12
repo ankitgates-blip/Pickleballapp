@@ -6,6 +6,7 @@ import { computePersonStats } from '@/lib/stats/personStats';
 import { starRating, renderStars } from '@/lib/stats/starRating';
 import { renderTrend, trendColorClass } from '@/lib/stats/trend';
 import { computeStandings } from '@/lib/tournament/standings';
+import { isIndividualFormat } from '@/lib/tournament/formats';
 import type { RawMatch, RawTeam, TournamentWon } from '@/lib/stats/types';
 import type { MatchResult } from '@/lib/types';
 import { cardClass, pillClass } from '@/app/components/ui';
@@ -109,7 +110,8 @@ export default async function PublicPersonPage({
 
   const tournamentsWon: TournamentWon[] = [];
   for (const tournamentId of tournamentIds) {
-    if (tournamentFormatById.get(tournamentId) === 'popcorn') continue;
+    const format = tournamentFormatById.get(tournamentId);
+    if (format && isIndividualFormat(format)) continue;
 
     const tournamentTeams = teams.filter((t) => t.tournamentId === tournamentId);
     const myTeam = tournamentTeams.find(

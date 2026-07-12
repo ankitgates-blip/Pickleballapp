@@ -2,7 +2,7 @@ import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass, primaryButtonClass, accentButtonClass, pillClass } from '@/app/components/ui';
-import { formatLabel } from '@/lib/tournament/formats';
+import { formatLabel, isIndividualFormat } from '@/lib/tournament/formats';
 import { pairTeam, shuffleRemaining, removeTeam } from './actions';
 
 const LEAGUE_PLAYOFFS_TEAM_CAP = 8;
@@ -24,7 +24,7 @@ export default async function TeamsPage({
   const isLeaguePlayoffs = tournament?.format === 'league_playoffs';
   const isPopcorn = tournament?.format === 'popcorn';
   const isGauntlet = tournament?.format === 'gauntlet';
-  const isAutoPaired = isPopcorn || isGauntlet;
+  const isAutoPaired = isIndividualFormat(tournament?.format ?? '');
 
   const { data: players } = await supabase
     .from('players')

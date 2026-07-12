@@ -1,5 +1,6 @@
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import { computeStandings, computeIndividualStandings } from '@/lib/tournament/standings';
+import { isIndividualFormat as isIndividualFormatCheck } from '@/lib/tournament/formats';
 import type { MatchResult, Team } from '@/lib/types';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
@@ -22,7 +23,7 @@ export default async function StandingsPage({
 
   const isPopcorn = tournament?.format === 'popcorn';
   const isGauntlet = tournament?.format === 'gauntlet';
-  const isIndividualFormat = isPopcorn || isGauntlet;
+  const isIndividualFormat = isIndividualFormatCheck(tournament?.format ?? '');
 
   const { data: teams } = await supabase
     .from('teams')

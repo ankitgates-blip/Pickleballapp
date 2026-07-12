@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import { computeStandings, computeIndividualStandings } from '@/lib/tournament/standings';
-import { formatLabel } from '@/lib/tournament/formats';
+import { formatLabel, isIndividualFormat as isIndividualFormatCheck } from '@/lib/tournament/formats';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
 import type { MatchResult, Team } from '@/lib/types';
 import OrganizerShell from '@/app/components/OrganizerShell';
@@ -81,7 +81,7 @@ export default async function ResultsPage({
   const isLeaguePlayoffs = tournament.format === 'league_playoffs';
   const isPopcorn = tournament.format === 'popcorn';
   const isGauntlet = tournament.format === 'gauntlet';
-  const isIndividualFormat = isPopcorn || isGauntlet;
+  const isIndividualFormat = isIndividualFormatCheck(tournament.format);
 
   const teamsForIndividual: Team[] = (teams ?? []).map((t) => ({
     id: t.id,

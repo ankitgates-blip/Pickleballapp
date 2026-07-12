@@ -14,3 +14,9 @@ export type TournamentFormat = (typeof TOURNAMENT_FORMATS)[number]['value'];
 export function formatLabel(format: string): string {
   return TOURNAMENT_FORMATS.find((f) => f.value === format)?.label ?? format;
 }
+
+const INDIVIDUAL_FORMATS: readonly string[] = ['popcorn', 'gauntlet'];
+
+export function isIndividualFormat(format: string): boolean {
+  return INDIVIDUAL_FORMATS.includes(format);
+}
