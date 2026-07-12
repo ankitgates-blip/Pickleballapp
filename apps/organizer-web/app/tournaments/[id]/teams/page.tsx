@@ -22,8 +22,6 @@ export default async function TeamsPage({
     .single();
 
   const isLeaguePlayoffs = tournament?.format === 'league_playoffs';
-  const isPopcorn = tournament?.format === 'popcorn';
-  const isGauntlet = tournament?.format === 'gauntlet';
   const isAutoPaired = isIndividualFormat(tournament?.format ?? '');
 
   const { data: players } = await supabase

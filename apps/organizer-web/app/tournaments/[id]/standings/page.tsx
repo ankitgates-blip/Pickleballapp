@@ -21,8 +21,6 @@ export default async function StandingsPage({
     .eq('id', id)
     .single();
 
-  const isPopcorn = tournament?.format === 'popcorn';
-  const isGauntlet = tournament?.format === 'gauntlet';
   const isIndividualFormat = isIndividualFormatCheck(tournament?.format ?? '');
 
   const { data: teams } = await supabase

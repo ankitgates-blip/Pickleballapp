@@ -79,8 +79,6 @@ export default async function ResultsPage({
   const standings = computeStandings(leagueMatchResults);
 
   const isLeaguePlayoffs = tournament.format === 'league_playoffs';
-  const isPopcorn = tournament.format === 'popcorn';
-  const isGauntlet = tournament.format === 'gauntlet';
   const isIndividualFormat = isIndividualFormatCheck(tournament.format);
 
   const teamsForIndividual: Team[] = (teams ?? []).map((t) => ({
