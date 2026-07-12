@@ -21,6 +21,8 @@ export default async function StandingsPage({
     .single();
 
   const isPopcorn = tournament?.format === 'popcorn';
+  const isGauntlet = tournament?.format === 'gauntlet';
+  const isIndividualFormat = isPopcorn || isGauntlet;
 
   const { data: teams } = await supabase
     .from('teams')
@@ -61,7 +63,7 @@ export default async function StandingsPage({
   }));
 
   const standings = computeStandings(matchResults);
-  const individualStandings = isPopcorn
+  const individualStandings = isIndividualFormat
     ? computeIndividualStandings(matchResults, teamsForIndividual)
     : [];
 
@@ -77,14 +79,14 @@ export default async function StandingsPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-slate-500 border-b border-slate-200">
-              <th className="pb-2 font-semibold">{isPopcorn ? 'Player' : 'Team'}</th>
+              <th className="pb-2 font-semibold">{isIndividualFormat ? 'Player' : 'Team'}</th>
               <th className="pb-2 font-semibold text-center">W</th>
               <th className="pb-2 font-semibold text-center">L</th>
               <th className="pb-2 font-semibold text-center">Point Diff</th>
             </tr>
           </thead>
           <tbody>
-            {isPopcorn
+            {isIndividualFormat
               ? individualStandings.map((s, i) => {
                   const medal = ['🥇', '🥈', '🥉'][i];
                   return (
