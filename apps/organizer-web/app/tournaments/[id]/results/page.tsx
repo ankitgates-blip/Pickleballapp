@@ -1,10 +1,10 @@
 // apps/organizer-web/app/tournaments/[id]/results/page.tsx
 import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
-import { computeStandings } from '@/lib/tournament/standings';
+import { computeStandings, computeIndividualStandings } from '@/lib/tournament/standings';
 import { formatLabel } from '@/lib/tournament/formats';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
-import type { MatchResult } from '@/lib/types';
+import type { MatchResult, Team } from '@/lib/types';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass } from '@/app/components/ui';
 
@@ -79,14 +79,28 @@ export default async function ResultsPage({
   const standings = computeStandings(leagueMatchResults);
 
   const isLeaguePlayoffs = tournament.format === 'league_playoffs';
+  const isPopcorn = tournament.format === 'popcorn';
+
+  const teamsForIndividual: Team[] = (teams ?? []).map((t) => ({
+    id: t.id,
+    tournamentId: id,
+    player1Id: t.player_1_id,
+    player2Id: t.player_2_id,
+  }));
+  const individualStandings = isPopcorn
+    ? computeIndividualStandings(leagueMatchResults, teamsForIndividual)
+    : [];
+
   const finalMatch = finalMatches[0];
-  const championTeamId = tournament.completed_at
+  const championTeamId = !isPopcorn && tournament.completed_at
     ? finalMatch
       ? (finalMatch.score_a ?? 0) > (finalMatch.score_b ?? 0)
         ? finalMatch.team_a_id
         : finalMatch.team_b_id
       : standings[0]?.teamId
     : undefined;
+  const championPlayerId =
+    isPopcorn && tournament.completed_at ? individualStandings[0]?.playerId : undefined;
 
   const renderMatch = (m: NonNullable<typeof matches>[number]) => {
     const teamAName = teamById.get(m.team_a_id!) ?? 'Unknown';
@@ -134,14 +148,14 @@ export default async function ResultsPage({
         )}
       </p>
 
-      {championTeamId && (
+      {(championTeamId || championPlayerId) && (
         <div
           className={`${cardClass} mb-6 text-center bg-gradient-to-br from-amber-50 to-lime-50 border-amber-200`}
         >
           <div className="text-3xl mb-1">🏆</div>
           <div className="text-xs font-bold text-amber-700 uppercase tracking-wide">Champion</div>
           <div className="text-xl font-extrabold text-slate-900">
-            {teamById.get(championTeamId)}
+            {championPlayerId ? playerById.get(championPlayerId) : teamById.get(championTeamId!)}
           </div>
         </div>
       )}
@@ -175,35 +189,53 @@ export default async function ResultsPage({
 
       <div className={`${cardClass} mb-6 overflow-x-auto`}>
         <h2 className="text-lg font-bold text-slate-900 mb-3">
-          {isLeaguePlayoffs ? 'League Standings' : 'Final Standings'}
+          {isPopcorn ? 'Individual Standings' : isLeaguePlayoffs ? 'League Standings' : 'Final Standings'}
         </h2>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-slate-500 border-b border-slate-200">
-              <th className="pb-2 font-semibold">Team</th>
+              <th className="pb-2 font-semibold">{isPopcorn ? 'Player' : 'Team'}</th>
               <th className="pb-2 font-semibold text-center">W</th>
               <th className="pb-2 font-semibold text-center">L</th>
               <th className="pb-2 font-semibold text-center">Point Diff</th>
             </tr>
           </thead>
           <tbody>
-            {standings.map((s, i) => {
-              const medal = ['🥇', '🥈', '🥉'][i];
-              return (
-                <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
-                  <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                    {medal && <span className="mr-1.5">{medal}</span>}
-                    {teamById.get(s.teamId)}
-                  </td>
-                  <td className="py-2 text-center text-teal-700 font-extrabold">{s.wins}</td>
-                  <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
-                  <td className="py-2 text-center font-bold">
-                    {s.pointsFor - s.pointsAgainst > 0 ? '+' : ''}
-                    {s.pointsFor - s.pointsAgainst}
-                  </td>
-                </tr>
-              );
-            })}
+            {isPopcorn
+              ? individualStandings.map((s, i) => {
+                  const medal = ['🥇', '🥈', '🥉'][i];
+                  return (
+                    <tr key={s.playerId} className="border-b border-slate-100 last:border-0">
+                      <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
+                        {medal && <span className="mr-1.5">{medal}</span>}
+                        {playerById.get(s.playerId)}
+                      </td>
+                      <td className="py-2 text-center text-teal-700 font-extrabold">{s.wins}</td>
+                      <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
+                      <td className="py-2 text-center font-bold">
+                        {s.pointsFor - s.pointsAgainst > 0 ? '+' : ''}
+                        {s.pointsFor - s.pointsAgainst}
+                      </td>
+                    </tr>
+                  );
+                })
+              : standings.map((s, i) => {
+                  const medal = ['🥇', '🥈', '🥉'][i];
+                  return (
+                    <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
+                      <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
+                        {medal && <span className="mr-1.5">{medal}</span>}
+                        {teamById.get(s.teamId)}
+                      </td>
+                      <td className="py-2 text-center text-teal-700 font-extrabold">{s.wins}</td>
+                      <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
+                      <td className="py-2 text-center font-bold">
+                        {s.pointsFor - s.pointsAgainst > 0 ? '+' : ''}
+                        {s.pointsFor - s.pointsAgainst}
+                      </td>
+                    </tr>
+                  );
+                })}
           </tbody>
         </table>
       </div>
