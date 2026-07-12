@@ -79,6 +79,12 @@ export default async function NewTournamentPage() {
             </label>
             <input name="popcornRounds" type="number" defaultValue={5} min={1} className={inputClass} />
           </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">
+              Number of rounds (Gauntlet only)
+            </label>
+            <input name="gauntletRounds" type="number" defaultValue={5} min={1} className={inputClass} />
+          </div>
           <button type="submit" className={`${accentButtonClass} w-full`}>
             Create Tournament
           </button>
