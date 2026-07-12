@@ -21,6 +21,7 @@ export default async function TeamsPage({
     .single();
 
   const isLeaguePlayoffs = tournament?.format === 'league_playoffs';
+  const isPopcorn = tournament?.format === 'popcorn';
 
   const { data: players } = await supabase
     .from('players')
@@ -59,7 +60,11 @@ export default async function TeamsPage({
         )}
       </div>
 
-      {atCap ? (
+      {isPopcorn ? (
+        <div className="rounded-lg bg-teal-50 border border-teal-200 text-teal-800 text-sm px-4 py-3 mb-6">
+          Popcorn auto-generates partners each round — head to Bracket to generate the schedule.
+        </div>
+      ) : atCap ? (
         <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6">
           8/8 teams — maximum reached for this format.
         </div>
