@@ -46,3 +46,16 @@ export type IndividualStandingsRow = {
   pointsFor: number;
   pointsAgainst: number;
 };
+
+export type GauntletRoundResult = {
+  round: number;
+  teamAPlayerIds: [string, string];
+  teamBPlayerIds: [string, string];
+  scoreA: number;
+  scoreB: number;
+};
+
+export type GauntletPairing = {
+  teamAPlayerIds: [string, string];
+  teamBPlayerIds: [string, string];
+};
