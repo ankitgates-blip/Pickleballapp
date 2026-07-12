@@ -72,4 +72,27 @@ describe('isTournamentComplete', () => {
     ];
     expect(isTournamentComplete('gauntlet', 4, matches, 2)).toBe(true);
   });
+
+  it('returns false for claim_the_throne when fewer rounds than the target have been played', () => {
+    const matches: CompletionCheckMatch[] = [
+      { stage: 'league', status: 'complete', teamBId: 't2', round: 1 },
+    ];
+    expect(isTournamentComplete('claim_the_throne', 4, matches, 5)).toBe(false);
+  });
+
+  it('returns false for claim_the_throne when the target round exists but its matches are not all complete', () => {
+    const matches: CompletionCheckMatch[] = [
+      { stage: 'league', status: 'complete', teamBId: 't2', round: 1 },
+      { stage: 'league', status: 'pending', teamBId: 't4', round: 2 },
+    ];
+    expect(isTournamentComplete('claim_the_throne', 4, matches, 2)).toBe(false);
+  });
+
+  it('returns true for claim_the_throne once the target round is reached and all matches are complete', () => {
+    const matches: CompletionCheckMatch[] = [
+      { stage: 'league', status: 'complete', teamBId: 't2', round: 1 },
+      { stage: 'league', status: 'complete', teamBId: 't4', round: 2 },
+    ];
+    expect(isTournamentComplete('claim_the_throne', 4, matches, 2)).toBe(true);
+  });
 });
