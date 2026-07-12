@@ -50,8 +50,6 @@ export default async function TournamentsPage() {
 
   return (
     <OrganizerShell organizerName={organizer.name}>
-      <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Tournaments</h1>
-
       {(tournaments ?? []).length === 0 && (
         <div className={`${cardClass} text-center text-slate-500`}>
           No tournaments yet — create your first one.
