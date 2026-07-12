@@ -60,3 +60,26 @@ export type GauntletPairing = {
   teamAPlayerIds: [string, string];
   teamBPlayerIds: [string, string];
 };
+
+export type ClaimTheThroneRoundResult = {
+  court: number;
+  teamAPlayerIds: [string, string];
+  teamBPlayerIds: [string, string];
+  scoreA: number;
+  scoreB: number;
+};
+
+export type ClaimTheThronePairing = {
+  court: number;
+  teamAPlayerIds: [string, string];
+  teamBPlayerIds: [string, string];
+};
+
+export type ClaimTheThroneStandingsRow = {
+  playerId: string;
+  wins: number;
+  losses: number;
+  ladderPoints: number;
+  pointsFor: number;
+  pointsAgainst: number;
+};
