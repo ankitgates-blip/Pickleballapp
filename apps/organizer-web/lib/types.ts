@@ -31,6 +31,7 @@ export type CompletionCheckMatch = {
   stage: 'league' | 'semifinal' | 'final';
   status: 'pending' | 'complete';
   teamBId: string | null;
+  round: number;
 };
 
 export type PopcornPairing = {

@@ -3,7 +3,8 @@ import type { CompletionCheckMatch } from '@/lib/types';
 export function isTournamentComplete(
   format: string,
   teamCount: number,
-  matches: CompletionCheckMatch[]
+  matches: CompletionCheckMatch[],
+  targetRounds?: number
 ): boolean {
   if (format === 'league_playoffs' && teamCount >= 4) {
     const finalMatch = matches.find((m) => m.stage === 'final');
@@ -11,5 +12,13 @@ export function isTournamentComplete(
   }
 
   const realMatches = matches.filter((m) => m.teamBId !== null);
-  return realMatches.length > 0 && realMatches.every((m) => m.status === 'complete');
+  const allComplete = realMatches.length > 0 && realMatches.every((m) => m.status === 'complete');
+
+  if (format === 'gauntlet') {
+    if (!allComplete) return false;
+    const maxRound = Math.max(...matches.map((m) => m.round));
+    return targetRounds !== undefined && maxRound >= targetRounds;
+  }
+
+  return allComplete;
 }
