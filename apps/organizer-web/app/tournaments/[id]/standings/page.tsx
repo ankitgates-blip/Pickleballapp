@@ -1,6 +1,6 @@
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
-import { computeStandings } from '@/lib/tournament/standings';
-import type { MatchResult } from '@/lib/types';
+import { computeStandings, computeIndividualStandings } from '@/lib/tournament/standings';
+import type { MatchResult, Team } from '@/lib/types';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass } from '@/app/components/ui';
@@ -13,6 +13,14 @@ export default async function StandingsPage({
 }) {
   const { id } = await params;
   const { supabase, organizer } = await requireOrganizer();
+
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('format')
+    .eq('id', id)
+    .single();
+
+  const isPopcorn = tournament?.format === 'popcorn';
 
   const { data: teams } = await supabase
     .from('teams')
@@ -45,7 +53,17 @@ export default async function StandingsPage({
     status: m.status as 'pending' | 'complete',
   }));
 
+  const teamsForIndividual: Team[] = (teams ?? []).map((t) => ({
+    id: t.id,
+    tournamentId: id,
+    player1Id: t.player_1_id,
+    player2Id: t.player_2_id,
+  }));
+
   const standings = computeStandings(matchResults);
+  const individualStandings = isPopcorn
+    ? computeIndividualStandings(matchResults, teamsForIndividual)
+    : [];
 
   return (
     <OrganizerShell organizerName={organizer.name}>
@@ -59,30 +77,48 @@ export default async function StandingsPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-slate-500 border-b border-slate-200">
-              <th className="pb-2 font-semibold">Team</th>
+              <th className="pb-2 font-semibold">{isPopcorn ? 'Player' : 'Team'}</th>
               <th className="pb-2 font-semibold text-center">W</th>
               <th className="pb-2 font-semibold text-center">L</th>
               <th className="pb-2 font-semibold text-center">Point Diff</th>
             </tr>
           </thead>
           <tbody>
-            {standings.map((s, i) => {
-              const medal = ['🥇', '🥈', '🥉'][i];
-              return (
-                <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
-                  <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                    {medal && <span className="mr-1.5">{medal}</span>}
-                    {teamById.get(s.teamId)}
-                  </td>
-                  <td className="py-2 text-center text-teal-700 font-extrabold">{s.wins}</td>
-                  <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
-                  <td className="py-2 text-center font-bold">
-                    {s.pointsFor - s.pointsAgainst > 0 ? '+' : ''}
-                    {s.pointsFor - s.pointsAgainst}
-                  </td>
-                </tr>
-              );
-            })}
+            {isPopcorn
+              ? individualStandings.map((s, i) => {
+                  const medal = ['🥇', '🥈', '🥉'][i];
+                  return (
+                    <tr key={s.playerId} className="border-b border-slate-100 last:border-0">
+                      <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
+                        {medal && <span className="mr-1.5">{medal}</span>}
+                        {playerById.get(s.playerId)}
+                      </td>
+                      <td className="py-2 text-center text-teal-700 font-extrabold">{s.wins}</td>
+                      <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
+                      <td className="py-2 text-center font-bold">
+                        {s.pointsFor - s.pointsAgainst > 0 ? '+' : ''}
+                        {s.pointsFor - s.pointsAgainst}
+                      </td>
+                    </tr>
+                  );
+                })
+              : standings.map((s, i) => {
+                  const medal = ['🥇', '🥈', '🥉'][i];
+                  return (
+                    <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
+                      <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
+                        {medal && <span className="mr-1.5">{medal}</span>}
+                        {teamById.get(s.teamId)}
+                      </td>
+                      <td className="py-2 text-center text-teal-700 font-extrabold">{s.wins}</td>
+                      <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
+                      <td className="py-2 text-center font-bold">
+                        {s.pointsFor - s.pointsAgainst > 0 ? '+' : ''}
+                        {s.pointsFor - s.pointsAgainst}
+                      </td>
+                    </tr>
+                  );
+                })}
           </tbody>
         </table>
       </div>
