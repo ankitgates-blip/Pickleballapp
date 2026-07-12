@@ -1,6 +1,7 @@
+// apps/organizer-web/app/login/page.tsx
 import Image from 'next/image';
-import { signIn, signUp } from './actions';
-import { cardClass, inputClass, primaryButtonClass, accentButtonClass } from '@/app/components/ui';
+import { cardClass } from '@/app/components/ui';
+import GoogleSignInButton from './GoogleSignInButton';
 
 export default async function LoginPage({
   searchParams,
@@ -35,39 +36,7 @@ export default async function LoginPage({
         )}
 
         <div className={cardClass}>
-          <h2 className="text-lg font-bold text-slate-900 mb-3">Sign in</h2>
-          <form action={signIn} className="space-y-3">
-            <input name="email" type="email" placeholder="Email" required className={inputClass} />
-            <input
-              name="password"
-              type="password"
-              placeholder="Password"
-              required
-              className={inputClass}
-            />
-            <button type="submit" className={`${primaryButtonClass} w-full`}>
-              Sign in
-            </button>
-          </form>
-        </div>
-
-        <div className={cardClass}>
-          <h2 className="text-lg font-bold text-slate-900 mb-1">First time here?</h2>
-          <p className="text-sm text-slate-500 mb-3">Create an organizer account.</p>
-          <form action={signUp} className="space-y-3">
-            <input name="name" type="text" placeholder="Your name" required className={inputClass} />
-            <input name="email" type="email" placeholder="Email" required className={inputClass} />
-            <input
-              name="password"
-              type="password"
-              placeholder="Password"
-              required
-              className={inputClass}
-            />
-            <button type="submit" className={`${accentButtonClass} w-full`}>
-              Sign up
-            </button>
-          </form>
+          <GoogleSignInButton />
         </div>
       </div>
     </main>
