@@ -7,7 +7,7 @@ import { cardClass, accentButtonClass, linkClass } from '@/app/components/ui';
 import { formatLabel } from '@/lib/tournament/formats';
 import { computeStandings } from '@/lib/tournament/standings';
 import type { MatchResult } from '@/lib/types';
-import { generateBracket, generateSemifinalMatches, generateFinalMatch } from './actions';
+import { generateBracket, generatePopcornBracket, generateSemifinalMatches, generateFinalMatch } from './actions';
 
 export default async function BracketPage({
   params,
@@ -19,7 +19,7 @@ export default async function BracketPage({
 
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('format')
+    .select('format, popcorn_rounds')
     .eq('id', id)
     .single();
 
@@ -27,7 +27,8 @@ export default async function BracketPage({
   const isRoundRobin = format === 'round_robin';
   const isLeaguePlayoffs = format === 'league_playoffs';
   const isDoubleHeader = format === 'double_header';
-  const isSupported = isRoundRobin || isLeaguePlayoffs || isDoubleHeader;
+  const isPopcorn = format === 'popcorn';
+  const isSupported = isRoundRobin || isLeaguePlayoffs || isDoubleHeader || isPopcorn;
 
   const { data: teams } = await supabase
     .from('teams')
@@ -54,6 +55,7 @@ export default async function BracketPage({
     .order('round', { ascending: true });
 
   const teamCount = (teams ?? []).length;
+  const playerCount = (players ?? []).length;
 
   const leagueMatches = (matches ?? []).filter((m) => m.stage === 'league');
   const semifinalMatches = (matches ?? []).filter((m) => m.stage === 'semifinal');
@@ -68,6 +70,7 @@ export default async function BracketPage({
   const hasFinalMatch = finalMatches.length > 0;
 
   const generateBracketWithId = generateBracket.bind(null, id);
+  const generatePopcornBracketWithId = generatePopcornBracket.bind(null, id);
   const generateSemifinalMatchesWithId = generateSemifinalMatches.bind(null, id);
   const generateFinalMatchWithId = generateFinalMatch.bind(null, id);
 
@@ -127,19 +130,37 @@ export default async function BracketPage({
       {!isSupported && (
         <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6">
           {formatLabel(format)} isn't available yet — bracket generation for this format is
-          coming soon. Round Robin, League + Playoffs, and Double Header are the only formats
-          that work today.
+          coming soon. Round Robin, League + Playoffs, Double Header, and Popcorn are the only
+          formats that work today.
         </div>
       )}
 
-      {isSupported && !hasLeagueMatches && teamCount < 2 && (
+      {isSupported && !hasLeagueMatches && isPopcorn && playerCount < 4 && (
+        <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
+          Need at least 4 players to generate a Popcorn schedule — you have {playerCount}. Go
+          back and add more players first.
+        </div>
+      )}
+
+      {isSupported && !hasLeagueMatches && isPopcorn && playerCount >= 4 && (
+        <form action={generatePopcornBracketWithId} className={`${cardClass} text-center mb-6`}>
+          <p className="text-slate-600 mb-4">
+            {playerCount} players ready. Generate the Popcorn schedule ({tournament?.popcorn_rounds ?? 5} rounds).
+          </p>
+          <button type="submit" className={accentButtonClass}>
+            Generate Popcorn Schedule
+          </button>
+        </form>
+      )}
+
+      {isSupported && !hasLeagueMatches && !isPopcorn && teamCount < 2 && (
         <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
           Need at least 2 teams to generate a bracket — you have {teamCount}. Go back and
           pair more teams first.
         </div>
       )}
 
-      {isSupported && !hasLeagueMatches && teamCount >= 2 && (
+      {isSupported && !hasLeagueMatches && !isPopcorn && teamCount >= 2 && (
         <form action={generateBracketWithId} className={`${cardClass} text-center mb-6`}>
           <p className="text-slate-600 mb-4">
             {teamCount} teams ready. Generate a round-robin league schedule.
