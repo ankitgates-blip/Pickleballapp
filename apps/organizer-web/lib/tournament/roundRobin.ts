@@ -39,3 +39,17 @@ export function generateRoundRobin(teamIds: string[]): RoundRobinPairing[] {
 
   return pairings;
 }
+
+export function generateDoubleHeaderRoundRobin(teamIds: string[]): RoundRobinPairing[] {
+  const singleRound = generateRoundRobin(teamIds);
+  const doubled: RoundRobinPairing[] = [];
+
+  for (const pairing of singleRound) {
+    doubled.push(pairing);
+    if (pairing.teamBId !== null) {
+      doubled.push({ ...pairing });
+    }
+  }
+
+  return doubled;
+}

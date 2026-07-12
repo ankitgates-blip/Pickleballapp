@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateRoundRobin } from './roundRobin';
+import { generateRoundRobin, generateDoubleHeaderRoundRobin } from './roundRobin';
 
 describe('generateRoundRobin', () => {
   it('throws with fewer than 2 teams', () => {
@@ -49,5 +49,37 @@ describe('generateRoundRobin', () => {
       );
       expect(realMatches).toHaveLength(8);
     }
+  });
+});
+
+describe('generateDoubleHeaderRoundRobin', () => {
+  it('doubles every real matchup, keeping the same round number', () => {
+    const single = generateRoundRobin(['A', 'B', 'C', 'D']);
+    const doubled = generateDoubleHeaderRoundRobin(['A', 'B', 'C', 'D']);
+
+    expect(doubled).toHaveLength(single.length * 2);
+
+    for (const pairing of single) {
+      const matches = doubled.filter(
+        (p) =>
+          p.round === pairing.round &&
+          p.teamAId === pairing.teamAId &&
+          p.teamBId === pairing.teamBId
+      );
+      expect(matches).toHaveLength(2);
+    }
+  });
+
+  it('does not double byes for an odd team count', () => {
+    const single = generateRoundRobin(['A', 'B', 'C']);
+    const doubled = generateDoubleHeaderRoundRobin(['A', 'B', 'C']);
+
+    const singleByes = single.filter((p) => p.teamBId === null);
+    const doubledByes = doubled.filter((p) => p.teamBId === null);
+    expect(doubledByes).toHaveLength(singleByes.length);
+
+    const singleReal = single.filter((p) => p.teamBId !== null);
+    const doubledReal = doubled.filter((p) => p.teamBId !== null);
+    expect(doubledReal).toHaveLength(singleReal.length * 2);
   });
 });
