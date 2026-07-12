@@ -26,7 +26,8 @@ export default async function BracketPage({
   const format = tournament?.format ?? 'round_robin';
   const isRoundRobin = format === 'round_robin';
   const isLeaguePlayoffs = format === 'league_playoffs';
-  const isSupported = isRoundRobin || isLeaguePlayoffs;
+  const isDoubleHeader = format === 'double_header';
+  const isSupported = isRoundRobin || isLeaguePlayoffs || isDoubleHeader;
 
   const { data: teams } = await supabase
     .from('teams')

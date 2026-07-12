@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
-import { generateRoundRobin } from '@/lib/tournament/roundRobin';
+import { generateRoundRobin, generateDoubleHeaderRoundRobin } from '@/lib/tournament/roundRobin';
 import { generateSemifinals } from '@/lib/tournament/playoffs';
 import { computeStandings } from '@/lib/tournament/standings';
 import type { MatchResult } from '@/lib/types';
@@ -24,7 +24,20 @@ export async function generateBracket(tournamentId: string) {
     throw new Error('Need at least 2 teams to generate a bracket');
   }
 
-  const pairings = generateRoundRobin(teams.map((t) => t.id));
+  const { data: tournament, error: tournamentError } = await supabase
+    .from('tournaments')
+    .select('format')
+    .eq('id', tournamentId)
+    .single();
+
+  if (tournamentError) {
+    throw new Error(tournamentError.message);
+  }
+
+  const pairings =
+    tournament?.format === 'double_header'
+      ? generateDoubleHeaderRoundRobin(teams.map((t) => t.id))
+      : generateRoundRobin(teams.map((t) => t.id));
 
   const { error: matchesError } = await supabase.from('matches').insert(
     pairings.map((p) => ({
