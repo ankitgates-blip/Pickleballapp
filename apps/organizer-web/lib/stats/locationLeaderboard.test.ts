@@ -65,4 +65,23 @@ describe('computeLocationLeaderboard', () => {
   it('returns an empty array for no candidates', () => {
     expect(computeLocationLeaderboard([])).toEqual([]);
   });
+
+  it('computes win percentage as matchWins over matchesPlayed, rounded', () => {
+    const result = computeLocationLeaderboard([
+      { personId: 'a', tournamentWins: 0, matchWins: 3, matchesPlayed: 4 }, // 75%
+      { personId: 'b', tournamentWins: 0, matchWins: 1, matchesPlayed: 3 }, // 33.33% -> 33%
+    ]);
+
+    const byId = new Map(result.map((r) => [r.personId, r]));
+    expect(byId.get('a')!.winPercentage).toBe(75);
+    expect(byId.get('b')!.winPercentage).toBe(33);
+  });
+
+  it('returns null win percentage for a candidate with zero matches played', () => {
+    const result = computeLocationLeaderboard([
+      { personId: 'a', tournamentWins: 0, matchWins: 0, matchesPlayed: 0 },
+    ]);
+
+    expect(result[0].winPercentage).toBeNull();
+  });
 });

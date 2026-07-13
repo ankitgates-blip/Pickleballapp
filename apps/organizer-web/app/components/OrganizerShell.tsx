@@ -15,11 +15,12 @@ function PersonIcon() {
   );
 }
 
-function MapPinIcon() {
+function BarChartIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-      <path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z" />
-      <circle cx="12" cy="10" r="2.5" />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+      <path d="M6 20V13" />
+      <path d="M12 20V7" />
+      <path d="M18 20V10" />
     </svg>
   );
 }
@@ -122,8 +123,8 @@ export default function OrganizerShell({
             isLocationsActive ? 'text-lime-300' : 'text-teal-50'
           }`}
         >
-          <MapPinIcon />
-          Locations
+          <BarChartIcon />
+          Leaderboard
         </Link>
       </nav>
     </div>

@@ -3,6 +3,7 @@ export type LocationLeaderboardEntry = {
   matchWins: number;
   tournamentWins: number;
   score: number;
+  winPercentage: number | null;
 };
 
 type Candidate = {
@@ -26,6 +27,8 @@ export function computeLocationLeaderboard(candidates: Candidate[]): LocationLea
         tournamentWins: c.tournamentWins,
         score: 0.6 * tournamentScore + 0.4 * matchScore,
         matchesPlayed: c.matchesPlayed,
+        winPercentage:
+          c.matchesPlayed > 0 ? Math.round((c.matchWins / c.matchesPlayed) * 100) : null,
       };
     })
     .sort((a, b) => {
@@ -33,10 +36,11 @@ export function computeLocationLeaderboard(candidates: Candidate[]): LocationLea
       return b.matchesPlayed - a.matchesPlayed;
     })
     .slice(0, 5)
-    .map(({ personId, matchWins, tournamentWins, score }) => ({
+    .map(({ personId, matchWins, tournamentWins, score, winPercentage }) => ({
       personId,
       matchWins,
       tournamentWins,
       score,
+      winPercentage,
     }));
 }

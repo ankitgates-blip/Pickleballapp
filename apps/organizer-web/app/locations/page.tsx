@@ -149,6 +149,9 @@ export default async function LocationsPage() {
                       {medal && <span className="mr-1.5">{medal}</span>}
                       {personNameById.get(entry.personId) ?? 'Unknown'}
                     </Link>
+                    {entry.winPercentage !== null && (
+                      <span className="font-bold text-teal-700">{entry.winPercentage}% wins</span>
+                    )}
                   </li>
                 );
               })}
