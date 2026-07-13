@@ -149,10 +149,6 @@ export default async function LocationsPage() {
                       {medal && <span className="mr-1.5">{medal}</span>}
                       {personNameById.get(entry.personId) ?? 'Unknown'}
                     </Link>
-                    <span className="text-slate-500">
-                      {entry.tournamentWins} tournament{entry.tournamentWins === 1 ? '' : 's'} won ·{' '}
-                      {entry.matchWins} match{entry.matchWins === 1 ? '' : 'es'} won
-                    </span>
                   </li>
                 );
               })}
