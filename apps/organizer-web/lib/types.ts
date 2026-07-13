@@ -83,3 +83,18 @@ export type ClaimTheThroneStandingsRow = {
   pointsFor: number;
   pointsAgainst: number;
 };
+
+export type UpAndDownRiverRoundResult = {
+  round: number;
+  court: number;
+  teamAPlayerIds: [string, string];
+  teamBPlayerIds: [string, string];
+  scoreA: number;
+  scoreB: number;
+};
+
+export type UpAndDownRiverPairing = {
+  court: number;
+  teamAPlayerIds: [string, string];
+  teamBPlayerIds: [string, string];
+};
