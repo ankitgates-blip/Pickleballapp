@@ -84,4 +84,14 @@ describe('computeLocationLeaderboard', () => {
 
     expect(result[0].winPercentage).toBeNull();
   });
+
+  it('includes matchesPlayed and derives losses from matchesPlayed minus matchWins', () => {
+    const result = computeLocationLeaderboard([
+      { personId: 'a', tournamentWins: 0, matchWins: 3, matchesPlayed: 5 },
+    ]);
+
+    expect(result[0].matchesPlayed).toBe(5);
+    expect(result[0].matchWins).toBe(3);
+    expect(result[0].losses).toBe(2);
+  });
 });

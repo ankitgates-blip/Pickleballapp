@@ -4,6 +4,8 @@ export type LocationLeaderboardEntry = {
   tournamentWins: number;
   score: number;
   winPercentage: number | null;
+  matchesPlayed: number;
+  losses: number;
 };
 
 type Candidate = {
@@ -36,11 +38,13 @@ export function computeLocationLeaderboard(candidates: Candidate[]): LocationLea
       return b.matchesPlayed - a.matchesPlayed;
     })
     .slice(0, 5)
-    .map(({ personId, matchWins, tournamentWins, score, winPercentage }) => ({
+    .map(({ personId, matchWins, tournamentWins, score, winPercentage, matchesPlayed }) => ({
       personId,
       matchWins,
       tournamentWins,
       score,
       winPercentage,
+      matchesPlayed,
+      losses: matchesPlayed - matchWins,
     }));
 }

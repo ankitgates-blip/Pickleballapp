@@ -134,27 +134,26 @@ export default async function LocationsPage() {
         <div key={venueId} className={`${cardClass} mb-6`}>
           <h2 className="text-lg font-bold text-slate-900 mb-3">{venueName}</h2>
           {leaderboard.length > 0 ? (
-            <ul className="space-y-2 text-sm">
-              {leaderboard.map((entry, i) => {
-                const medal = ['🥇', '🥈', '🥉'][i];
-                return (
-                  <li
-                    key={entry.personId}
-                    className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0"
+            <ul className="space-y-3 text-sm">
+              {leaderboard.map((entry, i) => (
+                <li key={entry.personId} className="border-b border-slate-100 pb-3 last:border-0">
+                  <Link
+                    href={`/people/${entry.personId}`}
+                    className={`flex items-center gap-2 font-semibold hover:underline ${i === 0 ? 'text-base text-slate-900' : 'text-slate-800'}`}
                   >
-                    <Link
-                      href={`/people/${entry.personId}`}
-                      className={`font-semibold hover:underline ${i === 0 ? 'text-base text-slate-900' : 'text-slate-800'}`}
-                    >
-                      {medal && <span className="mr-1.5">{medal}</span>}
-                      {personNameById.get(entry.personId) ?? 'Unknown'}
-                    </Link>
+                    <span className="text-slate-500">{i + 1}.</span>
+                    {personNameById.get(entry.personId) ?? 'Unknown'}
+                  </Link>
+                  <p className="mt-1 font-bold text-slate-900">
+                    {entry.matchesPlayed} match{entry.matchesPlayed === 1 ? '' : 'es'} ·{' '}
+                    {entry.matchWins} win{entry.matchWins === 1 ? '' : 's'} ·{' '}
+                    {entry.losses} loss{entry.losses === 1 ? '' : 'es'}
                     {entry.winPercentage !== null && (
-                      <span className="font-bold text-teal-700">{entry.winPercentage}% wins</span>
+                      <span className="text-teal-700"> · {entry.winPercentage}% winning</span>
                     )}
-                  </li>
-                );
-              })}
+                  </p>
+                </li>
+              ))}
             </ul>
           ) : (
             <p className="text-slate-400 text-sm">No matches played here yet.</p>
