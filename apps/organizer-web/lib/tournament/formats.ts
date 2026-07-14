@@ -15,7 +15,12 @@ export function formatLabel(format: string): string {
   return TOURNAMENT_FORMATS.find((f) => f.value === format)?.label ?? format;
 }
 
-const INDIVIDUAL_FORMATS: readonly string[] = ['popcorn', 'gauntlet', 'claim_the_throne'];
+const INDIVIDUAL_FORMATS: readonly string[] = [
+  'popcorn',
+  'gauntlet',
+  'claim_the_throne',
+  'up_and_down_the_river',
+];
 
 export function isIndividualFormat(format: string): boolean {
   return INDIVIDUAL_FORMATS.includes(format);

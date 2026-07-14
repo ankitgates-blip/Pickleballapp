@@ -95,4 +95,27 @@ describe('isTournamentComplete', () => {
     ];
     expect(isTournamentComplete('claim_the_throne', 4, matches, 2)).toBe(true);
   });
+
+  it('returns false for up_and_down_the_river when fewer rounds than the target have been played', () => {
+    const matches: CompletionCheckMatch[] = [
+      { stage: 'league', status: 'complete', teamBId: 't2', round: 1 },
+    ];
+    expect(isTournamentComplete('up_and_down_the_river', 4, matches, 5)).toBe(false);
+  });
+
+  it('returns false for up_and_down_the_river when the target round exists but its matches are not all complete', () => {
+    const matches: CompletionCheckMatch[] = [
+      { stage: 'league', status: 'complete', teamBId: 't2', round: 1 },
+      { stage: 'league', status: 'pending', teamBId: 't4', round: 2 },
+    ];
+    expect(isTournamentComplete('up_and_down_the_river', 4, matches, 2)).toBe(false);
+  });
+
+  it('returns true for up_and_down_the_river once the target round is reached and all matches are complete', () => {
+    const matches: CompletionCheckMatch[] = [
+      { stage: 'league', status: 'complete', teamBId: 't2', round: 1 },
+      { stage: 'league', status: 'complete', teamBId: 't4', round: 2 },
+    ];
+    expect(isTournamentComplete('up_and_down_the_river', 4, matches, 2)).toBe(true);
+  });
 });
