@@ -7,7 +7,7 @@ import { cardClass, accentButtonClass, linkClass } from '@/app/components/ui';
 import { formatLabel } from '@/lib/tournament/formats';
 import { computeStandings } from '@/lib/tournament/standings';
 import type { MatchResult } from '@/lib/types';
-import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, generateSemifinalMatches, generateFinalMatch } from './actions';
+import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, generateSemifinalMatches, generateFinalMatch } from './actions';
 
 export default async function BracketPage({
   params,
@@ -19,7 +19,9 @@ export default async function BracketPage({
 
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('format, popcorn_rounds, gauntlet_rounds, claim_the_throne_rounds')
+    .select(
+      'format, popcorn_rounds, gauntlet_rounds, claim_the_throne_rounds, up_and_down_the_river_rounds'
+    )
     .eq('id', id)
     .single();
 
@@ -30,13 +32,15 @@ export default async function BracketPage({
   const isPopcorn = format === 'popcorn';
   const isGauntlet = format === 'gauntlet';
   const isClaimTheThrone = format === 'claim_the_throne';
+  const isUpAndDownRiver = format === 'up_and_down_the_river';
   const isSupported =
     isRoundRobin ||
     isLeaguePlayoffs ||
     isDoubleHeader ||
     isPopcorn ||
     isGauntlet ||
-    isClaimTheThrone;
+    isClaimTheThrone ||
+    isUpAndDownRiver;
 
   const { data: teams } = await supabase
     .from('teams')
@@ -81,6 +85,7 @@ export default async function BracketPage({
   const generatePopcornBracketWithId = generatePopcornBracket.bind(null, id);
   const advanceGauntletRoundWithId = advanceGauntletRound.bind(null, id);
   const advanceClaimTheThroneRoundWithId = advanceClaimTheThroneRound.bind(null, id);
+  const advanceUpAndDownRiverRoundWithId = advanceUpAndDownRiverRound.bind(null, id);
   const generateSemifinalMatchesWithId = generateSemifinalMatches.bind(null, id);
   const generateFinalMatchWithId = generateFinalMatch.bind(null, id);
 
@@ -111,6 +116,22 @@ export default async function BracketPage({
     currentClaimTheThroneRoundComplete &&
     currentClaimTheThroneRound < claimTheThroneRounds;
   const claimTheThronePlayerCountValid = playerCount > 0 && playerCount % 4 === 0;
+
+  const upAndDownRiverRounds = tournament?.up_and_down_the_river_rounds ?? 5;
+  const currentUpAndDownRiverRound =
+    leagueMatches.length > 0 ? Math.max(...leagueMatches.map((m) => m.round)) : 0;
+  const currentUpAndDownRiverRoundMatches = leagueMatches.filter(
+    (m) => m.round === currentUpAndDownRiverRound
+  );
+  const currentUpAndDownRiverRoundComplete =
+    currentUpAndDownRiverRoundMatches.length > 0 &&
+    currentUpAndDownRiverRoundMatches.every((m) => m.status === 'complete');
+  const showGenerateNextUpAndDownRiverRound =
+    isUpAndDownRiver &&
+    hasLeagueMatches &&
+    currentUpAndDownRiverRoundComplete &&
+    currentUpAndDownRiverRound < upAndDownRiverRounds;
+  const upAndDownRiverPlayerCountValid = playerCount > 0 && playerCount % 4 === 0;
 
   const showGenerateSemifinals =
     isLeaguePlayoffs && allLeagueComplete && semifinalMatches.length === 0 && teamCount >= 4;
@@ -168,8 +189,8 @@ export default async function BracketPage({
       {!isSupported && (
         <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6">
           {formatLabel(format)} isn't available yet — bracket generation for this format is
-          coming soon. Round Robin, League + Playoffs, Double Header, Popcorn, Gauntlet, and
-          Claim the Throne are the only formats that work today.
+          coming soon. Round Robin, League + Playoffs, Double Header, Popcorn, Gauntlet, Claim
+          the Throne, and Up and Down the River are the only formats that work today.
         </div>
       )}
 
@@ -254,11 +275,48 @@ export default async function BracketPage({
         </form>
       )}
 
+      {isSupported && !hasLeagueMatches && isUpAndDownRiver && !upAndDownRiverPlayerCountValid && (
+        <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
+          Up and Down the River needs a player count that's a multiple of 4 — you have{' '}
+          {playerCount}. Go back and adjust the roster first.
+        </div>
+      )}
+
+      {isSupported && !hasLeagueMatches && isUpAndDownRiver && upAndDownRiverPlayerCountValid && (
+        <form
+          action={advanceUpAndDownRiverRoundWithId}
+          className={`${cardClass} text-center mb-6`}
+        >
+          <p className="text-slate-600 mb-4">
+            {playerCount} players ready. Generate Round 1 of {upAndDownRiverRounds}.
+          </p>
+          <button type="submit" className={accentButtonClass}>
+            Generate Round 1
+          </button>
+        </form>
+      )}
+
+      {showGenerateNextUpAndDownRiverRound && (
+        <form
+          action={advanceUpAndDownRiverRoundWithId}
+          className={`${cardClass} text-center mb-6`}
+        >
+          <p className="text-slate-600 mb-4">
+            Round {currentUpAndDownRiverRound} complete. Generate Round{' '}
+            {currentUpAndDownRiverRound + 1} of {upAndDownRiverRounds}.
+          </p>
+          <button type="submit" className={accentButtonClass}>
+            Generate Round {currentUpAndDownRiverRound + 1}
+          </button>
+        </form>
+      )}
+
       {isSupported &&
         !hasLeagueMatches &&
         !isPopcorn &&
         !isGauntlet &&
         !isClaimTheThrone &&
+        !isUpAndDownRiver &&
         teamCount < 2 && (
         <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
           Need at least 2 teams to generate a bracket — you have {teamCount}. Go back and
@@ -271,6 +329,7 @@ export default async function BracketPage({
         !isPopcorn &&
         !isGauntlet &&
         !isClaimTheThrone &&
+        !isUpAndDownRiver &&
         teamCount >= 2 && (
         <form action={generateBracketWithId} className={`${cardClass} text-center mb-6`}>
           <p className="text-slate-600 mb-4">
