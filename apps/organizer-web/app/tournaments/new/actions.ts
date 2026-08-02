@@ -17,6 +17,8 @@ export async function createTournament(formData: FormData) {
   const gauntletRounds = format === 'gauntlet' ? Number(formData.get('gauntletRounds')) : null;
   const claimTheThroneRounds =
     format === 'claim_the_throne' ? Number(formData.get('claimTheThroneRounds')) : null;
+  const upAndDownRiverRounds =
+    format === 'up_and_down_the_river' ? Number(formData.get('upAndDownRiverRounds')) : null;
 
   const { data: tournament, error } = await supabase
     .from('tournaments')
@@ -32,6 +34,7 @@ export async function createTournament(formData: FormData) {
       popcorn_rounds: popcornRounds,
       gauntlet_rounds: gauntletRounds,
       claim_the_throne_rounds: claimTheThroneRounds,
+      up_and_down_the_river_rounds: upAndDownRiverRounds,
     })
     .select('id')
     .single();
