@@ -12,6 +12,8 @@ import type { ClaimTheThroneRoundResult, MatchResult, Team } from '@/lib/types';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass } from '@/app/components/ui';
 
+type LadderRoundResult = ClaimTheThroneRoundResult;
+
 const STAGE_LABELS: Record<string, string> = {
   league: 'League',
   semifinal: 'Semifinal',
@@ -84,6 +86,8 @@ export default async function ResultsPage({
 
   const isLeaguePlayoffs = tournament.format === 'league_playoffs';
   const isClaimTheThrone = tournament.format === 'claim_the_throne';
+  const isUpAndDownRiver = tournament.format === 'up_and_down_the_river';
+  const isLadderFormat = isClaimTheThrone || isUpAndDownRiver;
   const isIndividualFormat = isIndividualFormatCheck(tournament.format);
 
   const teamsForIndividual: Team[] = (teams ?? []).map((t) => ({
@@ -92,12 +96,12 @@ export default async function ResultsPage({
     player1Id: t.player_1_id,
     player2Id: t.player_2_id,
   }));
-  const individualStandings = isIndividualFormat && !isClaimTheThrone
+  const individualStandings = isIndividualFormat && !isLadderFormat
     ? computeIndividualStandings(leagueMatchResults, teamsForIndividual)
     : [];
 
   const teamById2 = new Map((teams ?? []).map((t) => [t.id, t]));
-  const claimTheThroneMatches: ClaimTheThroneRoundResult[] = isClaimTheThrone
+  const ladderMatches: LadderRoundResult[] = isLadderFormat
     ? leagueMatches
         .filter(
           (m): m is typeof m & { team_a_id: string; team_b_id: string; court: number; score_a: number; score_b: number } =>
@@ -120,11 +124,11 @@ export default async function ResultsPage({
           };
         })
     : [];
-  const numCourts = claimTheThroneMatches.length > 0
-    ? Math.max(...claimTheThroneMatches.map((m) => m.court))
+  const numCourts = ladderMatches.length > 0
+    ? Math.max(...ladderMatches.map((m) => m.court))
     : 0;
-  const claimTheThroneStandings = isClaimTheThrone
-    ? computeClaimTheThroneStandings(claimTheThroneMatches, numCourts)
+  const ladderStandings = isLadderFormat
+    ? computeClaimTheThroneStandings(ladderMatches, numCourts)
     : [];
 
   const finalMatch = finalMatches[0];
@@ -136,8 +140,8 @@ export default async function ResultsPage({
       : standings[0]?.teamId
     : undefined;
   const championPlayerId = tournament.completed_at
-    ? isClaimTheThrone
-      ? claimTheThroneStandings[0]?.playerId
+    ? isLadderFormat
+      ? ladderStandings[0]?.playerId
       : isIndividualFormat
         ? individualStandings[0]?.playerId
         : undefined
@@ -230,7 +234,7 @@ export default async function ResultsPage({
 
       <div className={`${cardClass} mb-6 overflow-x-auto`}>
         <h2 className="text-lg font-bold text-slate-900 mb-3">
-          {isClaimTheThrone
+          {isLadderFormat
             ? 'Ladder Standings'
             : isIndividualFormat
               ? 'Individual Standings'
@@ -242,19 +246,19 @@ export default async function ResultsPage({
           <thead>
             <tr className="text-left text-slate-500 border-b border-slate-200">
               <th className="pb-2 font-semibold">{isIndividualFormat ? 'Player' : 'Team'}</th>
-              {isClaimTheThrone && (
+              {isLadderFormat && (
                 <th className="pb-2 font-semibold text-center">Ladder Pts</th>
               )}
               <th className="pb-2 font-semibold text-center">W</th>
               <th className="pb-2 font-semibold text-center">L</th>
               <th className="pb-2 font-semibold text-center">
-                {isClaimTheThrone ? 'Avg Diff' : 'Point Diff'}
+                {isLadderFormat ? 'Avg Diff' : 'Point Diff'}
               </th>
             </tr>
           </thead>
           <tbody>
-            {isClaimTheThrone
-              ? claimTheThroneStandings.map((s, i) => {
+            {isLadderFormat
+              ? ladderStandings.map((s, i) => {
                   const medal = ['🥇', '🥈', '🥉'][i];
                   const games = s.wins + s.losses;
                   const avgDiff = games > 0 ? (s.pointsFor - s.pointsAgainst) / games : 0;
