@@ -11,6 +11,8 @@ import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass } from '@/app/components/ui';
 import CopyLinkButton from './CopyLinkButton';
 
+type LadderRoundResult = ClaimTheThroneRoundResult;
+
 export default async function StandingsPage({
   params,
 }: {
@@ -26,6 +28,8 @@ export default async function StandingsPage({
     .single();
 
   const isClaimTheThrone = tournament?.format === 'claim_the_throne';
+  const isUpAndDownRiver = tournament?.format === 'up_and_down_the_river';
+  const isLadderFormat = isClaimTheThrone || isUpAndDownRiver;
   const isIndividualFormat = isIndividualFormatCheck(tournament?.format ?? '');
 
   const { data: teams } = await supabase
@@ -67,12 +71,12 @@ export default async function StandingsPage({
   }));
 
   const standings = computeStandings(matchResults);
-  const individualStandings = isIndividualFormat && !isClaimTheThrone
+  const individualStandings = isIndividualFormat && !isLadderFormat
     ? computeIndividualStandings(matchResults, teamsForIndividual)
     : [];
 
   const teamById2 = new Map((teams ?? []).map((t) => [t.id, t]));
-  const claimTheThroneMatches: ClaimTheThroneRoundResult[] = isClaimTheThrone
+  const ladderMatches: LadderRoundResult[] = isLadderFormat
     ? (matches ?? [])
         .filter(
           (m): m is typeof m & { team_a_id: string; team_b_id: string; court: number; score_a: number; score_b: number } =>
@@ -95,11 +99,11 @@ export default async function StandingsPage({
           };
         })
     : [];
-  const numCourts = claimTheThroneMatches.length > 0
-    ? Math.max(...claimTheThroneMatches.map((m) => m.court))
+  const numCourts = ladderMatches.length > 0
+    ? Math.max(...ladderMatches.map((m) => m.court))
     : 0;
-  const claimTheThroneStandings = isClaimTheThrone
-    ? computeClaimTheThroneStandings(claimTheThroneMatches, numCourts)
+  const ladderStandings = isLadderFormat
+    ? computeClaimTheThroneStandings(ladderMatches, numCourts)
     : [];
 
   return (
@@ -115,19 +119,19 @@ export default async function StandingsPage({
           <thead>
             <tr className="text-left text-slate-500 border-b border-slate-200">
               <th className="pb-2 font-semibold">{isIndividualFormat ? 'Player' : 'Team'}</th>
-              {isClaimTheThrone && (
+              {isLadderFormat && (
                 <th className="pb-2 font-semibold text-center">Ladder Pts</th>
               )}
               <th className="pb-2 font-semibold text-center">W</th>
               <th className="pb-2 font-semibold text-center">L</th>
               <th className="pb-2 font-semibold text-center">
-                {isClaimTheThrone ? 'Avg Diff' : 'Point Diff'}
+                {isLadderFormat ? 'Avg Diff' : 'Point Diff'}
               </th>
             </tr>
           </thead>
           <tbody>
-            {isClaimTheThrone
-              ? claimTheThroneStandings.map((s, i) => {
+            {isLadderFormat
+              ? ladderStandings.map((s, i) => {
                   const medal = ['🥇', '🥈', '🥉'][i];
                   const games = s.wins + s.losses;
                   const avgDiff = games > 0 ? (s.pointsFor - s.pointsAgainst) / games : 0;
