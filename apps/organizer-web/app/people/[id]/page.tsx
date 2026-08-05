@@ -6,6 +6,7 @@ import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computePersonStats } from '@/lib/stats/personStats';
 import { starRating, renderStars } from '@/lib/stats/starRating';
 import { computeStandings } from '@/lib/tournament/standings';
+import { isIndividualFormat } from '@/lib/tournament/formats';
 import { renderTrend, trendColorClass } from '@/lib/stats/trend';
 import type { RawMatch, RawTeam, TournamentWon } from '@/lib/stats/types';
 import type { MatchResult } from '@/lib/types';
@@ -35,11 +36,12 @@ export default async function PersonDetailPage({
 
   const { data: tournaments } = await supabase
     .from('tournaments')
-    .select('id, name, date, venues(name)')
+    .select('id, name, date, format, venues(name)')
     .eq('organizer_id', organizer.id);
 
   const tournamentIds = (tournaments ?? []).map((t) => t.id);
   const tournamentDateById = new Map((tournaments ?? []).map((t) => [t.id, t.date]));
+  const tournamentFormatById = new Map((tournaments ?? []).map((t) => [t.id, t.format]));
   const venueNameByTournamentId = new Map(
     (tournaments ?? []).map((t) => {
       const venue = t.venues as { name: string } | { name: string }[] | null;
@@ -112,6 +114,9 @@ export default async function PersonDetailPage({
   // tested computeStandings per tournament rather than re-deriving ranking logic here.
   const tournamentsWon: TournamentWon[] = [];
   for (const tournamentId of tournamentIds) {
+    const format = tournamentFormatById.get(tournamentId);
+    if (format && isIndividualFormat(format)) continue;
+
     const tournamentTeams = teams.filter((t) => t.tournamentId === tournamentId);
     const myTeam = tournamentTeams.find(
       (t) => t.player1PersonId === person.id || t.player2PersonId === person.id
