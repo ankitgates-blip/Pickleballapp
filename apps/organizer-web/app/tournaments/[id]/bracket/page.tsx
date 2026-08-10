@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
-import { cardClass, accentButtonClass, linkClass } from '@/app/components/ui';
+import { cardClass, accentButtonClass, linkClass, inputClass } from '@/app/components/ui';
 import { formatLabel } from '@/lib/tournament/formats';
 import { computeStandings } from '@/lib/tournament/standings';
 import type { MatchResult } from '@/lib/types';
@@ -132,6 +132,8 @@ export default async function BracketPage({
     currentUpAndDownRiverRoundComplete &&
     currentUpAndDownRiverRound < upAndDownRiverRounds;
   const upAndDownRiverPlayerCountValid = playerCount > 0 && playerCount % 4 === 0;
+
+  const leaguePlayoffsFullRounds = teamCount % 2 === 0 ? teamCount - 1 : teamCount;
 
   const showGenerateSemifinals =
     isLeaguePlayoffs && allLeagueComplete && semifinalMatches.length === 0 && teamCount >= 4;
@@ -317,6 +319,7 @@ export default async function BracketPage({
         !isGauntlet &&
         !isClaimTheThrone &&
         !isUpAndDownRiver &&
+        !isLeaguePlayoffs &&
         teamCount < 2 && (
         <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
           Need at least 2 teams to generate a bracket — you have {teamCount}. Go back and
@@ -330,11 +333,47 @@ export default async function BracketPage({
         !isGauntlet &&
         !isClaimTheThrone &&
         !isUpAndDownRiver &&
+        !isLeaguePlayoffs &&
         teamCount >= 2 && (
         <form action={generateBracketWithId} className={`${cardClass} text-center mb-6`}>
           <p className="text-slate-600 mb-4">
             {teamCount} teams ready. Generate a round-robin league schedule.
           </p>
+          <button type="submit" className={accentButtonClass}>
+            Generate League Bracket
+          </button>
+        </form>
+      )}
+
+      {isSupported && !hasLeagueMatches && isLeaguePlayoffs && teamCount < 2 && (
+        <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
+          Need at least 2 teams to generate a bracket — you have {teamCount}. Go back and
+          pair more teams first.
+        </div>
+      )}
+
+      {isSupported && !hasLeagueMatches && isLeaguePlayoffs && teamCount >= 2 && (
+        <form action={generateBracketWithId} className={`${cardClass} text-center mb-6`}>
+          <p className="text-slate-600 mb-4">
+            {teamCount} teams ready. Generate a round-robin league schedule.
+          </p>
+          <div className="mb-4 max-w-[140px] mx-auto text-left">
+            <label className="block text-sm font-semibold text-slate-700 mb-1">
+              Number of rounds
+            </label>
+            <input
+              name="rounds"
+              type="number"
+              defaultValue={leaguePlayoffsFullRounds}
+              min={1}
+              max={leaguePlayoffsFullRounds}
+              className={inputClass}
+            />
+            <p className="text-xs text-slate-400 mt-1">
+              Full round-robin is {leaguePlayoffsFullRounds}{' '}
+              round{leaguePlayoffsFullRounds === 1 ? '' : 's'}.
+            </p>
+          </div>
           <button type="submit" className={accentButtonClass}>
             Generate League Bracket
           </button>

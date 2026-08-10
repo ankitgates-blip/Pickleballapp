@@ -17,7 +17,7 @@ import type {
   UpAndDownRiverRoundResult,
 } from '@/lib/types';
 
-export async function generateBracket(tournamentId: string) {
+export async function generateBracket(tournamentId: string, formData?: FormData) {
   const { supabase } = await requireOrganizer();
 
   const { data: teams, error: teamsError } = await supabase
@@ -48,8 +48,25 @@ export async function generateBracket(tournamentId: string) {
       ? generateDoubleHeaderRoundRobin(teams.map((t) => t.id))
       : generateRoundRobin(teams.map((t) => t.id));
 
+  // League + Playoffs is the only format that lets the organizer stop short of
+  // a full round-robin. Round Robin and Double Header always insert every
+  // generated pairing, exactly as before.
+  const limitedPairings =
+    tournament?.format === 'league_playoffs'
+      ? (() => {
+          const teamCount = teams.length;
+          const fullRounds = teamCount % 2 === 0 ? teamCount - 1 : teamCount;
+          const requested = Number(formData?.get('rounds'));
+          const chosenRounds =
+            Number.isFinite(requested) && requested >= 1
+              ? Math.min(fullRounds, Math.floor(requested))
+              : fullRounds;
+          return pairings.filter((p) => p.round <= chosenRounds);
+        })()
+      : pairings;
+
   const { error: matchesError } = await supabase.from('matches').insert(
-    pairings.map((p) => ({
+    limitedPairings.map((p) => ({
       tournament_id: tournamentId,
       round: p.round,
       stage: 'league' as const,
