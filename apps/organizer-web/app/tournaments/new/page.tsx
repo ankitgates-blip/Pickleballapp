@@ -1,9 +1,9 @@
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, inputClass, accentButtonClass } from '@/app/components/ui';
-import { TOURNAMENT_FORMATS } from '@/lib/tournament/formats';
 import { TIME_SLOTS } from '@/lib/tournament/timeslots';
 import { createTournament } from './actions';
+import FormatFields from './FormatFields';
 
 export default async function NewTournamentPage() {
   const { supabase, organizer } = await requireOrganizer();
@@ -25,16 +25,7 @@ export default async function NewTournamentPage() {
             <label className="block text-sm font-semibold text-slate-700 mb-1">Date</label>
             <input name="date" type="date" required className={inputClass} />
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Format</label>
-            <select name="format" required defaultValue="round_robin" className={inputClass}>
-              {TOURNAMENT_FORMATS.map((f) => (
-                <option key={f.value} value={f.value}>
-                  {f.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <FormatFields />
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1">Location</label>
             <select name="venueId" required defaultValue="" className={inputClass}>
@@ -72,30 +63,6 @@ export default async function NewTournamentPage() {
               <label className="block text-sm font-semibold text-slate-700 mb-1">Win by</label>
               <input name="winBy" type="number" defaultValue={2} required className={inputClass} />
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">
-              Number of rounds (Popcorn only)
-            </label>
-            <input name="popcornRounds" type="number" defaultValue={5} min={1} className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">
-              Number of rounds (Gauntlet only)
-            </label>
-            <input name="gauntletRounds" type="number" defaultValue={5} min={1} className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">
-              Number of rounds (Claim the Throne only)
-            </label>
-            <input name="claimTheThroneRounds" type="number" defaultValue={5} min={1} className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">
-              Number of rounds (Up and Down the River only)
-            </label>
-            <input name="upAndDownRiverRounds" type="number" defaultValue={5} min={1} className={inputClass} />
           </div>
           <button type="submit" className={`${accentButtonClass} w-full`}>
             Create Tournament
