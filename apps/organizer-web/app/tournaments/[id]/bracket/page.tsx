@@ -7,7 +7,7 @@ import { cardClass, accentButtonClass, linkClass, inputClass } from '@/app/compo
 import { formatLabel } from '@/lib/tournament/formats';
 import { computeStandings } from '@/lib/tournament/standings';
 import type { MatchResult } from '@/lib/types';
-import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, generateSemifinalMatches, generateFinalMatch } from './actions';
+import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, advanceLeaguePlayoffsRound, generateSemifinalMatches, generateFinalMatch } from './actions';
 
 export default async function BracketPage({
   params,
@@ -20,7 +20,7 @@ export default async function BracketPage({
   const { data: tournament } = await supabase
     .from('tournaments')
     .select(
-      'format, popcorn_rounds, gauntlet_rounds, claim_the_throne_rounds, up_and_down_the_river_rounds'
+      'format, popcorn_rounds, gauntlet_rounds, claim_the_throne_rounds, up_and_down_the_river_rounds, league_playoffs_rounds'
     )
     .eq('id', id)
     .single();
@@ -86,6 +86,7 @@ export default async function BracketPage({
   const advanceGauntletRoundWithId = advanceGauntletRound.bind(null, id);
   const advanceClaimTheThroneRoundWithId = advanceClaimTheThroneRound.bind(null, id);
   const advanceUpAndDownRiverRoundWithId = advanceUpAndDownRiverRound.bind(null, id);
+  const advanceLeaguePlayoffsRoundWithId = advanceLeaguePlayoffsRound.bind(null, id);
   const generateSemifinalMatchesWithId = generateSemifinalMatches.bind(null, id);
   const generateFinalMatchWithId = generateFinalMatch.bind(null, id);
 
@@ -134,9 +135,28 @@ export default async function BracketPage({
   const upAndDownRiverPlayerCountValid = playerCount > 0 && playerCount % 4 === 0;
 
   const leaguePlayoffsFullRounds = teamCount % 2 === 0 ? teamCount - 1 : teamCount;
+  const leaguePlayoffsRounds = tournament?.league_playoffs_rounds ?? leaguePlayoffsFullRounds;
+  const currentLeaguePlayoffsRound =
+    leagueMatches.length > 0 ? Math.max(...leagueMatches.map((m) => m.round)) : 0;
+  const currentLeaguePlayoffsRoundMatches = leagueMatches.filter(
+    (m) => m.round === currentLeaguePlayoffsRound
+  );
+  const currentLeaguePlayoffsRoundComplete =
+    currentLeaguePlayoffsRoundMatches.length > 0 &&
+    currentLeaguePlayoffsRoundMatches.every((m) => m.status === 'complete');
+  const showGenerateNextLeaguePlayoffsRound =
+    isLeaguePlayoffs &&
+    hasLeagueMatches &&
+    currentLeaguePlayoffsRoundComplete &&
+    currentLeaguePlayoffsRound < leaguePlayoffsRounds;
+  const leaguePlayoffsRoundsComplete = currentLeaguePlayoffsRound >= leaguePlayoffsRounds;
 
   const showGenerateSemifinals =
-    isLeaguePlayoffs && allLeagueComplete && semifinalMatches.length === 0 && teamCount >= 4;
+    isLeaguePlayoffs &&
+    allLeagueComplete &&
+    leaguePlayoffsRoundsComplete &&
+    semifinalMatches.length === 0 &&
+    teamCount >= 4;
   const showGenerateFinal = isLeaguePlayoffs && allSemifinalComplete && !hasFinalMatch;
 
   const leagueStandings = isLeaguePlayoffs
@@ -353,9 +373,12 @@ export default async function BracketPage({
       )}
 
       {isSupported && !hasLeagueMatches && isLeaguePlayoffs && teamCount >= 2 && (
-        <form action={generateBracketWithId} className={`${cardClass} text-center mb-6`}>
+        <form
+          action={advanceLeaguePlayoffsRoundWithId}
+          className={`${cardClass} text-center mb-6`}
+        >
           <p className="text-slate-600 mb-4">
-            {teamCount} teams ready. Generate a round-robin league schedule.
+            {teamCount} teams ready. Generate Round 1 of {leaguePlayoffsFullRounds}.
           </p>
           <div className="mb-4 max-w-[140px] mx-auto text-left">
             <label className="block text-sm font-semibold text-slate-700 mb-1">
@@ -375,7 +398,22 @@ export default async function BracketPage({
             </p>
           </div>
           <button type="submit" className={accentButtonClass}>
-            Generate League Bracket
+            Generate Round 1
+          </button>
+        </form>
+      )}
+
+      {showGenerateNextLeaguePlayoffsRound && (
+        <form
+          action={advanceLeaguePlayoffsRoundWithId}
+          className={`${cardClass} text-center mb-6`}
+        >
+          <p className="text-slate-600 mb-4">
+            Round {currentLeaguePlayoffsRound} complete. Generate Round{' '}
+            {currentLeaguePlayoffsRound + 1} of {leaguePlayoffsRounds}.
+          </p>
+          <button type="submit" className={accentButtonClass}>
+            Generate Round {currentLeaguePlayoffsRound + 1}
           </button>
         </form>
       )}
@@ -393,7 +431,7 @@ export default async function BracketPage({
         </div>
       )}
 
-      {isLeaguePlayoffs && allLeagueComplete && teamCount < 4 && (
+      {isLeaguePlayoffs && allLeagueComplete && leaguePlayoffsRoundsComplete && teamCount < 4 && (
         <div className="rounded-lg bg-teal-50 border border-teal-200 text-teal-800 text-sm px-4 py-3 mb-6">
           Fewer than 4 teams — no playoff stage. League standings decide the champion.
         </div>

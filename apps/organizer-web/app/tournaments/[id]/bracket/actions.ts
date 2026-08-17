@@ -17,7 +17,7 @@ import type {
   UpAndDownRiverRoundResult,
 } from '@/lib/types';
 
-export async function generateBracket(tournamentId: string, formData?: FormData) {
+export async function generateBracket(tournamentId: string) {
   const { supabase } = await requireOrganizer();
 
   const { data: teams, error: teamsError } = await supabase
@@ -48,26 +48,103 @@ export async function generateBracket(tournamentId: string, formData?: FormData)
       ? generateDoubleHeaderRoundRobin(teams.map((t) => t.id))
       : generateRoundRobin(teams.map((t) => t.id));
 
-  // League + Playoffs is the only format that lets the organizer stop short of
-  // a full round-robin. Round Robin and Double Header always insert every
-  // generated pairing, exactly as before.
-  const limitedPairings =
-    tournament?.format === 'league_playoffs'
-      ? (() => {
-          const teamCount = teams.length;
-          const fullRounds = teamCount % 2 === 0 ? teamCount - 1 : teamCount;
-          const rawRounds = formData?.get('rounds');
-          const requested =
-            typeof rawRounds === 'string' && rawRounds.trim() !== '' ? Number(rawRounds) : NaN;
-          const chosenRounds = Number.isFinite(requested)
-            ? Math.max(1, Math.min(fullRounds, Math.floor(requested)))
-            : fullRounds;
-          return pairings.filter((p) => p.round <= chosenRounds);
-        })()
-      : pairings;
+  const { error: matchesError } = await supabase.from('matches').insert(
+    pairings.map((p) => ({
+      tournament_id: tournamentId,
+      round: p.round,
+      stage: 'league' as const,
+      team_a_id: p.teamAId,
+      team_b_id: p.teamBId,
+      status: 'pending' as const,
+    }))
+  );
+
+  if (matchesError) {
+    throw new Error(matchesError.message);
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}/bracket`);
+}
+
+export async function advanceLeaguePlayoffsRound(tournamentId: string, formData?: FormData) {
+  const { supabase } = await requireOrganizer();
+
+  const { data: teams, error: teamsError } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('tournament_id', tournamentId)
+    .order('id', { ascending: true });
+
+  if (teamsError) {
+    throw new Error(teamsError.message);
+  }
+
+  if (!teams || teams.length < 2) {
+    throw new Error('Need at least 2 teams to generate a bracket');
+  }
+
+  const { data: existingMatches, error: existingMatchesError } = await supabase
+    .from('matches')
+    .select('round')
+    .eq('tournament_id', tournamentId)
+    .eq('stage', 'league');
+
+  if (existingMatchesError) {
+    throw new Error(existingMatchesError.message);
+  }
+
+  const currentRound =
+    existingMatches && existingMatches.length > 0
+      ? Math.max(...existingMatches.map((m) => m.round))
+      : 0;
+
+  const teamCount = teams.length;
+  const fullRounds = teamCount % 2 === 0 ? teamCount - 1 : teamCount;
+
+  let targetRounds: number;
+
+  if (currentRound === 0) {
+    const rawRounds = formData?.get('rounds');
+    const requested =
+      typeof rawRounds === 'string' && rawRounds.trim() !== '' ? Number(rawRounds) : NaN;
+    targetRounds = Number.isFinite(requested)
+      ? Math.max(1, Math.min(fullRounds, Math.floor(requested)))
+      : fullRounds;
+
+    const { error: updateError } = await supabase
+      .from('tournaments')
+      .update({ league_playoffs_rounds: targetRounds })
+      .eq('id', tournamentId);
+
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+  } else {
+    const { data: tournament, error: tournamentError } = await supabase
+      .from('tournaments')
+      .select('league_playoffs_rounds')
+      .eq('id', tournamentId)
+      .single();
+
+    if (tournamentError) {
+      throw new Error(tournamentError.message);
+    }
+
+    targetRounds = tournament?.league_playoffs_rounds ?? fullRounds;
+  }
+
+  const nextRound = currentRound + 1;
+
+  if (nextRound > targetRounds) {
+    return;
+  }
+
+  const pairings = generateRoundRobin(teams.map((t) => t.id)).filter(
+    (p) => p.round === nextRound
+  );
 
   const { error: matchesError } = await supabase.from('matches').insert(
-    limitedPairings.map((p) => ({
+    pairings.map((p) => ({
       tournament_id: tournamentId,
       round: p.round,
       stage: 'league' as const,
