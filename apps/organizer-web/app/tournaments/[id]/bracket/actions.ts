@@ -56,10 +56,12 @@ export async function generateBracket(tournamentId: string, formData?: FormData)
       ? (() => {
           const teamCount = teams.length;
           const fullRounds = teamCount % 2 === 0 ? teamCount - 1 : teamCount;
-          const requested = Number(formData?.get('rounds'));
-          const chosenRounds = !Number.isFinite(requested)
-            ? fullRounds
-            : Math.max(1, Math.min(fullRounds, Math.floor(requested)));
+          const rawRounds = formData?.get('rounds');
+          const requested =
+            typeof rawRounds === 'string' && rawRounds.trim() !== '' ? Number(rawRounds) : NaN;
+          const chosenRounds = Number.isFinite(requested)
+            ? Math.max(1, Math.min(fullRounds, Math.floor(requested)))
+            : fullRounds;
           return pairings.filter((p) => p.round <= chosenRounds);
         })()
       : pairings;
