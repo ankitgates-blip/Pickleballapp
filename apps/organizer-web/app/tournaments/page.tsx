@@ -122,10 +122,7 @@ export default async function TournamentsPage() {
               const playerCount = playerCountByTournament.get(t.id) ?? 0;
               return (
                 <li key={t.id}>
-                  <Link
-                    href={`/tournaments/${t.id}/results`}
-                    className={`${cardClass} block hover:border-teal-400 transition-colors`}
-                  >
+                  <div className={cardClass}>
                     <div className="font-extrabold text-base text-slate-900 mb-1.5">
                       🏆 {t.name}
                     </div>
@@ -136,7 +133,19 @@ export default async function TournamentsPage() {
                       <span>📅 {t.date}</span>
                       <span>🎯 {formatLabel(t.format)}</span>
                     </div>
-                  </Link>
+                    <div className="flex items-center justify-between mt-2">
+                      <Link
+                        href={`/tournaments/${t.id}/results`}
+                        className="text-xs font-bold text-teal-700 hover:underline"
+                      >
+                        View results →
+                      </Link>
+                      <CancelTournamentButton
+                        tournamentName={t.name}
+                        cancelAction={cancelTournament.bind(null, t.id)}
+                      />
+                    </div>
+                  </div>
                 </li>
               );
             })}
