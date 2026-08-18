@@ -320,7 +320,7 @@ export default async function ResultsPage({
                       <td className="py-2 text-center text-teal-700 font-extrabold">{s.wins}</td>
                       <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
                       <td className="py-2 text-center font-bold">
-                        {avgDiff > 0 ? '+' : ''}
+                        {avgDiff >= 0 ? '+' : ''}
                         {avgDiff.toFixed(1)}
                       </td>
                     </tr>

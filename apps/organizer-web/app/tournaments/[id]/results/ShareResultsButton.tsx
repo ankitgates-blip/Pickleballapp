@@ -29,12 +29,12 @@ export default function ShareResultsButton({
   standingsRows,
   matchGroups,
 }: ShareResultsButtonProps) {
-  const [status, setStatus] = useState<'idle' | 'generating' | 'unsupported'>('idle');
+  const [status, setStatus] = useState<'idle' | 'generating' | 'unsupported' | 'error'>('idle');
 
   const handleClick = async () => {
     setStatus('generating');
     try {
-      const [{ default: jsPDF }] = await Promise.all([
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
         import('jspdf'),
         import('jspdf-autotable'),
       ]);
@@ -71,8 +71,7 @@ export default function ShareResultsButton({
           : [String(r.rank), r.name, String(r.wins), String(r.losses), r.diffLabel]
       );
 
-      // @ts-expect-error -- autoTable attaches itself to the jsPDF instance as a side effect of the import above
-      doc.autoTable({ startY: y, head: standingsHead, body: standingsBody });
+      autoTable(doc, { startY: y, head: standingsHead, body: standingsBody });
       // @ts-expect-error -- autoTable augments jsPDF's instance type with lastAutoTable at runtime
       y = doc.lastAutoTable.finalY + 8;
 
@@ -86,8 +85,7 @@ export default function ShareResultsButton({
           m.teamBName,
           m.scoreLabel,
         ]);
-        // @ts-expect-error -- see above
-        doc.autoTable({ startY: y + 4, head: [['Round', 'Team A', 'Team B', 'Score']], body });
+        autoTable(doc, { startY: y + 4, head: [['Round', 'Team A', 'Team B', 'Score']], body });
         // @ts-expect-error -- see above
         y = doc.lastAutoTable.finalY + 8;
       }
@@ -114,8 +112,9 @@ export default function ShareResultsButton({
       }
 
       setStatus('idle');
-    } catch {
-      setStatus('idle');
+    } catch (err) {
+      console.error(err);
+      setStatus('error');
     }
   };
 
@@ -132,6 +131,11 @@ export default function ShareResultsButton({
       {status === 'unsupported' && (
         <p className="text-xs text-slate-500 mt-1.5">
           Downloaded — this browser doesn't support direct sharing. Attach the file to WhatsApp manually.
+        </p>
+      )}
+      {status === 'error' && (
+        <p className="text-xs text-red-600 mt-1.5">
+          Something went wrong generating the PDF. Try again.
         </p>
       )}
     </div>
