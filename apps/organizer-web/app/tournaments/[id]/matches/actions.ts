@@ -62,7 +62,8 @@ export async function enterScore(
         : tournament?.format === 'up_and_down_the_river'
           ? (tournament?.up_and_down_the_river_rounds ?? 5)
           : tournament?.format === 'league_playoffs'
-            ? (tournament?.league_playoffs_rounds ?? undefined)
+            ? (tournament?.league_playoffs_rounds ??
+                ((teamCount ?? 0) % 2 === 0 ? (teamCount ?? 0) - 1 : (teamCount ?? 0)))
             : undefined;
 
   const complete = isTournamentComplete(
