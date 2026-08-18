@@ -19,30 +19,44 @@ export default async function TournamentsPage() {
     .order('date', { ascending: false });
 
   const tournamentIds = (tournaments ?? []).map((t) => t.id);
-  const completedTournamentIds = (tournaments ?? [])
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const upcoming = (tournaments ?? [])
+    .filter((t) => !t.completed_at)
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+
+  const RECENTLY_COMPLETED_LIMIT = 10;
+  const recentlyCompleted = (tournaments ?? [])
     .filter((t) => Boolean(t.completed_at))
-    .map((t) => t.id);
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .slice(0, RECENTLY_COMPLETED_LIMIT);
 
-  const { data: players } = tournamentIds.length
-    ? await supabase
-        .from('players')
-        .select('id, tournament_id, name')
-        .in('tournament_id', tournamentIds)
-    : { data: [] };
+  const completedTournamentIds = recentlyCompleted.map((t) => t.id);
 
-  const { data: completedTeams } = completedTournamentIds.length
-    ? await supabase
-        .from('teams')
-        .select('id, tournament_id, player_1_id, player_2_id')
-        .in('tournament_id', completedTournamentIds)
-    : { data: [] };
-
-  const { data: completedMatches } = completedTournamentIds.length
-    ? await supabase
-        .from('matches')
-        .select('tournament_id, stage, team_a_id, team_b_id, score_a, score_b, status, round, court')
-        .in('tournament_id', completedTournamentIds)
-    : { data: [] };
+  const [{ data: players }, { data: completedTeams }, { data: completedMatches }] =
+    await Promise.all([
+      tournamentIds.length
+        ? supabase
+            .from('players')
+            .select('id, tournament_id, name')
+            .in('tournament_id', tournamentIds)
+        : { data: [] },
+      completedTournamentIds.length
+        ? supabase
+            .from('teams')
+            .select('id, tournament_id, player_1_id, player_2_id')
+            .in('tournament_id', completedTournamentIds)
+        : { data: [] },
+      completedTournamentIds.length
+        ? supabase
+            .from('matches')
+            .select('tournament_id, stage, team_a_id, team_b_id, score_a, score_b, status, round, court')
+            .in('tournament_id', completedTournamentIds)
+            .order('round', { ascending: true })
+        : { data: [] },
+    ]);
 
   const playerCountByTournament = new Map<string, number>();
   for (const p of players ?? []) {
@@ -96,17 +110,6 @@ export default async function TournamentsPage() {
     });
     matchesByTournament.set(m.tournament_id, list);
   }
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const upcoming = (tournaments ?? [])
-    .filter((t) => !t.completed_at)
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
-
-  const recentlyCompleted = (tournaments ?? [])
-    .filter((t) => Boolean(t.completed_at))
-    .sort((a, b) => (a.date < b.date ? 1 : -1));
 
   const venueNameFor = (t: { venues: unknown }) => {
     const venue = t.venues as { name: string } | { name: string }[] | null;
