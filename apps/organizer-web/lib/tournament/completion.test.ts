@@ -19,11 +19,27 @@ describe('isTournamentComplete', () => {
     expect(isTournamentComplete('round_robin', 2, matches)).toBe(true);
   });
 
-  it('treats league_playoffs with fewer than 4 teams like a normal single-stage format', () => {
+  it('returns false for league_playoffs with fewer than 4 teams when fewer rounds than the target have been played', () => {
     const matches: CompletionCheckMatch[] = [
       { stage: 'league', status: 'complete', teamBId: 't2', round: 1 },
     ];
-    expect(isTournamentComplete('league_playoffs', 3, matches)).toBe(true);
+    expect(isTournamentComplete('league_playoffs', 3, matches, 5)).toBe(false);
+  });
+
+  it('returns false for league_playoffs with fewer than 4 teams when the target round exists but its matches are not all complete', () => {
+    const matches: CompletionCheckMatch[] = [
+      { stage: 'league', status: 'complete', teamBId: 't2', round: 1 },
+      { stage: 'league', status: 'pending', teamBId: 't3', round: 2 },
+    ];
+    expect(isTournamentComplete('league_playoffs', 3, matches, 2)).toBe(false);
+  });
+
+  it('returns true for league_playoffs with fewer than 4 teams once the target round is reached and all matches are complete', () => {
+    const matches: CompletionCheckMatch[] = [
+      { stage: 'league', status: 'complete', teamBId: 't2', round: 1 },
+      { stage: 'league', status: 'complete', teamBId: 't3', round: 2 },
+    ];
+    expect(isTournamentComplete('league_playoffs', 3, matches, 2)).toBe(true);
   });
 
   it('returns false for league_playoffs with 4+ teams when league is done but no final exists yet', () => {

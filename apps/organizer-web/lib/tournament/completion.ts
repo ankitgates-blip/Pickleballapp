@@ -14,7 +14,12 @@ export function isTournamentComplete(
   const realMatches = matches.filter((m) => m.teamBId !== null);
   const allComplete = realMatches.length > 0 && realMatches.every((m) => m.status === 'complete');
 
-  if (format === 'gauntlet' || format === 'claim_the_throne' || format === 'up_and_down_the_river') {
+  if (
+    format === 'gauntlet' ||
+    format === 'claim_the_throne' ||
+    format === 'up_and_down_the_river' ||
+    format === 'league_playoffs'
+  ) {
     if (!allComplete) return false;
     const maxRound = Math.max(...matches.map((m) => m.round));
     return targetRounds !== undefined && maxRound >= targetRounds;

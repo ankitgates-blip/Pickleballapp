@@ -26,7 +26,9 @@ export async function enterScore(
 
   const { data: tournament, error: tournamentError } = await supabase
     .from('tournaments')
-    .select('format, gauntlet_rounds, claim_the_throne_rounds, up_and_down_the_river_rounds')
+    .select(
+      'format, gauntlet_rounds, claim_the_throne_rounds, up_and_down_the_river_rounds, league_playoffs_rounds'
+    )
     .eq('id', tournamentId)
     .single();
 
@@ -59,7 +61,9 @@ export async function enterScore(
         ? (tournament?.claim_the_throne_rounds ?? 5)
         : tournament?.format === 'up_and_down_the_river'
           ? (tournament?.up_and_down_the_river_rounds ?? 5)
-          : undefined;
+          : tournament?.format === 'league_playoffs'
+            ? (tournament?.league_playoffs_rounds ?? undefined)
+            : undefined;
 
   const complete = isTournamentComplete(
     tournament?.format ?? 'round_robin',
