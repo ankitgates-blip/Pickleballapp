@@ -9,9 +9,16 @@ import {
 import { formatLabel, isIndividualFormat as isIndividualFormatCheck } from '@/lib/tournament/formats';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
 import { computeTournamentChampionName } from '@/lib/tournament/champion';
+import {
+  buildTeamStandingsRows,
+  buildIndividualStandingsRows,
+  buildLadderStandingsRows,
+  buildMatchGroups,
+} from '@/lib/tournament/resultsExport';
 import type { ClaimTheThroneRoundResult, MatchResult, Team } from '@/lib/types';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass } from '@/app/components/ui';
+import ShareResultsButton from './ShareResultsButton';
 
 type LadderRoundResult = ClaimTheThroneRoundResult;
 
@@ -152,6 +159,34 @@ export default async function ResultsPage({
     players: (players ?? []).map((p) => ({ id: p.id, name: p.name })),
   });
 
+  const standingsTitle = isLadderFormat
+    ? 'Ladder Standings'
+    : isIndividualFormat
+      ? 'Individual Standings'
+      : isLeaguePlayoffs
+        ? 'League Standings'
+        : 'Final Standings';
+
+  const exportStandingsRows = isLadderFormat
+    ? buildLadderStandingsRows(ladderStandings, playerById)
+    : isIndividualFormat
+      ? buildIndividualStandingsRows(individualStandings, playerById)
+      : buildTeamStandingsRows(standings, teamById);
+
+  const exportMatchGroups = buildMatchGroups(
+    (matches ?? []).map((m) => ({
+      round: m.round,
+      stage: m.stage,
+      team_a_id: m.team_a_id,
+      team_b_id: m.team_b_id,
+      score_a: m.score_a,
+      score_b: m.score_b,
+      status: m.status,
+    })),
+    teamById,
+    isLeaguePlayoffs
+  );
+
   const renderMatch = (m: NonNullable<typeof matches>[number]) => {
     const teamAName = teamById.get(m.team_a_id!) ?? 'Unknown';
     const teamBName = teamById.get(m.team_b_id!) ?? 'Unknown';
@@ -198,6 +233,24 @@ export default async function ResultsPage({
         )}
       </p>
 
+      <div className="mb-6">
+        <ShareResultsButton
+          tournamentName={tournament.name}
+          date={tournament.date}
+          venueName={venueName}
+          timeslotLabel={timeslotLabel(tournament.timeslot)}
+          formatLabel={formatLabel(tournament.format)}
+          completedAt={tournament.completed_at}
+          championName={championName}
+          standingsTitle={standingsTitle}
+          standingsRows={exportStandingsRows}
+          matchGroups={exportMatchGroups}
+        />
+        <p className="text-xs text-slate-400 mt-1.5">
+          Opens your share sheet on mobile — downloads the file on desktop.
+        </p>
+      </div>
+
       {championName && (
         <div
           className={`${cardClass} mb-6 text-center bg-gradient-to-br from-amber-50 to-lime-50 border-amber-200`}
@@ -236,15 +289,7 @@ export default async function ResultsPage({
       </div>
 
       <div className={`${cardClass} mb-6 overflow-x-auto`}>
-        <h2 className="text-lg font-bold text-slate-900 mb-3">
-          {isLadderFormat
-            ? 'Ladder Standings'
-            : isIndividualFormat
-              ? 'Individual Standings'
-              : isLeaguePlayoffs
-                ? 'League Standings'
-                : 'Final Standings'}
-        </h2>
+        <h2 className="text-lg font-bold text-slate-900 mb-3">{standingsTitle}</h2>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-slate-500 border-b border-slate-200">
