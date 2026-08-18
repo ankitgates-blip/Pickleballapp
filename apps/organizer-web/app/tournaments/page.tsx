@@ -5,6 +5,7 @@ import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, vibrantCardClass } from '@/app/components/ui';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
 import { formatLabel } from '@/lib/tournament/formats';
+import { computeTournamentChampionName } from '@/lib/tournament/champion';
 import { cancelTournament } from './actions';
 import CancelTournamentButton from './CancelTournamentButton';
 
@@ -18,9 +19,29 @@ export default async function TournamentsPage() {
     .order('date', { ascending: false });
 
   const tournamentIds = (tournaments ?? []).map((t) => t.id);
+  const completedTournamentIds = (tournaments ?? [])
+    .filter((t) => Boolean(t.completed_at))
+    .map((t) => t.id);
 
   const { data: players } = tournamentIds.length
-    ? await supabase.from('players').select('tournament_id').in('tournament_id', tournamentIds)
+    ? await supabase
+        .from('players')
+        .select('id, tournament_id, name')
+        .in('tournament_id', tournamentIds)
+    : { data: [] };
+
+  const { data: completedTeams } = completedTournamentIds.length
+    ? await supabase
+        .from('teams')
+        .select('id, tournament_id, player_1_id, player_2_id')
+        .in('tournament_id', completedTournamentIds)
+    : { data: [] };
+
+  const { data: completedMatches } = completedTournamentIds.length
+    ? await supabase
+        .from('matches')
+        .select('tournament_id, stage, team_a_id, team_b_id, score_a, score_b, status, round, court')
+        .in('tournament_id', completedTournamentIds)
     : { data: [] };
 
   const playerCountByTournament = new Map<string, number>();
@@ -29,6 +50,51 @@ export default async function TournamentsPage() {
       p.tournament_id,
       (playerCountByTournament.get(p.tournament_id) ?? 0) + 1
     );
+  }
+
+  const playersByTournament = new Map<string, { id: string; name: string }[]>();
+  for (const p of players ?? []) {
+    const list = playersByTournament.get(p.tournament_id) ?? [];
+    list.push({ id: p.id, name: p.name });
+    playersByTournament.set(p.tournament_id, list);
+  }
+
+  const teamsByTournament = new Map<
+    string,
+    { id: string; player_1_id: string; player_2_id: string }[]
+  >();
+  for (const t of completedTeams ?? []) {
+    const list = teamsByTournament.get(t.tournament_id) ?? [];
+    list.push({ id: t.id, player_1_id: t.player_1_id, player_2_id: t.player_2_id });
+    teamsByTournament.set(t.tournament_id, list);
+  }
+
+  const matchesByTournament = new Map<
+    string,
+    {
+      stage: string;
+      team_a_id: string | null;
+      team_b_id: string | null;
+      score_a: number | null;
+      score_b: number | null;
+      status: string;
+      round: number;
+      court: number | null;
+    }[]
+  >();
+  for (const m of completedMatches ?? []) {
+    const list = matchesByTournament.get(m.tournament_id) ?? [];
+    list.push({
+      stage: m.stage,
+      team_a_id: m.team_a_id,
+      team_b_id: m.team_b_id,
+      score_a: m.score_a,
+      score_b: m.score_b,
+      status: m.status,
+      round: m.round,
+      court: m.court,
+    });
+    matchesByTournament.set(m.tournament_id, list);
   }
 
   const today = new Date();
@@ -120,6 +186,13 @@ export default async function TournamentsPage() {
           <ul className="space-y-3">
             {recentlyCompleted.map((t) => {
               const playerCount = playerCountByTournament.get(t.id) ?? 0;
+              const championName = computeTournamentChampionName({
+                format: t.format,
+                completedAt: t.completed_at,
+                matches: matchesByTournament.get(t.id) ?? [],
+                teams: teamsByTournament.get(t.id) ?? [],
+                players: playersByTournament.get(t.id) ?? [],
+              });
               return (
                 <li key={t.id}>
                   <div className={cardClass}>
@@ -133,6 +206,11 @@ export default async function TournamentsPage() {
                       <span>📅 {t.date}</span>
                       <span>🎯 {formatLabel(t.format)}</span>
                     </div>
+                    {championName && (
+                      <div className="text-xs font-bold text-amber-700 mt-1.5">
+                        🏆 {championName}
+                      </div>
+                    )}
                     <div className="flex items-center justify-between mt-2">
                       <Link
                         href={`/tournaments/${t.id}/results`}
