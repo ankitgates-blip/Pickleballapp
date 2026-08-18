@@ -3,11 +3,12 @@ import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
-import { cardClass, accentButtonClass, linkClass, inputClass } from '@/app/components/ui';
+import { cardClass, accentButtonClass, linkClass, inputClass, primaryButtonClass } from '@/app/components/ui';
 import { formatLabel } from '@/lib/tournament/formats';
 import { computeStandings } from '@/lib/tournament/standings';
 import type { MatchResult } from '@/lib/types';
 import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, advanceLeaguePlayoffsRound, generateSemifinalMatches, generateFinalMatch } from './actions';
+import { enterScore } from '../matches/actions';
 
 export default async function BracketPage({
   params,
@@ -184,17 +185,88 @@ export default async function BracketPage({
     return rounds;
   };
 
-  const renderMatchList = (list: MatchRow[]) => (
+  const renderMatchList = (list: MatchRow[], isFinal: boolean = false) => (
     <ul className="space-y-2">
-      {list.map((m) => (
-        <li key={m.id} className="text-sm text-slate-800 flex items-center gap-2">
-          <span className="font-semibold">{teamById.get(m.team_a_id!) ?? 'Bye'}</span>
-          <span className="text-slate-400">vs</span>
-          <span className="font-semibold">
-            {m.team_b_id ? teamById.get(m.team_b_id) : 'BYE'}
+      {list.map((m) => {
+        if (!m.team_b_id) {
+          return (
+            <li key={m.id} className="text-sm text-slate-800 flex items-center gap-2">
+              <span className="font-semibold">{teamById.get(m.team_a_id!) ?? 'Bye'}</span>
+              <span className="text-slate-400">vs</span>
+              <span className="font-semibold">BYE</span>
+            </li>
+          );
+        }
+
+        const isComplete = m.status === 'complete';
+        const teamAWon = isComplete && (m.score_a ?? 0) > (m.score_b ?? 0);
+        const teamBWon = isComplete && (m.score_b ?? 0) > (m.score_a ?? 0);
+        const enterScoreForMatch = enterScore.bind(null, id, m.id);
+
+        const teamALabel = (
+          <span className={isFinal && teamAWon ? 'font-extrabold text-slate-900' : 'font-semibold'}>
+            {isFinal && teamAWon && <span className="mr-1">🏆</span>}
+            {teamById.get(m.team_a_id!)}
+            {!isFinal && isComplete && (
+              <span className={teamAWon ? 'text-teal-700 font-bold' : 'text-slate-400'}>
+                {' '}
+                ({teamAWon ? 'W' : 'L'})
+              </span>
+            )}
           </span>
-        </li>
-      ))}
+        );
+        const teamBLabel = (
+          <span className={isFinal && teamBWon ? 'font-extrabold text-slate-900' : 'font-semibold'}>
+            {isFinal && teamBWon && <span className="mr-1">🏆</span>}
+            {teamById.get(m.team_b_id)}
+            {!isFinal && isComplete && (
+              <span className={teamBWon ? 'text-teal-700 font-bold' : 'text-slate-400'}>
+                {' '}
+                ({teamBWon ? 'W' : 'L'})
+              </span>
+            )}
+          </span>
+        );
+
+        return (
+          <li key={m.id} className="text-sm text-slate-800">
+            <details>
+              <summary className="cursor-pointer list-none flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2">
+                  {teamALabel}
+                  <span className="text-slate-400">vs</span>
+                  {teamBLabel}
+                </span>
+                <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">
+                  {isComplete ? `${m.score_a}-${m.score_b}` : 'Not yet played'}
+                </span>
+              </summary>
+              <form action={enterScoreForMatch} className="flex items-center gap-3 mt-2 pl-1">
+                <input
+                  name="scoreA"
+                  type="number"
+                  defaultValue={m.score_a ?? ''}
+                  placeholder="Team A"
+                  required
+                  className={`${inputClass} w-20`}
+                />
+                <span className="text-slate-400 font-bold">–</span>
+                <input
+                  name="scoreB"
+                  type="number"
+                  defaultValue={m.score_b ?? ''}
+                  placeholder="Team B"
+                  required
+                  className={`${inputClass} w-20`}
+                />
+                <button type="submit" className={primaryButtonClass}>
+                  Save
+                </button>
+              </form>
+            </details>
+          </li>
+        );
+      })}
     </ul>
   );
 
@@ -469,7 +541,7 @@ export default async function BracketPage({
       {finalMatches.length > 0 && (
         <div className={`${cardClass} mb-6`}>
           <h2 className="text-sm font-bold text-teal-700 uppercase tracking-wide mb-2">Final</h2>
-          {renderMatchList(finalMatches)}
+          {renderMatchList(finalMatches, true)}
         </div>
       )}
 
