@@ -35,6 +35,14 @@ export default async function TeamsPage({
     .select('id, player_1_id, player_2_id')
     .eq('tournament_id', id);
 
+  const { count: leagueMatchCount } = await supabase
+    .from('matches')
+    .select('id', { count: 'exact', head: true })
+    .eq('tournament_id', id)
+    .eq('stage', 'league');
+
+  const hasLeagueMatches = (leagueMatchCount ?? 0) > 0;
+
   const teamCount = (teams ?? []).length;
   const atCap = isLeaguePlayoffs && teamCount >= LEAGUE_PLAYOFFS_TEAM_CAP;
 
@@ -60,6 +68,13 @@ export default async function TeamsPage({
           </span>
         )}
       </div>
+
+      {isLeaguePlayoffs && hasLeagueMatches && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6">
+          This tournament already has a generated schedule. Changing teams here won't update
+          already-generated rounds or matches.
+        </div>
+      )}
 
       {isAutoPaired ? (
         <div className="rounded-lg bg-teal-50 border border-teal-200 text-teal-800 text-sm px-4 py-3 mb-6">

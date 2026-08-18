@@ -7,23 +7,6 @@ import { shuffleIntoTeams } from '@/lib/tournament/shuffle';
 
 const LEAGUE_PLAYOFFS_TEAM_CAP = 8;
 
-async function hasLeaguePlayoffsMatches(
-  supabase: Awaited<ReturnType<typeof requireOrganizer>>['supabase'],
-  tournamentId: string
-): Promise<boolean> {
-  const { count, error } = await supabase
-    .from('matches')
-    .select('id', { count: 'exact', head: true })
-    .eq('tournament_id', tournamentId)
-    .eq('stage', 'league');
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return (count ?? 0) > 0;
-}
-
 export async function pairTeam(tournamentId: string, formData: FormData) {
   const { supabase } = await requireOrganizer();
 
@@ -45,10 +28,6 @@ export async function pairTeam(tournamentId: string, formData: FormData) {
   }
 
   if (tournament?.format === 'league_playoffs') {
-    if (await hasLeaguePlayoffsMatches(supabase, tournamentId)) {
-      throw new Error('Teams are locked once the league schedule has been generated');
-    }
-
     const { count, error: countError } = await supabase
       .from('teams')
       .select('id', { count: 'exact', head: true })
@@ -119,10 +98,6 @@ export async function shuffleRemaining(tournamentId: string) {
   }
 
   if (tournament?.format === 'league_playoffs') {
-    if (await hasLeaguePlayoffsMatches(supabase, tournamentId)) {
-      return;
-    }
-
     const existingTeamCount = (teams ?? []).length;
     const remainingSlots = LEAGUE_PLAYOFFS_TEAM_CAP - existingTeamCount;
 
@@ -156,22 +131,6 @@ export async function shuffleRemaining(tournamentId: string) {
 
 export async function removeTeam(tournamentId: string, teamId: string) {
   const { supabase } = await requireOrganizer();
-
-  const { data: tournament, error: tournamentError } = await supabase
-    .from('tournaments')
-    .select('format')
-    .eq('id', tournamentId)
-    .single();
-
-  if (tournamentError) {
-    throw new Error(tournamentError.message);
-  }
-
-  if (tournament?.format === 'league_playoffs') {
-    if (await hasLeaguePlayoffsMatches(supabase, tournamentId)) {
-      throw new Error('Teams are locked once the league schedule has been generated');
-    }
-  }
 
   const { error } = await supabase.from('teams').delete().eq('id', teamId);
 
