@@ -143,6 +143,7 @@ export default async function TournamentsPage() {
                       <CancelTournamentButton
                         tournamentName={t.name}
                         cancelAction={cancelTournament.bind(null, t.id)}
+                        isCompleted
                       />
                     </div>
                   </div>

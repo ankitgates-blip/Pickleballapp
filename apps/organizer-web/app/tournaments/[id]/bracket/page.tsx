@@ -63,7 +63,7 @@ export default async function BracketPage({
 
   const { data: matches } = await supabase
     .from('matches')
-    .select('id, round, stage, team_a_id, team_b_id, score_a, score_b, status')
+    .select('id, round, stage, team_a_id, team_b_id, score_a, score_b, status, court')
     .eq('tournament_id', id)
     .order('round', { ascending: true });
 
@@ -207,7 +207,7 @@ export default async function BracketPage({
           <span className={isFinal && teamAWon ? 'font-extrabold text-slate-900' : 'font-semibold'}>
             {isFinal && teamAWon && <span className="mr-1">🏆</span>}
             {teamById.get(m.team_a_id!)}
-            {!isFinal && isComplete && (
+            {!isFinal && isComplete && (teamAWon || teamBWon) && (
               <span className={teamAWon ? 'text-teal-700 font-bold' : 'text-slate-400'}>
                 {' '}
                 ({teamAWon ? 'W' : 'L'})
@@ -219,7 +219,7 @@ export default async function BracketPage({
           <span className={isFinal && teamBWon ? 'font-extrabold text-slate-900' : 'font-semibold'}>
             {isFinal && teamBWon && <span className="mr-1">🏆</span>}
             {teamById.get(m.team_b_id)}
-            {!isFinal && isComplete && (
+            {!isFinal && isComplete && (teamAWon || teamBWon) && (
               <span className={teamBWon ? 'text-teal-700 font-bold' : 'text-slate-400'}>
                 {' '}
                 ({teamBWon ? 'W' : 'L'})
@@ -233,6 +233,9 @@ export default async function BracketPage({
             <details>
               <summary className="cursor-pointer list-none flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2">
+                  {m.court !== null && (
+                    <span className="text-xs font-bold text-slate-400">C{m.court}</span>
+                  )}
                   {teamALabel}
                   <span className="text-slate-400">vs</span>
                   {teamBLabel}

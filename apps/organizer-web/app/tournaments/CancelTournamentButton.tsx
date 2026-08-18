@@ -5,15 +5,19 @@ import { useTransition } from 'react';
 export default function CancelTournamentButton({
   tournamentName,
   cancelAction,
+  isCompleted = false,
 }: {
   tournamentName: string;
   cancelAction: () => Promise<void>;
+  isCompleted?: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
 
   const handleClick = () => {
     const confirmed = confirm(
-      `Cancel "${tournamentName}"? This will permanently delete it and all its players, teams, and matches. This cannot be undone.`
+      isCompleted
+        ? `Delete "${tournamentName}"? This will permanently delete it and remove these results from every player's profile and rating. This cannot be undone.`
+        : `Cancel "${tournamentName}"? This will permanently delete it and all its players, teams, and matches. This cannot be undone.`
     );
     if (!confirmed) return;
     startTransition(() => {
