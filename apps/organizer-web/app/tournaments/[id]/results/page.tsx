@@ -8,6 +8,7 @@ import {
 } from '@/lib/tournament/standings';
 import { formatLabel, isIndividualFormat as isIndividualFormatCheck } from '@/lib/tournament/formats';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
+import { computeTournamentChampionName } from '@/lib/tournament/champion';
 import type { ClaimTheThroneRoundResult, MatchResult, Team } from '@/lib/types';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass } from '@/app/components/ui';
@@ -72,7 +73,6 @@ export default async function ResultsPage({
   );
 
   const leagueMatches = (matches ?? []).filter((m) => m.stage === 'league');
-  const finalMatches = (matches ?? []).filter((m) => m.stage === 'final');
 
   const leagueMatchResults: MatchResult[] = leagueMatches.map((m) => ({
     teamAId: m.team_a_id!,
@@ -131,21 +131,26 @@ export default async function ResultsPage({
     ? computeClaimTheThroneStandings(ladderMatches, numCourts)
     : [];
 
-  const finalMatch = finalMatches[0];
-  const championTeamId = !isIndividualFormat && tournament.completed_at
-    ? finalMatch
-      ? (finalMatch.score_a ?? 0) > (finalMatch.score_b ?? 0)
-        ? finalMatch.team_a_id
-        : finalMatch.team_b_id
-      : standings[0]?.teamId
-    : undefined;
-  const championPlayerId = tournament.completed_at
-    ? isLadderFormat
-      ? ladderStandings[0]?.playerId
-      : isIndividualFormat
-        ? individualStandings[0]?.playerId
-        : undefined
-    : undefined;
+  const championName = computeTournamentChampionName({
+    format: tournament.format,
+    completedAt: tournament.completed_at,
+    matches: (matches ?? []).map((m) => ({
+      stage: m.stage,
+      team_a_id: m.team_a_id,
+      team_b_id: m.team_b_id,
+      score_a: m.score_a,
+      score_b: m.score_b,
+      status: m.status,
+      round: m.round,
+      court: m.court,
+    })),
+    teams: (teams ?? []).map((t) => ({
+      id: t.id,
+      player_1_id: t.player_1_id,
+      player_2_id: t.player_2_id,
+    })),
+    players: (players ?? []).map((p) => ({ id: p.id, name: p.name })),
+  });
 
   const renderMatch = (m: NonNullable<typeof matches>[number]) => {
     const teamAName = teamById.get(m.team_a_id!) ?? 'Unknown';
@@ -193,15 +198,13 @@ export default async function ResultsPage({
         )}
       </p>
 
-      {(championTeamId || championPlayerId) && (
+      {championName && (
         <div
           className={`${cardClass} mb-6 text-center bg-gradient-to-br from-amber-50 to-lime-50 border-amber-200`}
         >
           <div className="text-3xl mb-1">🏆</div>
           <div className="text-xs font-bold text-amber-700 uppercase tracking-wide">Champion</div>
-          <div className="text-xl font-extrabold text-slate-900">
-            {championPlayerId ? playerById.get(championPlayerId) : teamById.get(championTeamId!)}
-          </div>
+          <div className="text-xl font-extrabold text-slate-900">{championName}</div>
         </div>
       )}
 
