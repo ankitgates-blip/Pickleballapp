@@ -71,8 +71,9 @@ export default async function TeamsPage({
 
       {isLeaguePlayoffs && hasLeagueMatches && (
         <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6">
-          This tournament already has a generated schedule. Changing teams here won't update
-          already-generated rounds or matches.
+          This tournament already has a generated schedule. Removing a team also deletes its
+          existing matches and their scores, and any rounds generated from here on are
+          recalculated from the new team list — so pairings may repeat or be skipped.
         </div>
       )}
 
