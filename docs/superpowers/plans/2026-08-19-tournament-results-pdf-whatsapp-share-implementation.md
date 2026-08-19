@@ -512,6 +512,15 @@ export default function ShareResultsButton({
           : [String(r.rank), r.name, String(r.wins), String(r.losses), r.diffLabel]
       );
 
+      // ⚠️ CORRECTED AFTER SHIPPING (commit 7f364a3): the two `doc.autoTable({...})`
+      // calls below are the ORIGINAL, BROKEN form — this side-effect-plugin call never
+      // registers under this app's bundler/ESM import path (it only self-registers when
+      // `window.jsPDF` exists, which a Next.js bundle never sets), so every real click
+      // silently threw and did nothing. The shipped fix imports `autoTable` as a named
+      // function and calls `autoTable(doc, { ...options })` instead — see the current
+      // apps/organizer-web/app/tournaments/[id]/results/ShareResultsButton.tsx for the
+      // correct pattern, and copy THAT, not the code below, into any future PDF-export
+      // task. `doc.lastAutoTable.finalY` (still needing @ts-expect-error) is unaffected.
       // @ts-expect-error -- autoTable attaches itself to the jsPDF instance as a side effect of the import above
       doc.autoTable({ startY: y, head: standingsHead, body: standingsBody });
       // @ts-expect-error -- autoTable augments jsPDF's instance type with lastAutoTable at runtime
@@ -527,6 +536,7 @@ export default function ShareResultsButton({
           m.teamBName,
           m.scoreLabel,
         ]);
+        // ⚠️ CORRECTED AFTER SHIPPING — same broken doc.autoTable(...) form as above, see the note there.
         // @ts-expect-error -- see above
         doc.autoTable({ startY: y + 4, head: [['Round', 'Team A', 'Team B', 'Score']], body });
         // @ts-expect-error -- see above
