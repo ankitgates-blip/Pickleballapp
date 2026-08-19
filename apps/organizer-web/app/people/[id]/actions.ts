@@ -16,11 +16,12 @@ export async function updatePersonProfile(personId: string, formData: FormData) 
   const age = Number.isInteger(ageNum) && ageNum > 0 && ageNum < 130 ? ageNum : null;
   const handedness = (formData.get('handedness') as string) || null;
   const playingStyle = (formData.get('playingStyle') as string) || null;
+  const paddleBrand = (formData.get('paddleBrand') as string) || null;
   const strengths = formData.getAll('strengths') as string[];
 
   const { error } = await supabase
     .from('people')
-    .update({ name, age, handedness, playing_style: playingStyle, strengths })
+    .update({ name, age, handedness, playing_style: playingStyle, paddle_brand: paddleBrand, strengths })
     .eq('id', personId);
 
   if (error) {

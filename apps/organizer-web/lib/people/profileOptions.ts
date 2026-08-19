@@ -19,3 +19,12 @@ export const STRENGTH_OPTIONS = [
   { value: 'footwork', label: 'Footwork' },
   { value: 'strategy', label: 'Strategy' },
 ] as const;
+
+export const PADDLE_BRAND_OPTIONS = [
+  { value: 'selkirk_boomstick', label: 'Selkirk Boomstick' },
+  { value: 'selkirk_omni', label: 'Selkirk Omni' },
+  { value: 'joola_perseus_4_5', label: 'Joola Perseus 4/5' },
+  { value: 'joola_agassi', label: 'Joola Agassi' },
+  { value: 'bread_and_butter', label: 'Bread and Butter' },
+  { value: 'rpm', label: 'RPM' },
+] as const;
