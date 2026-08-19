@@ -127,7 +127,7 @@ export default async function TournamentsPage() {
 
       {upcoming.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-lg font-extrabold text-slate-900 mb-3 flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-navy-deep mb-3 flex items-center gap-2">
             <span>🔥</span> Upcoming Matches
           </h2>
           <ul className="space-y-3">
@@ -142,7 +142,7 @@ export default async function TournamentsPage() {
                   <div className={vibrantCardClass}>
                     <span
                       className={`absolute top-0 right-0 ${
-                        isOverdue ? 'bg-red-600' : 'bg-orange-500'
+                        isOverdue ? 'bg-red-600' : 'bg-brand-orange'
                       } text-white text-[10px] font-extrabold px-3 py-1 rounded-bl-xl rounded-tr-2xl tracking-wide`}
                     >
                       {isOverdue
@@ -151,7 +151,7 @@ export default async function TournamentsPage() {
                           ? 'TODAY'
                           : `${daysAway} DAY${daysAway === 1 ? '' : 'S'}`}
                     </span>
-                    <div className="font-extrabold text-base text-slate-900 mb-1.5">
+                    <div className="font-extrabold text-lg text-navy-deep mb-1.5">
                       🏆 {t.name}
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-600">
@@ -164,7 +164,7 @@ export default async function TournamentsPage() {
                     <div className="flex items-center justify-between mt-2">
                       <Link
                         href={`/tournaments/${t.id}/roster`}
-                        className="text-xs font-bold text-teal-700 hover:underline"
+                        className="text-xs font-bold text-navy-mid hover:underline"
                       >
                         Manage tournament →
                       </Link>
@@ -183,7 +183,7 @@ export default async function TournamentsPage() {
 
       {recentlyCompleted.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-lg font-extrabold text-slate-900 mb-3 flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-navy-deep mb-3 flex items-center gap-2">
             <span>✅</span> Recently Completed
           </h2>
           <ul className="space-y-3">
@@ -199,7 +199,7 @@ export default async function TournamentsPage() {
               return (
                 <li key={t.id}>
                   <div className={cardClass}>
-                    <div className="font-extrabold text-base text-slate-900 mb-1.5">
+                    <div className="font-extrabold text-lg text-navy-deep mb-1.5">
                       🏆 {t.name}
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-600">
@@ -210,14 +210,14 @@ export default async function TournamentsPage() {
                       <span>🎯 {formatLabel(t.format)}</span>
                     </div>
                     {championName && (
-                      <div className="text-xs font-bold text-amber-700 mt-1.5">
+                      <div className="text-xs font-bold text-gold mt-1.5">
                         🏆 {championName}
                       </div>
                     )}
                     <div className="flex items-center justify-between mt-2">
                       <Link
                         href={`/tournaments/${t.id}/results`}
-                        className="text-xs font-bold text-teal-700 hover:underline"
+                        className="text-xs font-bold text-navy-mid hover:underline"
                       >
                         View results →
                       </Link>
