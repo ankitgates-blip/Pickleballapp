@@ -2,7 +2,7 @@
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, pillClass, inputClass, primaryButtonClass } from '@/app/components/ui';
-import { HANDEDNESS_OPTIONS, PLAYING_STYLE_OPTIONS, STRENGTH_OPTIONS } from '@/lib/people/profileOptions';
+import { HANDEDNESS_OPTIONS, PLAYING_STYLE_OPTIONS, STRENGTH_OPTIONS, PADDLE_BRAND_OPTIONS } from '@/lib/people/profileOptions';
 import { updatePersonProfile } from './actions';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computePersonStats } from '@/lib/stats/personStats';
@@ -31,7 +31,7 @@ export default async function PersonDetailPage({
 
   const { data: person } = await supabase
     .from('people')
-    .select('id, name, handedness, age, playing_style, strengths')
+    .select('id, name, handedness, age, playing_style, paddle_brand, strengths')
     .eq('id', id)
     .eq('organizer_id', organizer.id)
     .single();
@@ -182,6 +182,9 @@ export default async function PersonDetailPage({
     person.playing_style
       ? (PLAYING_STYLE_OPTIONS.find((s) => s.value === person.playing_style)?.label ?? null)
       : null,
+    person.paddle_brand
+      ? (PADDLE_BRAND_OPTIONS.find((p) => p.value === person.paddle_brand)?.label ?? null)
+      : null,
     strengthLabels.length > 0 ? strengthLabels.join(', ') : null,
   ].filter((part): part is string => Boolean(part));
   const profileSummary = profileSummaryParts.length > 0 ? profileSummaryParts.join(' · ') : null;
@@ -252,6 +255,17 @@ export default async function PersonDetailPage({
                 {PLAYING_STYLE_OPTIONS.map((s) => (
                   <option key={s.value} value={s.value}>
                     {s.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm font-semibold text-slate-700">
+              Paddle Brand
+              <select name="paddleBrand" defaultValue={person.paddle_brand ?? ''} className={`${inputClass} mt-1`}>
+                <option value="">Not set</option>
+                {PADDLE_BRAND_OPTIONS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
                   </option>
                 ))}
               </select>
