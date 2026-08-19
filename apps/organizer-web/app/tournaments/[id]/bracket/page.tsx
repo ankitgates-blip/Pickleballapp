@@ -289,9 +289,9 @@ export default async function BracketPage({
               </form>
               <div className="mt-3 pl-1">
                 <p className="text-xs text-slate-400 mb-2">
-                  Changing a match&apos;s teams doesn&apos;t recompute any standings, seeding, or
-                  later rounds already generated from it — double-check anything downstream that
-                  depended on this match.
+                  Standings recalculate automatically when you change a match&apos;s teams. Already-generated
+                  semifinals, finals, and later rounds do <strong>not</strong> update — and if this tournament
+                  has no final match, the champion shown elsewhere can change as a result.
                 </p>
                 <form action={updateMatchTeamsForMatch} className="flex items-center gap-3">
                   <select name="teamAId" defaultValue={m.team_a_id ?? ''} className={inputClass}>

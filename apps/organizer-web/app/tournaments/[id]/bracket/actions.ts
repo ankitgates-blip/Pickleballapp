@@ -710,11 +710,30 @@ export async function updateMatchTeams(
   formData: FormData
 ) {
   const { supabase } = await requireOrganizer();
-  const teamAId = formData.get('teamAId') as string;
-  const teamBId = formData.get('teamBId') as string;
+  const teamAId = formData.get('teamAId');
+  const teamBId = formData.get('teamBId');
+
+  if (typeof teamAId !== 'string' || typeof teamBId !== 'string' || !teamAId || !teamBId) {
+    throw new Error('Both teams must be selected');
+  }
 
   if (teamAId === teamBId) {
     throw new Error('Team A and Team B must be different teams');
+  }
+
+  const { data: validTeams, error: teamsError } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('tournament_id', tournamentId)
+    .in('id', [teamAId, teamBId]);
+
+  if (teamsError) {
+    throw new Error(teamsError.message);
+  }
+
+  const validIds = new Set((validTeams ?? []).map((t) => t.id));
+  if (!validIds.has(teamAId) || !validIds.has(teamBId)) {
+    throw new Error('Selected teams must belong to this tournament');
   }
 
   const { error } = await supabase
