@@ -10,9 +10,15 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-poppins);
+  --font-heading: var(--font-space-grotesk);
   --font-brand: var(--font-black-ops-one);
   --font-script: var(--font-dancing-script);
+  --color-navy-deep: #0c1830;
+  --color-navy-mid: #16294e;
+  --color-navy-light: #1c3560;
+  --color-gold: #a8874f;
+  --color-brand-orange: #d2621c;
+  --color-brand-orange-deep: #b6462a;
 }
 
 body {
