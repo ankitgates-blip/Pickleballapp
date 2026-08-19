@@ -4,7 +4,6 @@ import {
   buildIndividualStandingsRows,
   buildLadderStandingsRows,
   buildMatchGroups,
-  sanitizeFileNamePart,
 } from './resultsExport';
 
 describe('buildTeamStandingsRows', () => {
@@ -125,16 +124,5 @@ describe('buildMatchGroups', () => {
       false
     );
     expect(result).toEqual([]);
-  });
-});
-
-describe('sanitizeFileNamePart', () => {
-  it('replaces whitespace with hyphens and strips non-alphanumeric characters', () => {
-    expect(sanitizeFileNamePart("Sunday Smash 8/16 (Pickle Turf)")).toBe('Sunday-Smash-816-Pickle-Turf');
-  });
-
-  it('falls back to "tournament" for an empty or all-punctuation input', () => {
-    expect(sanitizeFileNamePart('   ')).toBe('tournament');
-    expect(sanitizeFileNamePart('!!!')).toBe('tournament');
   });
 });

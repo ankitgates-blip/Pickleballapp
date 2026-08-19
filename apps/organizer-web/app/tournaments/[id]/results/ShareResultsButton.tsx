@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { outlineButtonClass } from '@/app/components/ui';
-import { sanitizeFileNamePart, type ExportStandingsRow, type ExportMatchGroup } from '@/lib/tournament/resultsExport';
+import { shareOrDownloadPdf, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
+import type { ExportStandingsRow, ExportMatchGroup } from '@/lib/tournament/resultsExport';
 
 type ShareResultsButtonProps = {
   tournamentName: string;
@@ -92,26 +93,8 @@ export default function ShareResultsButton({
 
       const blob: Blob = doc.output('blob');
       const fileName = `${sanitizeFileNamePart(tournamentName)}-results.pdf`;
-      const file = new File([blob], fileName, { type: 'application/pdf' });
-
-      if (navigator.canShare?.({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], title: tournamentName });
-        } catch (err) {
-          if (!(err instanceof Error) || err.name !== 'AbortError') throw err;
-        }
-      } else {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        URL.revokeObjectURL(url);
-        setStatus('unsupported');
-        return;
-      }
-
-      setStatus('idle');
+      const result = await shareOrDownloadPdf(blob, fileName, tournamentName);
+      setStatus(result === 'downloaded' ? 'unsupported' : 'idle');
     } catch (err) {
       console.error(err);
       setStatus('error');

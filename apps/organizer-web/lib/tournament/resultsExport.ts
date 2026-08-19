@@ -126,8 +126,3 @@ export function buildMatchGroups(
   }
   return groups;
 }
-
-export function sanitizeFileNamePart(name: string): string {
-  const cleaned = name.trim().replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
-  return cleaned || 'tournament';
-}
