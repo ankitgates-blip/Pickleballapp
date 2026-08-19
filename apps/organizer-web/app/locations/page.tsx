@@ -128,7 +128,7 @@ export default async function LocationsPage() {
 
   return (
     <OrganizerShell organizerName={organizer.name}>
-      <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Location Stats</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-6">Location Stats</h1>
 
       {leaderboardsByVenue.map(({ venueId, venueName, leaderboard }) => (
         <div key={venueId} className={`${cardClass} mb-6`}>

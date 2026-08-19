@@ -102,7 +102,7 @@ export default async function RosterPage({
     return (
       <OrganizerShell organizerName={organizer.name}>
         <TournamentNav tournamentId={id} current="roster" />
-        <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Review Roster Additions</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mb-6">Review Roster Additions</h1>
 
         <div className={`${cardClass} mb-6`}>
           <h2 className="text-lg font-bold text-slate-900 mb-2">
@@ -149,7 +149,7 @@ export default async function RosterPage({
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="roster" />
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-extrabold text-slate-900">Roster</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Roster</h1>
         <CopyLinkButton tournamentId={id} />
       </div>
 

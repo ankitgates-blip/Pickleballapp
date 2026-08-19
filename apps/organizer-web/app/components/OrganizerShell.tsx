@@ -91,7 +91,7 @@ export default function OrganizerShell({
           />
         </Link>
       </div>
-      <main className="flex-1 w-full max-w-3xl mx-auto px-4 pt-14 pb-24">{children}</main>
+      <main className="flex-1 w-full max-w-3xl mx-auto px-4 pt-20 pb-24">{children}</main>
       <nav
         className="fixed bottom-0 left-0 right-0 flex text-white shadow-[0_-4px_12px_rgba(0,0,0,0.15)] z-20"
         style={{
@@ -102,7 +102,7 @@ export default function OrganizerShell({
         <Link
           href="/people"
           className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-bold ${
-            isPlayerProfileActive ? 'text-gold' : 'text-[#b9c4dd]'
+            isPlayerProfileActive ? 'text-[#b69a6b]' : 'text-[#b9c4dd]'
           }`}
         >
           <PersonIcon />
@@ -119,7 +119,7 @@ export default function OrganizerShell({
         <Link
           href="/locations"
           className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-bold ${
-            isLocationsActive ? 'text-gold' : 'text-[#b9c4dd]'
+            isLocationsActive ? 'text-[#b69a6b]' : 'text-[#b9c4dd]'
           }`}
         >
           <LeaderboardIcon />

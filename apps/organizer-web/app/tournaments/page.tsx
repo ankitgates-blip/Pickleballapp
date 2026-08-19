@@ -127,7 +127,7 @@ export default async function TournamentsPage() {
 
       {upcoming.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xl font-extrabold text-navy-deep mb-3 flex items-center gap-2">
+          <h2 className="text-xl font-bold text-navy-deep mb-3 flex items-center gap-2">
             <span>🔥</span> Upcoming Matches
           </h2>
           <ul className="space-y-3">
@@ -183,7 +183,7 @@ export default async function TournamentsPage() {
 
       {recentlyCompleted.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xl font-extrabold text-navy-deep mb-3 flex items-center gap-2">
+          <h2 className="text-xl font-bold text-navy-deep mb-3 flex items-center gap-2">
             <span>✅</span> Recently Completed
           </h2>
           <ul className="space-y-3">
@@ -210,7 +210,7 @@ export default async function TournamentsPage() {
                       <span>🎯 {formatLabel(t.format)}</span>
                     </div>
                     {championName && (
-                      <div className="text-xs font-bold text-gold mt-1.5">
+                      <div className="text-xs font-bold text-[#8d7142] mt-1.5">
                         🏆 {championName}
                       </div>
                     )}

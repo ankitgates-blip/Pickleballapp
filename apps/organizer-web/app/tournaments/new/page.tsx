@@ -12,7 +12,7 @@ export default async function NewTournamentPage() {
 
   return (
     <OrganizerShell organizerName={organizer.name}>
-      <h1 className="text-2xl font-extrabold text-slate-900 mb-6">New Tournament</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-6">New Tournament</h1>
       <div className={cardClass}>
         <form action={createTournament} className="space-y-4">
           <div>

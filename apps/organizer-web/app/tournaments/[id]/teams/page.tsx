@@ -61,7 +61,7 @@ export default async function TeamsPage({
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="teams" />
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-extrabold text-slate-900">Pair Teams</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Pair Teams</h1>
         {isLeaguePlayoffs && (
           <span className="text-sm font-semibold text-teal-700 bg-teal-50 rounded-full px-3 py-1">
             {teamCount}/{LEAGUE_PLAYOFFS_TEAM_CAP} teams

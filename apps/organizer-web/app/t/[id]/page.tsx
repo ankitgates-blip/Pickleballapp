@@ -87,7 +87,7 @@ export default async function PublicTournamentPage({
         />
         <div className="relative max-w-2xl mx-auto px-4 py-6 text-center">
           <Image src="/logo.png" alt="PicklerAlly DXB" width={40} height={40} className="mx-auto mb-2 rounded-full" />
-          <h1 className="text-2xl font-extrabold tracking-tight">{tournament.name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{tournament.name}</h1>
           <p className="text-teal-50 text-sm mt-1 font-medium">
             {tournament.date} · 📍 {venueName} · 🕐 {timeslotLabel(tournament.timeslot)}
           </p>

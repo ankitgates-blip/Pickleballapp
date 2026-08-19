@@ -110,7 +110,7 @@ export default async function StandingsPage({
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="standings" />
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-extrabold text-slate-900">Standings</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Standings</h1>
         <CopyLinkButton tournamentId={id} />
       </div>
 

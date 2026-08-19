@@ -20,4 +20,4 @@ export const linkClass = 'text-navy-mid font-semibold hover:text-navy-deep hover
 export const pillClass =
   'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold';
 
-export const headingClass = 'font-heading font-extrabold tracking-tight text-navy-deep';
+export const headingClass = 'font-heading font-bold tracking-tight text-navy-deep';

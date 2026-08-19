@@ -49,7 +49,7 @@ export default async function MatchesPage({
   return (
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="matches" />
-      <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Enter Scores</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-6">Enter Scores</h1>
 
       {stages.map((stage) => {
         const stageMatches = (matches ?? []).filter(

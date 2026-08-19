@@ -193,7 +193,7 @@ export default async function PersonDetailPage({
 
   return (
     <OrganizerShell organizerName={organizer.name}>
-      <h1 className="text-2xl font-extrabold text-slate-900 mb-1">{person.name}</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-1">{person.name}</h1>
       <p className="text-sm text-slate-500">
         {stats.lastPlayedDate ? `Last played: ${stats.lastPlayedDate}` : 'No matches played yet'}
       </p>
