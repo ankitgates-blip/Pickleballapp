@@ -5,8 +5,11 @@ import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass, primaryButtonClass, accentButtonClass, pillClass, linkClass } from '@/app/components/ui';
 import { matchNamesToPeople } from '@/lib/people/matchNames';
-import { TIME_SLOTS } from '@/lib/tournament/timeslots';
+import { TIME_SLOTS, timeslotLabel } from '@/lib/tournament/timeslots';
+import { formatLabel, isIndividualFormat } from '@/lib/tournament/formats';
+import { buildRosterTeams, buildUnpairedPlayerNames } from '@/lib/tournament/rosterExport';
 import CopyLinkButton from '../standings/CopyLinkButton';
+import ShareRosterButton from './ShareRosterButton';
 import {
   startAddPlayers,
   confirmAddPlayers,
@@ -28,11 +31,16 @@ export default async function RosterPage({
 
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('completed_at, venue_id, timeslot')
+    .select('name, date, format, completed_at, venue_id, timeslot, venues(name)')
     .eq('id', id)
     .single();
 
   const isCompleted = Boolean(tournament?.completed_at);
+
+  const venue = tournament?.venues as { name: string } | { name: string }[] | null;
+  const venueName = Array.isArray(venue) ? (venue[0]?.name ?? 'Pickle Turf') : (venue?.name ?? 'Pickle Turf');
+
+  const isIndividual = isIndividualFormat(tournament?.format ?? '');
 
   const { data: venues } = await supabase.from('venues').select('id, name').order('name');
 
@@ -41,6 +49,10 @@ export default async function RosterPage({
     .select('id, name, person_id')
     .eq('tournament_id', id)
     .order('created_at', { ascending: true });
+
+  const { data: teams } = !isIndividual
+    ? await supabase.from('teams').select('player_1_id, player_2_id').eq('tournament_id', id)
+    : { data: [] };
 
   const { data: allPeople } = await supabase
     .from('people')
@@ -52,6 +64,15 @@ export default async function RosterPage({
     (players ?? []).map((p) => p.person_id).filter((personId): personId is string => Boolean(personId))
   );
   const availablePeople = (allPeople ?? []).filter((p) => !personIdsOnRoster.has(p.id));
+
+  const playerById = new Map((players ?? []).map((p) => [p.id, p.name]));
+  const rosterTeams = buildRosterTeams(teams ?? [], playerById);
+  const unpairedPlayerNames = buildUnpairedPlayerNames(
+    (players ?? []).map((p) => ({ id: p.id, name: p.name })),
+    teams ?? []
+  );
+  const hasTeams = rosterTeams.length > 0;
+  const allPlayerNames = (players ?? []).map((p) => p.name);
 
   const nameCounts = new Map<string, number>();
   for (const p of players ?? []) {
@@ -130,6 +151,23 @@ export default async function RosterPage({
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-extrabold text-slate-900">Roster</h1>
         <CopyLinkButton tournamentId={id} />
+      </div>
+
+      <div className="mb-6">
+        <ShareRosterButton
+          tournamentName={tournament?.name ?? ''}
+          date={tournament?.date ?? ''}
+          venueName={venueName}
+          timeslotLabel={timeslotLabel(tournament?.timeslot ?? '')}
+          formatLabel={formatLabel(tournament?.format ?? '')}
+          hasTeams={hasTeams}
+          rosterTeams={rosterTeams}
+          unpairedPlayerNames={unpairedPlayerNames}
+          allPlayerNames={allPlayerNames}
+        />
+        <p className="text-xs text-slate-400 mt-1.5">
+          Opens your share sheet on mobile — downloads the file on desktop.
+        </p>
       </div>
 
       {!isCompleted && (
