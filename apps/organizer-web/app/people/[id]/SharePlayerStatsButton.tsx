@@ -49,6 +49,13 @@ export default function SharePlayerStatsButton({
       const doc = new jsPDF();
       let y = 16;
 
+      const ensureSpace = (needed: number) => {
+        if (y + needed > doc.internal.pageSize.getHeight() - 14) {
+          doc.addPage();
+          y = 16;
+        }
+      };
+
       doc.setFontSize(16);
       doc.text('PicklerAlly DXB', 14, y);
       y += 8;
@@ -64,6 +71,7 @@ export default function SharePlayerStatsButton({
       );
       y += 10;
 
+      ensureSpace(20);
       doc.setFontSize(12);
       doc.text('This Month', 14, y);
       y += 6;
@@ -75,6 +83,7 @@ export default function SharePlayerStatsButton({
       );
       y += 10;
 
+      ensureSpace(30);
       doc.setFontSize(12);
       doc.text('By Location', 14, y);
       y += 2;
@@ -87,6 +96,7 @@ export default function SharePlayerStatsButton({
       y = doc.lastAutoTable.finalY + 8;
 
       const trendTable = (title: string, rows: ExportPeriodRow[]) => {
+        ensureSpace(30);
         doc.setFontSize(12);
         doc.text(title, 14, y);
         y += 2;
@@ -109,15 +119,19 @@ export default function SharePlayerStatsButton({
       trendTable('Monthly Trend', monthlyRows);
       trendTable('Yearly Trend', yearlyRows);
 
+      ensureSpace(20);
       doc.setFontSize(12);
       doc.text('Head-to-Head', 14, y);
       y += 6;
       doc.setFontSize(10);
+      ensureSpace(20);
       doc.text(`Toughest opponent: ${toughestOpponentLabel}`, 14, y);
       y += 6;
+      ensureSpace(20);
       doc.text(`Best partner: ${bestPartnerLabel}`, 14, y);
       y += 10;
 
+      ensureSpace(30);
       doc.setFontSize(12);
       doc.text('Match History', 14, y);
       y += 2;
