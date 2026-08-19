@@ -5,6 +5,14 @@ import { cardClass, pillClass } from '@/app/components/ui';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computePersonStats } from '@/lib/stats/personStats';
 import { starRating, renderStars } from '@/lib/stats/starRating';
+import {
+  buildLocationRows,
+  buildPeriodRows,
+  buildMatchHistoryRows,
+  formatHeadToHead,
+  starRatingLabel,
+} from '@/lib/stats/personStatsExport';
+import SharePlayerStatsButton from './SharePlayerStatsButton';
 import { computeStandings } from '@/lib/tournament/standings';
 import { isIndividualFormat } from '@/lib/tournament/formats';
 import { renderTrend, trendColorClass } from '@/lib/stats/trend';
@@ -152,6 +160,15 @@ export default async function PersonDetailPage({
     tournamentsWon: 0,
   };
 
+  const locationRows = buildLocationRows(stats.matchesByLocation);
+  const weeklyRows = buildPeriodRows(stats.weekly.slice(0, 4));
+  const monthlyRows = buildPeriodRows(stats.monthly.slice(0, 6));
+  const yearlyRows = buildPeriodRows(stats.yearly);
+  const matchHistoryRows = buildMatchHistoryRows(stats.matchHistory, personNameById);
+  const toughestOpponentLabel = formatHeadToHead(stats.toughestOpponent, personNameById);
+  const bestPartnerLabel = formatHeadToHead(stats.bestPartner, personNameById);
+  const starLabel = starRatingLabel(stats.winPercentage);
+
   return (
     <OrganizerShell organizerName={organizer.name}>
       <h1 className="text-2xl font-extrabold text-slate-900 mb-1">{person.name}</h1>
@@ -170,6 +187,27 @@ export default async function PersonDetailPage({
           'No matches played yet'
         )}
       </p>
+
+      <div className="mb-6">
+        <SharePlayerStatsButton
+          personName={person.name}
+          lastPlayedDate={stats.lastPlayedDate}
+          starLabel={starLabel}
+          thisMonthGamesWon={thisMonth.gamesWon}
+          thisMonthGamesLost={thisMonth.gamesLost}
+          thisMonthTournamentsWon={thisMonth.tournamentsWon}
+          locationRows={locationRows}
+          weeklyRows={weeklyRows}
+          monthlyRows={monthlyRows}
+          yearlyRows={yearlyRows}
+          toughestOpponentLabel={toughestOpponentLabel}
+          bestPartnerLabel={bestPartnerLabel}
+          matchHistoryRows={matchHistoryRows}
+        />
+        <p className="text-xs text-slate-400 mt-1.5">
+          Opens your share sheet on mobile — downloads the file on desktop.
+        </p>
+      </div>
 
       <div className={`${cardClass} mb-6`}>
         <h2 className="text-lg font-bold text-slate-900 mb-3">This Month</h2>
