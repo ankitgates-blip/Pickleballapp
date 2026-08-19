@@ -9,6 +9,7 @@ type SharePlayerStatsButtonProps = {
   personName: string;
   lastPlayedDate: string | null;
   starLabel: string;
+  profileSummary: string | null;
   thisMonthGamesWon: number;
   thisMonthGamesLost: number;
   thisMonthTournamentsWon: number;
@@ -25,6 +26,7 @@ export default function SharePlayerStatsButton({
   personName,
   lastPlayedDate,
   starLabel,
+  profileSummary,
   thisMonthGamesWon,
   thisMonthGamesLost,
   thisMonthTournamentsWon,
@@ -69,7 +71,14 @@ export default function SharePlayerStatsButton({
         14,
         y
       );
-      y += 10;
+      y += 8;
+
+      if (profileSummary) {
+        doc.text(profileSummary, 14, y);
+        y += 8;
+      }
+
+      y += 2;
 
       ensureSpace(20);
       doc.setFontSize(12);
