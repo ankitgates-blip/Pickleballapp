@@ -12,7 +12,8 @@ export async function updatePersonProfile(personId: string, formData: FormData) 
   }
 
   const ageRaw = formData.get('age') as string;
-  const age = ageRaw ? Number(ageRaw) : null;
+  const ageNum = ageRaw ? Number(ageRaw) : NaN;
+  const age = Number.isInteger(ageNum) && ageNum > 0 && ageNum < 130 ? ageNum : null;
   const handedness = (formData.get('handedness') as string) || null;
   const playingStyle = (formData.get('playingStyle') as string) || null;
   const strengths = formData.getAll('strengths') as string[];
@@ -24,6 +25,15 @@ export async function updatePersonProfile(personId: string, formData: FormData) 
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  const { error: playersError } = await supabase
+    .from('players')
+    .update({ name })
+    .eq('person_id', personId);
+
+  if (playersError) {
+    throw new Error(playersError.message);
   }
 
   revalidatePath(`/people/${personId}`);
