@@ -285,6 +285,7 @@ export default async function PersonDetailPage({
           personName={person.name}
           lastPlayedDate={stats.lastPlayedDate}
           starLabel={starLabel}
+          profileSummary={profileSummary}
           thisMonthGamesWon={thisMonth.gamesWon}
           thisMonthGamesLost={thisMonth.gamesLost}
           thisMonthTournamentsWon={thisMonth.tournamentsWon}
