@@ -119,15 +119,13 @@ export default function SharePlayerStatsButton({
       trendTable('Monthly Trend', monthlyRows);
       trendTable('Yearly Trend', yearlyRows);
 
-      ensureSpace(20);
+      ensureSpace(30);
       doc.setFontSize(12);
       doc.text('Head-to-Head', 14, y);
       y += 6;
       doc.setFontSize(10);
-      ensureSpace(20);
       doc.text(`Toughest opponent: ${toughestOpponentLabel}`, 14, y);
       y += 6;
-      ensureSpace(20);
       doc.text(`Best partner: ${bestPartnerLabel}`, 14, y);
       y += 10;
 
