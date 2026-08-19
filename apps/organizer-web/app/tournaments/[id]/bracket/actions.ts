@@ -703,3 +703,29 @@ export async function generateFinalMatch(tournamentId: string) {
 
   revalidatePath(`/tournaments/${tournamentId}/bracket`);
 }
+
+export async function updateMatchTeams(
+  tournamentId: string,
+  matchId: string,
+  formData: FormData
+) {
+  const { supabase } = await requireOrganizer();
+  const teamAId = formData.get('teamAId') as string;
+  const teamBId = formData.get('teamBId') as string;
+
+  if (teamAId === teamBId) {
+    throw new Error('Team A and Team B must be different teams');
+  }
+
+  const { error } = await supabase
+    .from('matches')
+    .update({ team_a_id: teamAId, team_b_id: teamBId })
+    .eq('id', matchId)
+    .eq('tournament_id', tournamentId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}/bracket`);
+}
