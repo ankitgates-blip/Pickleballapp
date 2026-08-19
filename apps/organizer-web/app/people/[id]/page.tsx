@@ -1,7 +1,9 @@
 // apps/organizer-web/app/people/[id]/page.tsx
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
-import { cardClass, pillClass } from '@/app/components/ui';
+import { cardClass, pillClass, inputClass, primaryButtonClass } from '@/app/components/ui';
+import { HANDEDNESS_OPTIONS, PLAYING_STYLE_OPTIONS, STRENGTH_OPTIONS } from '@/lib/people/profileOptions';
+import { updatePersonProfile } from './actions';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computePersonStats } from '@/lib/stats/personStats';
 import { starRating, renderStars } from '@/lib/stats/starRating';
@@ -29,7 +31,7 @@ export default async function PersonDetailPage({
 
   const { data: person } = await supabase
     .from('people')
-    .select('id, name')
+    .select('id, name, handedness, age, playing_style, strengths')
     .eq('id', id)
     .eq('organizer_id', organizer.id)
     .single();
@@ -169,13 +171,30 @@ export default async function PersonDetailPage({
   const bestPartnerLabel = formatHeadToHead(stats.bestPartner, personNameById);
   const starLabel = starRatingLabel(stats.winPercentage);
 
+  const strengthLabels = (person.strengths ?? []).map(
+    (s: string) => STRENGTH_OPTIONS.find((o) => o.value === s)?.label ?? s
+  );
+  const profileSummaryParts = [
+    person.handedness
+      ? (HANDEDNESS_OPTIONS.find((h) => h.value === person.handedness)?.label ?? null)
+      : null,
+    person.age ? `Age ${person.age}` : null,
+    person.playing_style
+      ? (PLAYING_STYLE_OPTIONS.find((s) => s.value === person.playing_style)?.label ?? null)
+      : null,
+    strengthLabels.length > 0 ? strengthLabels.join(', ') : null,
+  ].filter((part): part is string => Boolean(part));
+  const profileSummary = profileSummaryParts.length > 0 ? profileSummaryParts.join(' · ') : null;
+
+  const updatePersonProfileWithId = updatePersonProfile.bind(null, person.id);
+
   return (
     <OrganizerShell organizerName={organizer.name}>
       <h1 className="text-2xl font-extrabold text-slate-900 mb-1">{person.name}</h1>
       <p className="text-sm text-slate-500">
         {stats.lastPlayedDate ? `Last played: ${stats.lastPlayedDate}` : 'No matches played yet'}
       </p>
-      <p className="text-sm text-slate-500 mb-6">
+      <p className="text-sm text-slate-500">
         {stats.winPercentage !== null ? (
           <>
             Win rate: {stats.winPercentage}%{' '}
@@ -187,6 +206,79 @@ export default async function PersonDetailPage({
           'No matches played yet'
         )}
       </p>
+      {profileSummary && <p className="text-sm text-slate-500 mb-6">{profileSummary}</p>}
+
+      <div className="mb-6">
+        <details>
+          <summary className="cursor-pointer text-sm font-bold text-teal-700 hover:text-teal-800 list-none mb-3">
+            ✏️ Edit Profile
+          </summary>
+          <form action={updatePersonProfileWithId} className={`${cardClass} flex flex-col gap-3 max-w-md`}>
+            <label className="text-sm font-semibold text-slate-700">
+              Name
+              <input
+                type="text"
+                name="name"
+                defaultValue={person.name}
+                required
+                className={`${inputClass} mt-1`}
+              />
+            </label>
+            <label className="text-sm font-semibold text-slate-700">
+              Handedness
+              <select name="handedness" defaultValue={person.handedness ?? ''} className={`${inputClass} mt-1`}>
+                <option value="">Not set</option>
+                {HANDEDNESS_OPTIONS.map((h) => (
+                  <option key={h.value} value={h.value}>
+                    {h.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm font-semibold text-slate-700">
+              Age
+              <input
+                type="number"
+                name="age"
+                defaultValue={person.age ?? ''}
+                min={1}
+                className={`${inputClass} mt-1`}
+              />
+            </label>
+            <label className="text-sm font-semibold text-slate-700">
+              Playing Style
+              <select name="playingStyle" defaultValue={person.playing_style ?? ''} className={`${inputClass} mt-1`}>
+                <option value="">Not set</option>
+                {PLAYING_STYLE_OPTIONS.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <fieldset>
+              <legend className="text-sm font-semibold text-slate-700 mb-1">Strengths</legend>
+              <div className="flex flex-wrap gap-3">
+                {STRENGTH_OPTIONS.map((s) => (
+                  <label key={s.value} className="flex items-center gap-1.5 text-sm text-slate-600">
+                    <input
+                      type="checkbox"
+                      name="strengths"
+                      value={s.value}
+                      defaultChecked={(person.strengths ?? []).includes(s.value)}
+                      className="accent-teal-600"
+                    />
+                    {s.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <button type="submit" className={primaryButtonClass}>
+              Save Profile
+            </button>
+          </form>
+        </details>
+      </div>
 
       <div className="mb-6">
         <SharePlayerStatsButton
