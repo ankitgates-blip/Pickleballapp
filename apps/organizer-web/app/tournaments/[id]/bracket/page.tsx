@@ -5,10 +5,13 @@ import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass, accentButtonClass, linkClass, inputClass, primaryButtonClass } from '@/app/components/ui';
 import { formatLabel } from '@/lib/tournament/formats';
+import { timeslotLabel } from '@/lib/tournament/timeslots';
 import { computeStandings } from '@/lib/tournament/standings';
+import { buildMatchGroups } from '@/lib/tournament/resultsExport';
 import type { MatchResult } from '@/lib/types';
 import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, advanceLeaguePlayoffsRound, generateSemifinalMatches, generateFinalMatch } from './actions';
 import { enterScore } from '../matches/actions';
+import ShareScheduleButton from './ShareScheduleButton';
 
 export default async function BracketPage({
   params,
@@ -21,7 +24,7 @@ export default async function BracketPage({
   const { data: tournament } = await supabase
     .from('tournaments')
     .select(
-      'format, popcorn_rounds, gauntlet_rounds, claim_the_throne_rounds, up_and_down_the_river_rounds, league_playoffs_rounds'
+      'name, date, timeslot, format, popcorn_rounds, gauntlet_rounds, claim_the_throne_rounds, up_and_down_the_river_rounds, league_playoffs_rounds, venues(name)'
     )
     .eq('id', id)
     .single();
@@ -42,6 +45,9 @@ export default async function BracketPage({
     isGauntlet ||
     isClaimTheThrone ||
     isUpAndDownRiver;
+
+  const venue = tournament?.venues as { name: string } | { name: string }[] | null;
+  const venueName = Array.isArray(venue) ? (venue[0]?.name ?? 'Pickle Turf') : (venue?.name ?? 'Pickle Turf');
 
   const { data: teams } = await supabase
     .from('teams')
@@ -66,6 +72,20 @@ export default async function BracketPage({
     .select('id, round, stage, team_a_id, team_b_id, score_a, score_b, status, court')
     .eq('tournament_id', id)
     .order('round', { ascending: true });
+
+  const exportMatchGroups = buildMatchGroups(
+    (matches ?? []).map((m) => ({
+      round: m.round,
+      stage: m.stage,
+      team_a_id: m.team_a_id,
+      team_b_id: m.team_b_id,
+      score_a: m.score_a,
+      score_b: m.score_b,
+      status: m.status,
+    })),
+    teamById,
+    isLeaguePlayoffs
+  );
 
   const teamCount = (teams ?? []).length;
   const playerCount = (players ?? []).length;
@@ -281,6 +301,20 @@ export default async function BracketPage({
         <span className="text-sm font-semibold text-teal-700 bg-teal-50 rounded-full px-3 py-1">
           {formatLabel(format)}
         </span>
+      </div>
+
+      <div className="mb-6">
+        <ShareScheduleButton
+          tournamentName={tournament?.name ?? ''}
+          date={tournament?.date ?? ''}
+          venueName={venueName}
+          timeslotLabel={timeslotLabel(tournament?.timeslot ?? '')}
+          formatLabel={formatLabel(format)}
+          matchGroups={exportMatchGroups}
+        />
+        <p className="text-xs text-slate-400 mt-1.5">
+          Opens your share sheet on mobile — downloads the file on desktop.
+        </p>
       </div>
 
       {!isSupported && (
