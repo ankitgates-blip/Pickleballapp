@@ -9,7 +9,7 @@ import { timeslotLabel } from '@/lib/tournament/timeslots';
 import { computeStandings } from '@/lib/tournament/standings';
 import { buildMatchGroups } from '@/lib/tournament/resultsExport';
 import type { MatchResult } from '@/lib/types';
-import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, advanceLeaguePlayoffsRound, generateSemifinalMatches, generateFinalMatch } from './actions';
+import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, advanceLeaguePlayoffsRound, generateSemifinalMatches, generateFinalMatch, updateMatchTeams } from './actions';
 import { enterScore } from '../matches/actions';
 import ShareScheduleButton from './ShareScheduleButton';
 
@@ -222,6 +222,7 @@ export default async function BracketPage({
         const teamAWon = isComplete && (m.score_a ?? 0) > (m.score_b ?? 0);
         const teamBWon = isComplete && (m.score_b ?? 0) > (m.score_a ?? 0);
         const enterScoreForMatch = enterScore.bind(null, id, m.id);
+        const updateMatchTeamsForMatch = updateMatchTeams.bind(null, id, m.id);
 
         const teamALabel = (
           <span className={isFinal && teamAWon ? 'font-extrabold text-slate-900' : 'font-semibold'}>
@@ -286,6 +287,33 @@ export default async function BracketPage({
                   Save
                 </button>
               </form>
+              <div className="mt-3 pl-1">
+                <p className="text-xs text-slate-400 mb-2">
+                  Changing a match&apos;s teams doesn&apos;t recompute any standings, seeding, or
+                  later rounds already generated from it — double-check anything downstream that
+                  depended on this match.
+                </p>
+                <form action={updateMatchTeamsForMatch} className="flex items-center gap-3">
+                  <select name="teamAId" defaultValue={m.team_a_id ?? ''} className={inputClass}>
+                    {(teams ?? []).map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {teamById.get(t.id)}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-slate-400 font-bold">vs</span>
+                  <select name="teamBId" defaultValue={m.team_b_id ?? ''} className={inputClass}>
+                    {(teams ?? []).map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {teamById.get(t.id)}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="submit" className={primaryButtonClass}>
+                    Save Teams
+                  </button>
+                </form>
+              </div>
             </details>
           </li>
         );
