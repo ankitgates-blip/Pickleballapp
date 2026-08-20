@@ -3,7 +3,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
-import { isTournamentComplete } from '@/lib/tournament/completion';
+import { isTournamentComplete, canEditScore } from '@/lib/tournament/completion';
 
 export async function enterScore(
   tournamentId: string,
@@ -11,6 +11,22 @@ export async function enterScore(
   formData: FormData
 ) {
   const { supabase } = await requireOrganizer();
+
+  const { data: tournament, error: tournamentError } = await supabase
+    .from('tournaments')
+    .select(
+      'format, gauntlet_rounds, claim_the_throne_rounds, up_and_down_the_river_rounds, league_playoffs_rounds, completed_at, results_unlocked_at'
+    )
+    .eq('id', tournamentId)
+    .single();
+
+  if (tournamentError) {
+    throw new Error(tournamentError.message);
+  }
+
+  if (!canEditScore(tournament?.completed_at ?? null, tournament?.results_unlocked_at ?? null)) {
+    throw new Error('Scores are locked — unlock editing first to make a change.');
+  }
 
   const scoreA = Number(formData.get('scoreA'));
   const scoreB = Number(formData.get('scoreB'));
@@ -22,18 +38,6 @@ export async function enterScore(
 
   if (error) {
     throw new Error(error.message);
-  }
-
-  const { data: tournament, error: tournamentError } = await supabase
-    .from('tournaments')
-    .select(
-      'format, gauntlet_rounds, claim_the_throne_rounds, up_and_down_the_river_rounds, league_playoffs_rounds'
-    )
-    .eq('id', tournamentId)
-    .single();
-
-  if (tournamentError) {
-    throw new Error(tournamentError.message);
   }
 
   const { count: teamCount, error: teamCountError } = await supabase
