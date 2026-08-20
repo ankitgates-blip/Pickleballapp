@@ -6,6 +6,7 @@ import { HANDEDNESS_OPTIONS, PLAYING_STYLE_OPTIONS, STRENGTH_OPTIONS, PADDLE_BRA
 import { updatePersonProfile, uploadPersonPhoto, removePersonPhoto } from './actions';
 import PersonAvatar from '@/app/components/PersonAvatar';
 import SaveButton from '@/app/components/SaveButton';
+import ThreatBadge from '@/app/components/ThreatBadge';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computePersonStats } from '@/lib/stats/personStats';
 import { starRating, renderStars } from '@/lib/stats/starRating';
@@ -212,7 +213,10 @@ export default async function PersonDetailPage({
     <OrganizerShell organizerName={organizer.name}>
       <div className="flex items-center gap-4 mb-1">
         <PersonAvatar photoUrl={person.photo_url} name={person.name} size={80} />
-        <h1 className="text-2xl font-bold text-slate-900">{displayName}</h1>
+        <div className="flex items-center gap-2 flex-wrap">
+          <h1 className="text-2xl font-bold text-slate-900">{displayName}</h1>
+          <ThreatBadge winPercentage={stats.winPercentage} />
+        </div>
       </div>
       <p className="text-sm text-slate-500">
         {stats.lastPlayedDate ? `Last played: ${stats.lastPlayedDate}` : 'No matches played yet'}
