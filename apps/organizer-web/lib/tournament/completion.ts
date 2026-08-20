@@ -27,3 +27,17 @@ export function isTournamentComplete(
 
   return allComplete;
 }
+
+export function canEditScore(
+  completedAt: string | null,
+  resultsUnlockedAt: string | null
+): boolean {
+  return completedAt === null || resultsUnlockedAt !== null;
+}
+
+export function canEditTeams(
+  completedAt: string | null,
+  resultsUnlockedAt: string | null
+): boolean {
+  return completedAt !== null && resultsUnlockedAt !== null;
+}

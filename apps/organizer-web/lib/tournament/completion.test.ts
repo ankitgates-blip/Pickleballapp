@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isTournamentComplete } from './completion';
+import { isTournamentComplete, canEditScore, canEditTeams } from './completion';
 import type { CompletionCheckMatch } from '@/lib/types';
 
 describe('isTournamentComplete', () => {
@@ -133,5 +133,33 @@ describe('isTournamentComplete', () => {
       { stage: 'league', status: 'complete', teamBId: 't4', round: 2 },
     ];
     expect(isTournamentComplete('up_and_down_the_river', 4, matches, 2)).toBe(true);
+  });
+});
+
+describe('canEditScore', () => {
+  it('is editable when the tournament is not complete', () => {
+    expect(canEditScore(null, null)).toBe(true);
+  });
+
+  it('is editable when complete but not yet unlocked', () => {
+    expect(canEditScore('2026-08-20T10:00:00.000Z', null)).toBe(false);
+  });
+
+  it('is editable when complete and unlocked', () => {
+    expect(canEditScore('2026-08-20T10:00:00.000Z', '2026-08-20T11:00:00.000Z')).toBe(true);
+  });
+});
+
+describe('canEditTeams', () => {
+  it('is not editable when the tournament is not complete', () => {
+    expect(canEditTeams(null, null)).toBe(false);
+  });
+
+  it('is not editable when complete but not unlocked', () => {
+    expect(canEditTeams('2026-08-20T10:00:00.000Z', null)).toBe(false);
+  });
+
+  it('is editable when complete and unlocked', () => {
+    expect(canEditTeams('2026-08-20T10:00:00.000Z', '2026-08-20T11:00:00.000Z')).toBe(true);
   });
 });
