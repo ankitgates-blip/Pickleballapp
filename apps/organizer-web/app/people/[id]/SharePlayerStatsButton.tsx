@@ -10,7 +10,12 @@ type SharePlayerStatsButtonProps = {
   photoUrl: string | null;
   lastPlayedDate: string | null;
   starLabel: string;
-  profileSummary: string | null;
+  handedness: string | null;
+  age: number | null;
+  playingStyle: string | null;
+  paddleBrand: string | null;
+  signatureShot: string | null;
+  strengths: string[];
   thisMonthGamesWon: number;
   thisMonthGamesLost: number;
   thisMonthTournamentsWon: number;
@@ -44,7 +49,12 @@ export default function SharePlayerStatsButton({
   photoUrl,
   lastPlayedDate,
   starLabel,
-  profileSummary,
+  handedness,
+  age,
+  playingStyle,
+  paddleBrand,
+  signatureShot,
+  strengths,
   thisMonthGamesWon,
   thisMonthGamesLost,
   thisMonthTournamentsWon,
@@ -105,9 +115,18 @@ export default function SharePlayerStatsButton({
       );
       y += 8;
 
-      if (profileSummary) {
-        doc.text(profileSummary, 14, y);
-        y += 8;
+      const profileRows: [string, string][] = [
+        handedness ? (['Handedness', handedness] as [string, string]) : null,
+        age !== null ? (['Age', String(age)] as [string, string]) : null,
+        playingStyle ? (['Playing Style', playingStyle] as [string, string]) : null,
+        paddleBrand ? (['Paddle Brand', paddleBrand] as [string, string]) : null,
+        signatureShot ? (['Signature Shot', signatureShot] as [string, string]) : null,
+        strengths.length > 0 ? (['Strengths', strengths.join(', ')] as [string, string]) : null,
+      ].filter((row): row is [string, string] => row !== null);
+
+      for (const [label, value] of profileRows) {
+        doc.text(`${label}: ${value}`, 14, y);
+        y += 6;
       }
 
       y += 2;

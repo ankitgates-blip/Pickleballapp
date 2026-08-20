@@ -175,17 +175,20 @@ export default async function PersonDetailPage({
   const strengthLabels = (person.strengths ?? []).map(
     (s: string) => STRENGTH_OPTIONS.find((o) => o.value === s)?.label ?? s
   );
+  const handednessLabel = person.handedness
+    ? (HANDEDNESS_OPTIONS.find((h) => h.value === person.handedness)?.label ?? null)
+    : null;
+  const playingStyleLabel = person.playing_style
+    ? (PLAYING_STYLE_OPTIONS.find((s) => s.value === person.playing_style)?.label ?? null)
+    : null;
+  const paddleBrandLabel = person.paddle_brand
+    ? (PADDLE_BRAND_OPTIONS.find((p) => p.value === person.paddle_brand)?.label ?? null)
+    : null;
   const profileSummaryParts = [
-    person.handedness
-      ? (HANDEDNESS_OPTIONS.find((h) => h.value === person.handedness)?.label ?? null)
-      : null,
+    handednessLabel,
     person.age ? `Age ${person.age}` : null,
-    person.playing_style
-      ? (PLAYING_STYLE_OPTIONS.find((s) => s.value === person.playing_style)?.label ?? null)
-      : null,
-    person.paddle_brand
-      ? (PADDLE_BRAND_OPTIONS.find((p) => p.value === person.paddle_brand)?.label ?? null)
-      : null,
+    playingStyleLabel,
+    paddleBrandLabel,
     strengthLabels.length > 0 ? strengthLabels.join(', ') : null,
   ].filter((part): part is string => Boolean(part));
   const profileSummary = profileSummaryParts.length > 0 ? profileSummaryParts.join(' · ') : null;
@@ -344,7 +347,12 @@ export default async function PersonDetailPage({
           photoUrl={person.photo_url}
           lastPlayedDate={stats.lastPlayedDate}
           starLabel={starLabel}
-          profileSummary={profileSummary}
+          handedness={handednessLabel}
+          age={person.age}
+          playingStyle={playingStyleLabel}
+          paddleBrand={paddleBrandLabel}
+          signatureShot={person.signature_shot}
+          strengths={strengthLabels}
           thisMonthGamesWon={thisMonth.gamesWon}
           thisMonthGamesLost={thisMonth.gamesLost}
           thisMonthTournamentsWon={thisMonth.tournamentsWon}
