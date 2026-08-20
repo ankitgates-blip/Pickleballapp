@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type PersonAvatarProps = {
   photoUrl: string | null;
@@ -10,6 +10,11 @@ type PersonAvatarProps = {
 
 export default function PersonAvatar({ photoUrl, name, size }: PersonAvatarProps) {
   const [failed, setFailed] = useState(false);
+  // Reset the failure flag whenever the photo URL changes (e.g. a re-upload produces a new
+  // cache-busted URL) so a previously-broken image doesn't stay stuck on the initials fallback.
+  useEffect(() => {
+    setFailed(false);
+  }, [photoUrl]);
   const initial = name.trim().charAt(0).toUpperCase() || '?';
   const style = { width: size, height: size };
 
