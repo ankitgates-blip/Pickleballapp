@@ -4,7 +4,6 @@ const steps = [
   { key: 'roster', label: 'Roster' },
   { key: 'teams', label: 'Teams' },
   { key: 'bracket', label: 'Bracket' },
-  { key: 'matches', label: 'Scores' },
   { key: 'standings', label: 'Standings' },
   { key: 'results', label: 'Results' },
 ] as const;

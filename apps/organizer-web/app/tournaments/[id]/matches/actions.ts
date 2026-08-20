@@ -95,7 +95,6 @@ export async function enterScore(
     }
   }
 
-  revalidatePath(`/tournaments/${tournamentId}/matches`);
   revalidatePath(`/tournaments/${tournamentId}/standings`);
   revalidatePath(`/tournaments/${tournamentId}/bracket`);
   revalidatePath('/tournaments');

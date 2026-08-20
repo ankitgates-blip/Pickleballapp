@@ -862,7 +862,6 @@ export async function unlockTournamentResults(tournamentId: string) {
   }
 
   revalidatePath(`/tournaments/${tournamentId}/bracket`);
-  revalidatePath(`/tournaments/${tournamentId}/matches`);
 }
 
 export async function lockTournamentResults(tournamentId: string) {
@@ -878,5 +877,4 @@ export async function lockTournamentResults(tournamentId: string) {
   }
 
   revalidatePath(`/tournaments/${tournamentId}/bracket`);
-  revalidatePath(`/tournaments/${tournamentId}/matches`);
 }

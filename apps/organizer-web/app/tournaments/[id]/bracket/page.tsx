@@ -653,9 +653,6 @@ export default async function BracketPage({
 
       {hasLeagueMatches && (
         <p className="mt-6 flex gap-4">
-          <Link href={`/tournaments/${id}/matches`} className={linkClass}>
-            Enter scores →
-          </Link>
           <Link href={`/tournaments/${id}/standings`} className={linkClass}>
             View standings →
           </Link>
