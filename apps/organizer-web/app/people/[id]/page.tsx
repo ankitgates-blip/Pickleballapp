@@ -184,10 +184,15 @@ export default async function PersonDetailPage({
   const paddleBrandLabel = person.paddle_brand
     ? (PADDLE_BRAND_OPTIONS.find((p) => p.value === person.paddle_brand)?.label ?? null)
     : null;
-  const signatureShotBadges = ((person.signature_shot as string[] | null) ?? [])
-    .map((v: string) => SIGNATURE_SHOT_OPTIONS.find((o) => o.value === v))
+  const signatureShotValues = (person.signature_shot as string[] | null) ?? [];
+  const signatureShotBadges = signatureShotValues
+    .map((v) => SIGNATURE_SHOT_OPTIONS.find((o) => o.value === v))
     .filter((b): b is (typeof SIGNATURE_SHOT_OPTIONS)[number] => Boolean(b));
-  const signatureShotLabels = signatureShotBadges.map((b) => `${b.emoji} ${b.skillName} — ${b.funnyName}`);
+  // The PDF export uses jsPDF's standard WinAnsi-encoded font with no custom font registered
+  // (matching the existing ASCII-only convention in lib/stats/personStatsExport.ts) -- an emoji
+  // in a doc.text() call corrupts the entire string into mojibake, so the PDF gets a plain-text
+  // label without the emoji while the on-page pills keep it.
+  const signatureShotPdfLabels = signatureShotBadges.map((b) => `${b.skillName} — ${b.funnyName}`);
   const profileSummaryParts = [
     handednessLabel,
     person.age ? `Age ${person.age}` : null,
@@ -328,7 +333,7 @@ export default async function PersonDetailPage({
                       type="checkbox"
                       name="signatureShot"
                       value={b.value}
-                      defaultChecked={(person.signature_shot ?? []).includes(b.value)}
+                      defaultChecked={signatureShotValues.includes(b.value)}
                       className="accent-teal-600"
                     />
                     {b.emoji} {b.skillName} — {b.funnyName}
@@ -370,7 +375,7 @@ export default async function PersonDetailPage({
           age={person.age}
           playingStyle={playingStyleLabel}
           paddleBrand={paddleBrandLabel}
-          signatureShot={signatureShotLabels}
+          signatureShot={signatureShotPdfLabels}
           strengths={strengthLabels}
           thisMonthGamesWon={thisMonth.gamesWon}
           thisMonthGamesLost={thisMonth.gamesLost}
