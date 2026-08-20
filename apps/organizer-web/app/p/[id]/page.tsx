@@ -10,6 +10,7 @@ import { isIndividualFormat } from '@/lib/tournament/formats';
 import type { RawMatch, RawTeam, TournamentWon } from '@/lib/stats/types';
 import type { MatchResult } from '@/lib/types';
 import { cardClass, pillClass } from '@/app/components/ui';
+import PersonAvatar from '@/app/components/PersonAvatar';
 
 export default async function PublicPersonPage({
   params,
@@ -21,7 +22,7 @@ export default async function PublicPersonPage({
 
   const { data: person } = await supabase
     .from('people')
-    .select('id, name, organizer_id')
+    .select('id, name, organizer_id, photo_url')
     .eq('id', id)
     .single();
 
@@ -158,6 +159,9 @@ export default async function PublicPersonPage({
         />
         <div className="relative max-w-2xl mx-auto px-4 py-6 text-center">
           <Image src="/logo.png" alt="PicklerAlly DXB" width={40} height={40} className="mx-auto mb-2 rounded-full" />
+          <div className="flex justify-center mb-2">
+            <PersonAvatar photoUrl={person.photo_url} name={person.name} size={64} />
+          </div>
           <h1 className="text-2xl font-bold tracking-tight">{person.name}</h1>
           <p className="text-teal-50 text-sm mt-1 font-medium">
             {stats.lastPlayedDate ? `Last played: ${stats.lastPlayedDate}` : 'No matches played yet'}
