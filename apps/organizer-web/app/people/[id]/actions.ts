@@ -21,7 +21,10 @@ export async function updatePersonProfile(personId: string, formData: FormData) 
   const handedness = (formData.get('handedness') as string) || null;
   const playingStyle = (formData.get('playingStyle') as string) || null;
   const paddleBrand = (formData.get('paddleBrand') as string) || null;
-  const signatureShot = (formData.get('signatureShot') as string)?.trim() || null;
+  const signatureShot = formData.getAll('signatureShot') as string[];
+  if (signatureShot.length > 4) {
+    throw new Error('Choose at most 4 signature shot badges');
+  }
   const strengths = formData.getAll('strengths') as string[];
 
   const { error } = await supabase
