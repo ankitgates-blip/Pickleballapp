@@ -72,9 +72,9 @@ export default function SharePlayerStatsButton({
 
       if (photoDataUrl) {
         try {
-          const format = photoDataUrl.includes('image/png')
+          const format = photoDataUrl.startsWith('data:image/png')
             ? 'PNG'
-            : photoDataUrl.includes('image/webp')
+            : photoDataUrl.startsWith('data:image/webp')
               ? 'WEBP'
               : 'JPEG';
           doc.addImage(photoDataUrl, format, 160, 10, 30, 30);

@@ -5,7 +5,7 @@ import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import { ALLOWED_PHOTO_MIME_TO_EXT, validatePhotoFile } from '@/lib/people/photoValidation';
 
 const PLAYER_PHOTOS_BUCKET = 'player-photos';
-const PHOTO_EXTENSIONS = ['jpg', 'png', 'webp'];
+const PHOTO_EXTENSIONS = Object.values(ALLOWED_PHOTO_MIME_TO_EXT);
 
 export async function updatePersonProfile(personId: string, formData: FormData) {
   const { supabase } = await requireOrganizer();

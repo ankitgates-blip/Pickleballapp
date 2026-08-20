@@ -159,9 +159,11 @@ export default async function PublicPersonPage({
         />
         <div className="relative max-w-2xl mx-auto px-4 py-6 text-center">
           <Image src="/logo.png" alt="PicklerAlly DXB" width={40} height={40} className="mx-auto mb-2 rounded-full" />
-          <div className="flex justify-center mb-2">
-            <PersonAvatar photoUrl={person.photo_url} name={person.name} size={64} />
-          </div>
+          {person.photo_url && (
+            <div className="flex justify-center mb-2">
+              <PersonAvatar photoUrl={person.photo_url} name={person.name} size={64} />
+            </div>
+          )}
           <h1 className="text-2xl font-bold tracking-tight">{person.name}</h1>
           <p className="text-teal-50 text-sm mt-1 font-medium">
             {stats.lastPlayedDate ? `Last played: ${stats.lastPlayedDate}` : 'No matches played yet'}

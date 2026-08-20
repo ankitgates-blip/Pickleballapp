@@ -227,15 +227,17 @@ export default async function PersonDetailPage({
             ✏️ Edit Profile
           </summary>
           <div className={`${cardClass} flex flex-col gap-3 max-w-md mb-3`}>
-            <p className="text-sm font-semibold text-slate-700">Photo</p>
             <form action={uploadPersonPhotoWithId} className="flex items-center gap-2">
-              <input
-                type="file"
-                name="photo"
-                accept="image/jpeg,image/png,image/webp"
-                required
-                className="text-sm flex-1"
-              />
+              <label className="text-sm font-semibold text-slate-700 flex-1">
+                Photo
+                <input
+                  type="file"
+                  name="photo"
+                  accept="image/jpeg,image/png,image/webp"
+                  required
+                  className="text-sm block w-full mt-1"
+                />
+              </label>
               <button type="submit" className={primaryButtonClass}>
                 Upload
               </button>
