@@ -100,12 +100,22 @@ new helpers.
   `results_unlocked_at` is null (calls `unlockTournamentResults`), or
   "🔒 Lock Editing" when it's set (calls `lockTournamentResults`).
 
+## Correction (post-implementation)
+
+The original design assumed `Regenerate All Rounds` was already unreachable
+once a tournament was complete, since it refuses once Semifinal/Final
+matches exist. That assumption was wrong: League + Playoffs tournaments
+with fewer than 4 teams can reach `completed_at` from the League stage
+alone — no Semifinal/Final match is ever created below 4 teams — leaving
+`regenerateLeaguePlayoffsBracket` reachable on a completed, locked
+tournament with no guard against it. This was caught in the final
+whole-branch review and fixed: `regenerateLeaguePlayoffsBracket` now also
+throws if `tournaments.completed_at` is set, and the Bracket page's
+`showRegenerateLeaguePlayoffsRounds` condition now also requires
+`!tournament?.completed_at`.
+
 ## Out of scope
 
-- Any change to `Regenerate All Rounds` — it already refuses once
-  Semifinal/Final matches exist, which happens well before a League +
-  Playoffs tournament could ever be marked complete, so it's already
-  unreachable in the locked state without any new guard.
 - Any change to how/when `tournaments.completed_at` itself gets set —
   untouched, still automatic via `enterScore`'s existing
   `isTournamentComplete()` check.
