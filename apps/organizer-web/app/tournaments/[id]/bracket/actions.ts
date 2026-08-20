@@ -66,7 +66,7 @@ export async function generateBracket(tournamentId: string) {
   revalidatePath(`/tournaments/${tournamentId}/bracket`);
 }
 
-export async function advanceLeaguePlayoffsRound(tournamentId: string, formData?: FormData) {
+export async function generateLeaguePlayoffsBracket(tournamentId: string, formData?: FormData) {
   const { supabase } = await requireOrganizer();
 
   const { data: teams, error: teamsError } = await supabase
@@ -83,64 +83,116 @@ export async function advanceLeaguePlayoffsRound(tournamentId: string, formData?
     throw new Error('Need at least 2 teams to generate a bracket');
   }
 
-  const { data: existingMatches, error: existingMatchesError } = await supabase
-    .from('matches')
-    .select('round')
-    .eq('tournament_id', tournamentId)
-    .eq('stage', 'league');
-
-  if (existingMatchesError) {
-    throw new Error(existingMatchesError.message);
-  }
-
-  const currentRound =
-    existingMatches && existingMatches.length > 0
-      ? Math.max(...existingMatches.map((m) => m.round))
-      : 0;
-
   const teamCount = teams.length;
   const fullRounds = teamCount % 2 === 0 ? teamCount - 1 : teamCount;
 
-  let targetRounds: number;
+  const rawRounds = formData?.get('rounds');
+  const requested =
+    typeof rawRounds === 'string' && rawRounds.trim() !== '' ? Number(rawRounds) : NaN;
+  const targetRounds = Number.isFinite(requested)
+    ? Math.max(1, Math.min(fullRounds, Math.floor(requested)))
+    : fullRounds;
 
-  if (currentRound === 0) {
-    const rawRounds = formData?.get('rounds');
-    const requested =
-      typeof rawRounds === 'string' && rawRounds.trim() !== '' ? Number(rawRounds) : NaN;
-    targetRounds = Number.isFinite(requested)
-      ? Math.max(1, Math.min(fullRounds, Math.floor(requested)))
-      : fullRounds;
+  const { error: updateError } = await supabase
+    .from('tournaments')
+    .update({ league_playoffs_rounds: targetRounds })
+    .eq('id', tournamentId);
 
-    const { error: updateError } = await supabase
-      .from('tournaments')
-      .update({ league_playoffs_rounds: targetRounds })
-      .eq('id', tournamentId);
-
-    if (updateError) {
-      throw new Error(updateError.message);
-    }
-  } else {
-    const { data: tournament, error: tournamentError } = await supabase
-      .from('tournaments')
-      .select('league_playoffs_rounds')
-      .eq('id', tournamentId)
-      .single();
-
-    if (tournamentError) {
-      throw new Error(tournamentError.message);
-    }
-
-    targetRounds = tournament?.league_playoffs_rounds ?? fullRounds;
-  }
-
-  const nextRound = currentRound + 1;
-
-  if (nextRound > targetRounds) {
-    return;
+  if (updateError) {
+    throw new Error(updateError.message);
   }
 
   const pairings = generateRoundRobin(teams.map((t) => t.id)).filter(
-    (p) => p.round === nextRound
+    (p) => p.round <= targetRounds
+  );
+
+  const { error: matchesError } = await supabase.from('matches').insert(
+    pairings.map((p) => ({
+      tournament_id: tournamentId,
+      round: p.round,
+      stage: 'league' as const,
+      team_a_id: p.teamAId,
+      team_b_id: p.teamBId,
+      status: 'pending' as const,
+    }))
+  );
+
+  if (matchesError) {
+    throw new Error(matchesError.message);
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}/bracket`);
+}
+
+export async function regenerateLeaguePlayoffsBracket(tournamentId: string) {
+  const { supabase } = await requireOrganizer();
+
+  const { data: playoffMatches, error: playoffError } = await supabase
+    .from('matches')
+    .select('stage')
+    .eq('tournament_id', tournamentId)
+    .in('stage', ['semifinal', 'final']);
+
+  if (playoffError) {
+    throw new Error(playoffError.message);
+  }
+
+  if (playoffMatches && playoffMatches.length > 0) {
+    throw new Error('Playoffs have already started — cannot regenerate the League stage');
+  }
+
+  const { data: teams, error: teamsError } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('tournament_id', tournamentId)
+    .order('id', { ascending: true });
+
+  if (teamsError) {
+    throw new Error(teamsError.message);
+  }
+
+  if (!teams || teams.length < 2) {
+    throw new Error('Need at least 2 teams to generate a bracket');
+  }
+
+  const { data: tournament, error: tournamentError } = await supabase
+    .from('tournaments')
+    .select('league_playoffs_rounds')
+    .eq('id', tournamentId)
+    .single();
+
+  if (tournamentError) {
+    throw new Error(tournamentError.message);
+  }
+
+  const teamCount = teams.length;
+  const fullRounds = teamCount % 2 === 0 ? teamCount - 1 : teamCount;
+  const targetRounds = Math.max(
+    1,
+    Math.min(fullRounds, tournament?.league_playoffs_rounds ?? fullRounds)
+  );
+
+  const { error: deleteError } = await supabase
+    .from('matches')
+    .delete()
+    .eq('tournament_id', tournamentId)
+    .eq('stage', 'league');
+
+  if (deleteError) {
+    throw new Error(deleteError.message);
+  }
+
+  const { error: updateError } = await supabase
+    .from('tournaments')
+    .update({ league_playoffs_rounds: targetRounds })
+    .eq('id', tournamentId);
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
+  const pairings = generateRoundRobin(teams.map((t) => t.id)).filter(
+    (p) => p.round <= targetRounds
   );
 
   const { error: matchesError } = await supabase.from('matches').insert(
