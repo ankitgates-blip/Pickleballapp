@@ -13,6 +13,7 @@ import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceC
 import { enterScore } from '../matches/actions';
 import ShareScheduleButton from './ShareScheduleButton';
 import RegenerateLeagueRoundsButton from './RegenerateLeagueRoundsButton';
+import SaveButton from '@/app/components/SaveButton';
 
 export default async function BracketPage({
   params,
@@ -274,9 +275,9 @@ export default async function BracketPage({
                   required
                   className={`${inputClass} w-20`}
                 />
-                <button type="submit" className={primaryButtonClass}>
+                <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
                   Save
-                </button>
+                </SaveButton>
               </form>
               <div className="mt-3 pl-1">
                 <p className="text-xs text-slate-400 mb-2">
