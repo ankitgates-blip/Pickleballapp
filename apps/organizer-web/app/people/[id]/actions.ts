@@ -15,6 +15,8 @@ export async function updatePersonProfile(personId: string, formData: FormData) 
     throw new Error('Name is required');
   }
 
+  const nickname = (formData.get('nickname') as string)?.trim() || null;
+
   const ageRaw = formData.get('age') as string;
   const ageNum = ageRaw ? Number(ageRaw) : NaN;
   const age = Number.isInteger(ageNum) && ageNum > 0 && ageNum < 130 ? ageNum : null;
@@ -31,6 +33,7 @@ export async function updatePersonProfile(personId: string, formData: FormData) 
     .from('people')
     .update({
       name,
+      nickname,
       age,
       handedness,
       playing_style: playingStyle,
