@@ -169,7 +169,7 @@ export default async function BracketPage({
   const playoffsStarted = semifinalMatches.length > 0 || finalMatches.length > 0;
   const hasScoredLeagueMatches = leagueMatches.some((m) => m.status === 'complete');
   const showRegenerateLeaguePlayoffsRounds =
-    isLeaguePlayoffs && hasLeagueMatches && !playoffsStarted;
+    isLeaguePlayoffs && hasLeagueMatches && !playoffsStarted && !tournament?.completed_at;
 
   const showGenerateSemifinals =
     isLeaguePlayoffs &&
@@ -339,11 +339,11 @@ export default async function BracketPage({
 
       {tournament?.completed_at && (
         <form
-          action={canEditTeamsValue ? lockTournamentResultsWithId : unlockTournamentResultsWithId}
+          action={tournament?.results_unlocked_at ? lockTournamentResultsWithId : unlockTournamentResultsWithId}
           className="mb-6"
         >
           <button type="submit" className={outlineButtonClass}>
-            {canEditTeamsValue ? '🔒 Lock Editing' : '🔓 Unlock Editing'}
+            {tournament?.results_unlocked_at ? '🔒 Lock Editing' : '🔓 Unlock Editing'}
           </button>
         </form>
       )}

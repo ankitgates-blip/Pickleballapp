@@ -142,6 +142,22 @@ export async function regenerateLeaguePlayoffsBracket(tournamentId: string) {
     throw new Error('Playoffs have already started — cannot regenerate the League stage');
   }
 
+  const { data: tournamentCompletion, error: completionError } = await supabase
+    .from('tournaments')
+    .select('completed_at')
+    .eq('id', tournamentId)
+    .single();
+
+  if (completionError) {
+    throw new Error(completionError.message);
+  }
+
+  if (tournamentCompletion?.completed_at) {
+    throw new Error(
+      'This tournament is already complete — unlock editing first to regenerate the schedule.'
+    );
+  }
+
   const { data: teams, error: teamsError } = await supabase
     .from('teams')
     .select('id')

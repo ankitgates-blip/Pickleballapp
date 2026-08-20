@@ -141,7 +141,7 @@ describe('canEditScore', () => {
     expect(canEditScore(null, null)).toBe(true);
   });
 
-  it('is editable when complete but not yet unlocked', () => {
+  it('is not editable when complete but not yet unlocked', () => {
     expect(canEditScore('2026-08-20T10:00:00.000Z', null)).toBe(false);
   });
 
@@ -161,5 +161,20 @@ describe('canEditTeams', () => {
 
   it('is editable when complete and unlocked', () => {
     expect(canEditTeams('2026-08-20T10:00:00.000Z', '2026-08-20T11:00:00.000Z')).toBe(true);
+  });
+});
+
+describe('canEditTeams implies canEditScore', () => {
+  it('never allows team edits while scores are locked', () => {
+    const cases: Array<[string | null, string | null]> = [
+      [null, null],
+      ['2026-08-20T10:00:00.000Z', null],
+      ['2026-08-20T10:00:00.000Z', '2026-08-20T11:00:00.000Z'],
+    ];
+    for (const [completedAt, resultsUnlockedAt] of cases) {
+      if (canEditTeams(completedAt, resultsUnlockedAt)) {
+        expect(canEditScore(completedAt, resultsUnlockedAt)).toBe(true);
+      }
+    }
   });
 });

@@ -34,7 +34,8 @@ export async function enterScore(
   const { error } = await supabase
     .from('matches')
     .update({ score_a: scoreA, score_b: scoreB, status: 'complete' })
-    .eq('id', matchId);
+    .eq('id', matchId)
+    .eq('tournament_id', tournamentId);
 
   if (error) {
     throw new Error(error.message);
