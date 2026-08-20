@@ -5,6 +5,7 @@ import { cardClass, pillClass, inputClass, primaryButtonClass } from '@/app/comp
 import { HANDEDNESS_OPTIONS, PLAYING_STYLE_OPTIONS, STRENGTH_OPTIONS, PADDLE_BRAND_OPTIONS, SIGNATURE_SHOT_OPTIONS } from '@/lib/people/profileOptions';
 import { updatePersonProfile, uploadPersonPhoto, removePersonPhoto } from './actions';
 import PersonAvatar from '@/app/components/PersonAvatar';
+import SaveButton from '@/app/components/SaveButton';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computePersonStats } from '@/lib/stats/personStats';
 import { starRating, renderStars } from '@/lib/stats/starRating';
@@ -257,15 +258,18 @@ export default async function PersonDetailPage({
                   className="text-sm block w-full mt-1"
                 />
               </label>
-              <button type="submit" className={primaryButtonClass}>
+              <SaveButton className={primaryButtonClass} pendingLabel="Uploading…">
                 Upload
-              </button>
+              </SaveButton>
             </form>
             {person.photo_url && (
               <form action={removePersonPhotoWithId}>
-                <button type="submit" className="text-xs font-semibold text-red-600 hover:underline">
+                <SaveButton
+                  className="text-xs font-semibold text-red-600 hover:underline"
+                  pendingLabel="Removing…"
+                >
                   Remove photo
-                </button>
+                </SaveButton>
               </form>
             )}
           </div>
@@ -369,9 +373,9 @@ export default async function PersonDetailPage({
                 ))}
               </div>
             </fieldset>
-            <button type="submit" className={primaryButtonClass}>
+            <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
               Save Profile
-            </button>
+            </SaveButton>
           </form>
         </details>
       </div>
