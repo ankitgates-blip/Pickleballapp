@@ -6,6 +6,7 @@ import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass, inputClass, primaryButtonClass, pillClass, linkClass } from '@/app/components/ui';
 import { enterScore } from './actions';
 import SaveButton from '@/app/components/SaveButton';
+import { canEditScore } from '@/lib/tournament/completion';
 
 const STAGE_LABELS: Record<string, string> = {
   league: 'League',
@@ -20,6 +21,17 @@ export default async function MatchesPage({
 }) {
   const { id } = await params;
   const { supabase, organizer } = await requireOrganizer();
+
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('completed_at, results_unlocked_at')
+    .eq('id', id)
+    .single();
+
+  const canEditScoreValue = canEditScore(
+    tournament?.completed_at ?? null,
+    tournament?.results_unlocked_at ?? null
+  );
 
   const { data: teams } = await supabase
     .from('teams')
@@ -82,28 +94,34 @@ export default async function MatchesPage({
                         {m.status}
                       </span>
                     </div>
-                    <form action={enterScoreForMatch} className="flex items-center gap-3">
-                      <input
-                        name="scoreA"
-                        type="number"
-                        defaultValue={m.score_a ?? ''}
-                        placeholder="Team A"
-                        required
-                        className={`${inputClass} w-24`}
-                      />
-                      <span className="text-slate-400 font-bold">–</span>
-                      <input
-                        name="scoreB"
-                        type="number"
-                        defaultValue={m.score_b ?? ''}
-                        placeholder="Team B"
-                        required
-                        className={`${inputClass} w-24`}
-                      />
-                      <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
-                        Save
-                      </SaveButton>
-                    </form>
+                    {canEditScoreValue ? (
+                      <form action={enterScoreForMatch} className="flex items-center gap-3">
+                        <input
+                          name="scoreA"
+                          type="number"
+                          defaultValue={m.score_a ?? ''}
+                          placeholder="Team A"
+                          required
+                          className={`${inputClass} w-24`}
+                        />
+                        <span className="text-slate-400 font-bold">–</span>
+                        <input
+                          name="scoreB"
+                          type="number"
+                          defaultValue={m.score_b ?? ''}
+                          placeholder="Team B"
+                          required
+                          className={`${inputClass} w-24`}
+                        />
+                        <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
+                          Save
+                        </SaveButton>
+                      </form>
+                    ) : (
+                      <p className="text-sm font-semibold text-slate-700">
+                        Final: {m.score_a}-{m.score_b}
+                      </p>
+                    )}
                   </div>
                 );
               })}
