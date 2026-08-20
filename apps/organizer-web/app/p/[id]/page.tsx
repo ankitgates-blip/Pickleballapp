@@ -22,7 +22,7 @@ export default async function PublicPersonPage({
 
   const { data: person } = await supabase
     .from('people')
-    .select('id, name, organizer_id, photo_url')
+    .select('id, name, nickname, organizer_id, photo_url')
     .eq('id', id)
     .single();
 
@@ -164,7 +164,9 @@ export default async function PublicPersonPage({
               <PersonAvatar photoUrl={person.photo_url} name={person.name} size={64} />
             </div>
           )}
-          <h1 className="text-2xl font-bold tracking-tight">{person.name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {person.nickname ? `${person.name} (${person.nickname})` : person.name}
+          </h1>
           <p className="text-teal-50 text-sm mt-1 font-medium">
             {stats.lastPlayedDate ? `Last played: ${stats.lastPlayedDate}` : 'No matches played yet'}
           </p>
