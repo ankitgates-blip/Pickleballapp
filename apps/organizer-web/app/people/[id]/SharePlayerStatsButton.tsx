@@ -7,6 +7,7 @@ import type { ExportLocationRow, ExportMatchHistoryRow, ExportPeriodRow } from '
 
 type SharePlayerStatsButtonProps = {
   personName: string;
+  nickname: string | null;
   photoUrl: string | null;
   lastPlayedDate: string | null;
   starLabel: string;
@@ -46,6 +47,7 @@ async function loadPhotoDataUrl(url: string): Promise<string | null> {
 
 export default function SharePlayerStatsButton({
   personName,
+  nickname,
   photoUrl,
   lastPlayedDate,
   starLabel,
@@ -104,7 +106,7 @@ export default function SharePlayerStatsButton({
       doc.text('PicklerAlly DXB', 14, y);
       y += 8;
       doc.setFontSize(13);
-      doc.text(personName, 14, y);
+      doc.text(nickname ? `${personName} (${nickname})` : personName, 14, y);
       y += 7;
 
       doc.setFontSize(10);

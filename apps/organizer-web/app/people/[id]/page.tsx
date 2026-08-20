@@ -32,7 +32,7 @@ export default async function PersonDetailPage({
 
   const { data: person } = await supabase
     .from('people')
-    .select('id, name, handedness, age, playing_style, paddle_brand, signature_shot, photo_url, strengths')
+    .select('id, name, nickname, handedness, age, playing_style, paddle_brand, signature_shot, photo_url, strengths')
     .eq('id', id)
     .eq('organizer_id', organizer.id)
     .single();
@@ -205,12 +205,13 @@ export default async function PersonDetailPage({
   const updatePersonProfileWithId = updatePersonProfile.bind(null, person.id);
   const uploadPersonPhotoWithId = uploadPersonPhoto.bind(null, person.id);
   const removePersonPhotoWithId = removePersonPhoto.bind(null, person.id);
+  const displayName = person.nickname ? `${person.name} (${person.nickname})` : person.name;
 
   return (
     <OrganizerShell organizerName={organizer.name}>
       <div className="flex items-center gap-4 mb-1">
         <PersonAvatar photoUrl={person.photo_url} name={person.name} size={80} />
-        <h1 className="text-2xl font-bold text-slate-900">{person.name}</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{displayName}</h1>
       </div>
       <p className="text-sm text-slate-500">
         {stats.lastPlayedDate ? `Last played: ${stats.lastPlayedDate}` : 'No matches played yet'}
@@ -276,6 +277,16 @@ export default async function PersonDetailPage({
                 name="name"
                 defaultValue={person.name}
                 required
+                className={`${inputClass} mt-1`}
+              />
+            </label>
+            <label className="text-sm font-semibold text-slate-700">
+              Nickname
+              <input
+                type="text"
+                name="nickname"
+                defaultValue={person.nickname ?? ''}
+                placeholder="e.g. Rocket"
                 className={`${inputClass} mt-1`}
               />
             </label>
@@ -368,6 +379,7 @@ export default async function PersonDetailPage({
       <div className="mb-6">
         <SharePlayerStatsButton
           personName={person.name}
+          nickname={person.nickname}
           photoUrl={person.photo_url}
           lastPlayedDate={stats.lastPlayedDate}
           starLabel={starLabel}
