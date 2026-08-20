@@ -4,6 +4,10 @@ import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass, primaryButtonClass, accentButtonClass, pillClass } from '@/app/components/ui';
 import { formatLabel, isIndividualFormat } from '@/lib/tournament/formats';
 import { pairTeam, shuffleRemaining, removeTeam } from './actions';
+import ThreatBadge from '@/app/components/ThreatBadge';
+import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
+import { winPercentageFromRecords } from '@/lib/stats/winRate';
+import type { RawMatch, RawTeam } from '@/lib/stats/types';
 
 const LEAGUE_PLAYOFFS_TEAM_CAP = 8;
 
@@ -26,7 +30,7 @@ export default async function TeamsPage({
 
   const { data: players } = await supabase
     .from('players')
-    .select('id, name')
+    .select('id, name, person_id')
     .eq('tournament_id', id)
     .order('created_at', { ascending: true });
 
@@ -34,6 +38,71 @@ export default async function TeamsPage({
     .from('teams')
     .select('id, player_1_id, player_2_id')
     .eq('tournament_id', id);
+
+  const { data: allTournaments } = await supabase
+    .from('tournaments')
+    .select('id')
+    .eq('organizer_id', organizer.id);
+
+  const allTournamentIds = (allTournaments ?? []).map((t) => t.id);
+
+  const { data: allTeamsRaw } = allTournamentIds.length
+    ? await supabase
+        .from('teams')
+        .select('id, player_1_id, player_2_id')
+        .in('tournament_id', allTournamentIds)
+    : { data: [] };
+
+  const { data: allPlayersRaw } = allTournamentIds.length
+    ? await supabase
+        .from('players')
+        .select('id, person_id')
+        .in('tournament_id', allTournamentIds)
+    : { data: [] };
+
+  const { data: allMatchesRaw } = allTournamentIds.length
+    ? await supabase
+        .from('matches')
+        .select('tournament_id, team_a_id, team_b_id, score_a, score_b, status')
+        .in('tournament_id', allTournamentIds)
+    : { data: [] };
+
+  const personIdByAllPlayerId = new Map(
+    (allPlayersRaw ?? []).map((p) => [p.id, p.person_id as string | null])
+  );
+
+  // tournamentId/tournamentDate/venueName are unused by buildPersonMatchRecords for this
+  // purpose (only `.won` is read off the resulting records), so they're left as placeholders.
+  const allTeams: RawTeam[] = (allTeamsRaw ?? [])
+    .map((t) => ({
+      id: t.id,
+      tournamentId: '',
+      player1PersonId: personIdByAllPlayerId.get(t.player_1_id) ?? '',
+      player2PersonId: personIdByAllPlayerId.get(t.player_2_id) ?? '',
+    }))
+    .filter((t) => t.player1PersonId && t.player2PersonId);
+
+  const allCompleteMatches: RawMatch[] = (allMatchesRaw ?? [])
+    .filter((m) => m.team_b_id !== null && m.status === 'complete')
+    .map((m) => ({
+      tournamentId: m.tournament_id,
+      tournamentDate: '',
+      venueName: '',
+      teamAId: m.team_a_id!,
+      teamBId: m.team_b_id!,
+      scoreA: m.score_a ?? 0,
+      scoreB: m.score_b ?? 0,
+      status: 'complete' as const,
+    }));
+
+  const winPercentageByPersonId = new Map<string, number | null>();
+  for (const p of players ?? []) {
+    if (!p.person_id || winPercentageByPersonId.has(p.person_id)) continue;
+    winPercentageByPersonId.set(
+      p.person_id,
+      winPercentageFromRecords(buildPersonMatchRecords(p.person_id, allCompleteMatches, allTeams))
+    );
+  }
 
   const { count: leagueMatchCount } = await supabase
     .from('matches')
@@ -51,6 +120,11 @@ export default async function TeamsPage({
   );
   const unpairedPlayers = (players ?? []).filter((p) => !pairedPlayerIds.has(p.id));
   const playerById = new Map((players ?? []).map((p) => [p.id, p.name]));
+  const personIdByPlayerId = new Map((players ?? []).map((p) => [p.id, p.person_id as string | null]));
+  const winPercentageForPlayerId = (playerId: string): number | null => {
+    const personId = personIdByPlayerId.get(playerId);
+    return personId ? (winPercentageByPersonId.get(personId) ?? null) : null;
+  };
 
   const pairTeamWithId = pairTeam.bind(null, id);
   const shuffleRemainingWithId = shuffleRemaining.bind(null, id);
@@ -134,9 +208,17 @@ export default async function TeamsPage({
                 key={t.id}
                 className="flex items-center justify-between gap-2 rounded-lg bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-900"
               >
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2 flex-wrap">
                   <span className="h-2 w-2 rounded-full bg-amber-400" />
-                  {playerById.get(t.player_1_id)} / {playerById.get(t.player_2_id)}
+                  <span className="inline-flex items-center gap-1.5">
+                    {playerById.get(t.player_1_id)}
+                    <ThreatBadge winPercentage={winPercentageForPlayerId(t.player_1_id)} />
+                  </span>
+                  <span>/</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    {playerById.get(t.player_2_id)}
+                    <ThreatBadge winPercentage={winPercentageForPlayerId(t.player_2_id)} />
+                  </span>
                 </span>
                 <form action={removeTeamForTeam}>
                   <button
@@ -158,8 +240,9 @@ export default async function TeamsPage({
         </h2>
         <ul className="flex flex-wrap gap-2">
           {unpairedPlayers.map((p) => (
-            <li key={p.id} className={`${pillClass} bg-slate-100 text-slate-700`}>
+            <li key={p.id} className={`${pillClass} bg-slate-100 text-slate-700 flex items-center gap-1.5`}>
               {p.name}
+              <ThreatBadge winPercentage={winPercentageForPlayerId(p.id)} />
             </li>
           ))}
         </ul>
