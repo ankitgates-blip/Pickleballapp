@@ -4,6 +4,8 @@ import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass } from '@/app/components/ui';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computeLocationLeaderboard } from '@/lib/stats/locationLeaderboard';
+import { winPercentageFromRecords } from '@/lib/stats/winRate';
+import ThreatBadge from '@/app/components/ThreatBadge';
 import { computeStandings } from '@/lib/tournament/standings';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
 import type { MatchResult } from '@/lib/types';
@@ -61,6 +63,28 @@ export default async function LocationsPage() {
       player2PersonId: personIdByPlayerId.get(t.player_2_id) ?? '',
     }))
     .filter((t) => t.player1PersonId && t.player2PersonId);
+
+  // Overall (not venue-scoped) win rate, computed once from data already fetched above,
+  // for the Threat Level badge — separate from each venue's own winPercentage below.
+  const allCompleteMatches: RawMatch[] = (matchesRaw ?? [])
+    .filter((m) => m.team_b_id !== null && m.status === 'complete')
+    .map((m) => ({
+      tournamentId: m.tournament_id,
+      tournamentDate: tournamentDateById.get(m.tournament_id) ?? '',
+      venueName: '',
+      teamAId: m.team_a_id!,
+      teamBId: m.team_b_id!,
+      scoreA: m.score_a ?? 0,
+      scoreB: m.score_b ?? 0,
+      status: 'complete' as const,
+    }));
+
+  const overallWinPercentageByPersonId = new Map(
+    (people ?? []).map((person) => [
+      person.id,
+      winPercentageFromRecords(buildPersonMatchRecords(person.id, allCompleteMatches, teams)),
+    ])
+  );
 
   const leaderboardsByVenue = (venues ?? []).map((venue) => {
     const venueTournamentIds = new Set(
@@ -137,13 +161,18 @@ export default async function LocationsPage() {
             <ul className="space-y-3 text-sm">
               {leaderboard.map((entry, i) => (
                 <li key={entry.personId} className="border-b border-slate-100 pb-3 last:border-0">
-                  <Link
-                    href={`/people/${entry.personId}`}
-                    className={`flex items-center gap-2 font-semibold hover:underline ${i === 0 ? 'text-base text-slate-900' : 'text-slate-800'}`}
-                  >
-                    <span className="text-slate-500">{i + 1}.</span>
-                    {personNameById.get(entry.personId) ?? 'Unknown'}
-                  </Link>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link
+                      href={`/people/${entry.personId}`}
+                      className={`flex items-center gap-2 font-semibold hover:underline ${i === 0 ? 'text-base text-slate-900' : 'text-slate-800'}`}
+                    >
+                      <span className="text-slate-500">{i + 1}.</span>
+                      {personNameById.get(entry.personId) ?? 'Unknown'}
+                    </Link>
+                    <ThreatBadge
+                      winPercentage={overallWinPercentageByPersonId.get(entry.personId) ?? null}
+                    />
+                  </div>
                   <p className="mt-1 font-bold text-slate-900">
                     {entry.matchesPlayed} match{entry.matchesPlayed === 1 ? '' : 'es'} ·{' '}
                     {entry.matchWins} win{entry.matchWins === 1 ? '' : 's'} ·{' '}
