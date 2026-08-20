@@ -8,6 +8,10 @@ import { matchNamesToPeople } from '@/lib/people/matchNames';
 import { TIME_SLOTS, timeslotLabel } from '@/lib/tournament/timeslots';
 import { formatLabel, isIndividualFormat } from '@/lib/tournament/formats';
 import { buildRosterTeams, buildUnpairedPlayerNames } from '@/lib/tournament/rosterExport';
+import ThreatBadge from '@/app/components/ThreatBadge';
+import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
+import { winPercentageFromRecords } from '@/lib/stats/winRate';
+import type { RawMatch, RawTeam } from '@/lib/stats/types';
 import CopyLinkButton from '../standings/CopyLinkButton';
 import ShareRosterButton from './ShareRosterButton';
 import {
@@ -49,6 +53,71 @@ export default async function RosterPage({
     .select('id, name, person_id')
     .eq('tournament_id', id)
     .order('created_at', { ascending: true });
+
+  const { data: allTournaments } = await supabase
+    .from('tournaments')
+    .select('id')
+    .eq('organizer_id', organizer.id);
+
+  const allTournamentIds = (allTournaments ?? []).map((t) => t.id);
+
+  const { data: allTeamsRaw } = allTournamentIds.length
+    ? await supabase
+        .from('teams')
+        .select('id, player_1_id, player_2_id')
+        .in('tournament_id', allTournamentIds)
+    : { data: [] };
+
+  const { data: allPlayersRaw } = allTournamentIds.length
+    ? await supabase
+        .from('players')
+        .select('id, person_id')
+        .in('tournament_id', allTournamentIds)
+    : { data: [] };
+
+  const { data: allMatchesRaw } = allTournamentIds.length
+    ? await supabase
+        .from('matches')
+        .select('tournament_id, team_a_id, team_b_id, score_a, score_b, status')
+        .in('tournament_id', allTournamentIds)
+    : { data: [] };
+
+  const personIdByAllPlayerId = new Map(
+    (allPlayersRaw ?? []).map((p) => [p.id, p.person_id as string | null])
+  );
+
+  // tournamentId/tournamentDate/venueName are unused by buildPersonMatchRecords for this
+  // purpose (only `.won` is read off the resulting records), so they're left as placeholders.
+  const allTeams: RawTeam[] = (allTeamsRaw ?? [])
+    .map((t) => ({
+      id: t.id,
+      tournamentId: '',
+      player1PersonId: personIdByAllPlayerId.get(t.player_1_id) ?? '',
+      player2PersonId: personIdByAllPlayerId.get(t.player_2_id) ?? '',
+    }))
+    .filter((t) => t.player1PersonId && t.player2PersonId);
+
+  const allCompleteMatches: RawMatch[] = (allMatchesRaw ?? [])
+    .filter((m) => m.team_b_id !== null && m.status === 'complete')
+    .map((m) => ({
+      tournamentId: m.tournament_id,
+      tournamentDate: '',
+      venueName: '',
+      teamAId: m.team_a_id!,
+      teamBId: m.team_b_id!,
+      scoreA: m.score_a ?? 0,
+      scoreB: m.score_b ?? 0,
+      status: 'complete' as const,
+    }));
+
+  const winPercentageByPersonId = new Map<string, number | null>();
+  for (const p of players ?? []) {
+    if (!p.person_id || winPercentageByPersonId.has(p.person_id)) continue;
+    winPercentageByPersonId.set(
+      p.person_id,
+      winPercentageFromRecords(buildPersonMatchRecords(p.person_id, allCompleteMatches, allTeams))
+    );
+  }
 
   const { data: teams } = !isIndividual
     ? await supabase.from('teams').select('player_1_id, player_2_id').eq('tournament_id', id)
@@ -266,7 +335,12 @@ export default async function RosterPage({
                 key={p.id}
                 className="flex items-center justify-between gap-2 rounded-lg bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-900"
               >
-                <span>{p.name}</span>
+                <span className="flex items-center gap-2 flex-wrap">
+                  {p.name}
+                  <ThreatBadge
+                    winPercentage={p.person_id ? (winPercentageByPersonId.get(p.person_id) ?? null) : null}
+                  />
+                </span>
                 {!isCompleted && (
                   <form action={removePlayerForPlayer}>
                     <button
