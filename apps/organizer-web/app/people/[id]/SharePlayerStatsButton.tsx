@@ -7,6 +7,7 @@ import type { ExportLocationRow, ExportMatchHistoryRow, ExportPeriodRow } from '
 
 type SharePlayerStatsButtonProps = {
   personName: string;
+  photoUrl: string | null;
   lastPlayedDate: string | null;
   starLabel: string;
   profileSummary: string | null;
@@ -22,8 +23,25 @@ type SharePlayerStatsButtonProps = {
   matchHistoryRows: ExportMatchHistoryRow[];
 };
 
+async function loadPhotoDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string | null>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
 export default function SharePlayerStatsButton({
   personName,
+  photoUrl,
   lastPlayedDate,
   starLabel,
   profileSummary,
@@ -43,13 +61,27 @@ export default function SharePlayerStatsButton({
   const handleClick = async () => {
     setStatus('generating');
     try {
-      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      const [{ default: jsPDF }, { default: autoTable }, photoDataUrl] = await Promise.all([
         import('jspdf'),
         import('jspdf-autotable'),
+        photoUrl ? loadPhotoDataUrl(photoUrl) : Promise.resolve(null),
       ]);
 
       const doc = new jsPDF();
       let y = 16;
+
+      if (photoDataUrl) {
+        try {
+          const format = photoDataUrl.includes('image/png')
+            ? 'PNG'
+            : photoDataUrl.includes('image/webp')
+              ? 'WEBP'
+              : 'JPEG';
+          doc.addImage(photoDataUrl, format, 160, 10, 30, 30);
+        } catch {
+          // Malformed image data shouldn't break the rest of the export.
+        }
+      }
 
       const ensureSpace = (needed: number) => {
         if (y + needed > doc.internal.pageSize.getHeight() - 14) {

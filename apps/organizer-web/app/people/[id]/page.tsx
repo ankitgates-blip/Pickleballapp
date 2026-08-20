@@ -3,7 +3,8 @@ import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, pillClass, inputClass, primaryButtonClass } from '@/app/components/ui';
 import { HANDEDNESS_OPTIONS, PLAYING_STYLE_OPTIONS, STRENGTH_OPTIONS, PADDLE_BRAND_OPTIONS } from '@/lib/people/profileOptions';
-import { updatePersonProfile } from './actions';
+import { updatePersonProfile, uploadPersonPhoto, removePersonPhoto } from './actions';
+import PersonAvatar from '@/app/components/PersonAvatar';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computePersonStats } from '@/lib/stats/personStats';
 import { starRating, renderStars } from '@/lib/stats/starRating';
@@ -31,7 +32,7 @@ export default async function PersonDetailPage({
 
   const { data: person } = await supabase
     .from('people')
-    .select('id, name, handedness, age, playing_style, paddle_brand, signature_shot, strengths')
+    .select('id, name, handedness, age, playing_style, paddle_brand, signature_shot, photo_url, strengths')
     .eq('id', id)
     .eq('organizer_id', organizer.id)
     .single();
@@ -190,10 +191,15 @@ export default async function PersonDetailPage({
   const profileSummary = profileSummaryParts.length > 0 ? profileSummaryParts.join(' · ') : null;
 
   const updatePersonProfileWithId = updatePersonProfile.bind(null, person.id);
+  const uploadPersonPhotoWithId = uploadPersonPhoto.bind(null, person.id);
+  const removePersonPhotoWithId = removePersonPhoto.bind(null, person.id);
 
   return (
     <OrganizerShell organizerName={organizer.name}>
-      <h1 className="text-2xl font-bold text-slate-900 mb-1">{person.name}</h1>
+      <div className="flex items-center gap-4 mb-1">
+        <PersonAvatar photoUrl={person.photo_url} name={person.name} size={80} />
+        <h1 className="text-2xl font-bold text-slate-900">{person.name}</h1>
+      </div>
       <p className="text-sm text-slate-500">
         {stats.lastPlayedDate ? `Last played: ${stats.lastPlayedDate}` : 'No matches played yet'}
       </p>
@@ -220,6 +226,28 @@ export default async function PersonDetailPage({
           <summary className="cursor-pointer text-sm font-bold text-teal-700 hover:text-teal-800 list-none mb-3">
             ✏️ Edit Profile
           </summary>
+          <div className={`${cardClass} flex flex-col gap-3 max-w-md mb-3`}>
+            <p className="text-sm font-semibold text-slate-700">Photo</p>
+            <form action={uploadPersonPhotoWithId} className="flex items-center gap-2">
+              <input
+                type="file"
+                name="photo"
+                accept="image/jpeg,image/png,image/webp"
+                required
+                className="text-sm flex-1"
+              />
+              <button type="submit" className={primaryButtonClass}>
+                Upload
+              </button>
+            </form>
+            {person.photo_url && (
+              <form action={removePersonPhotoWithId}>
+                <button type="submit" className="text-xs font-semibold text-red-600 hover:underline">
+                  Remove photo
+                </button>
+              </form>
+            )}
+          </div>
           <form action={updatePersonProfileWithId} className={`${cardClass} flex flex-col gap-3 max-w-md`}>
             <label className="text-sm font-semibold text-slate-700">
               Name
@@ -311,6 +339,7 @@ export default async function PersonDetailPage({
       <div className="mb-6">
         <SharePlayerStatsButton
           personName={person.name}
+          photoUrl={person.photo_url}
           lastPlayedDate={stats.lastPlayedDate}
           starLabel={starLabel}
           profileSummary={profileSummary}
