@@ -14,7 +14,7 @@ type SharePlayerStatsButtonProps = {
   age: number | null;
   playingStyle: string | null;
   paddleBrand: string | null;
-  signatureShot: string | null;
+  signatureShot: string[];
   strengths: string[];
   thisMonthGamesWon: number;
   thisMonthGamesLost: number;
@@ -120,7 +120,7 @@ export default function SharePlayerStatsButton({
         age !== null ? (['Age', String(age)] as [string, string]) : null,
         playingStyle ? (['Playing Style', playingStyle] as [string, string]) : null,
         paddleBrand ? (['Paddle Brand', paddleBrand] as [string, string]) : null,
-        signatureShot ? (['Signature Shot', signatureShot] as [string, string]) : null,
+        signatureShot.length > 0 ? (['Signature Shot', signatureShot.join(', ')] as [string, string]) : null,
         strengths.length > 0 ? (['Strengths', strengths.join(', ')] as [string, string]) : null,
       ].filter((row): row is [string, string] => row !== null);
 

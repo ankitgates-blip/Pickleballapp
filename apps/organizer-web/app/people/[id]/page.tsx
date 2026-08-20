@@ -2,7 +2,7 @@
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, pillClass, inputClass, primaryButtonClass } from '@/app/components/ui';
-import { HANDEDNESS_OPTIONS, PLAYING_STYLE_OPTIONS, STRENGTH_OPTIONS, PADDLE_BRAND_OPTIONS } from '@/lib/people/profileOptions';
+import { HANDEDNESS_OPTIONS, PLAYING_STYLE_OPTIONS, STRENGTH_OPTIONS, PADDLE_BRAND_OPTIONS, SIGNATURE_SHOT_OPTIONS } from '@/lib/people/profileOptions';
 import { updatePersonProfile, uploadPersonPhoto, removePersonPhoto } from './actions';
 import PersonAvatar from '@/app/components/PersonAvatar';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
@@ -184,6 +184,10 @@ export default async function PersonDetailPage({
   const paddleBrandLabel = person.paddle_brand
     ? (PADDLE_BRAND_OPTIONS.find((p) => p.value === person.paddle_brand)?.label ?? null)
     : null;
+  const signatureShotBadges = ((person.signature_shot as string[] | null) ?? [])
+    .map((v: string) => SIGNATURE_SHOT_OPTIONS.find((o) => o.value === v))
+    .filter((b): b is (typeof SIGNATURE_SHOT_OPTIONS)[number] => Boolean(b));
+  const signatureShotLabels = signatureShotBadges.map((b) => `${b.emoji} ${b.skillName} — ${b.funnyName}`);
   const profileSummaryParts = [
     handednessLabel,
     person.age ? `Age ${person.age}` : null,
@@ -219,10 +223,16 @@ export default async function PersonDetailPage({
         )}
       </p>
       {profileSummary && <p className="text-sm text-slate-500">{profileSummary}</p>}
-      {person.signature_shot && (
-        <p className="text-sm italic text-slate-500 mb-6">🎯 &quot;{person.signature_shot}&quot;</p>
+      {signatureShotBadges.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {signatureShotBadges.map((b) => (
+            <span key={b.value} className={`${pillClass} bg-amber-50 text-amber-900`}>
+              {b.emoji} {b.skillName} — {b.funnyName}
+            </span>
+          ))}
+        </div>
       )}
-      {!person.signature_shot && profileSummary && <div className="mb-6" />}
+      {signatureShotBadges.length === 0 && profileSummary && <div className="mb-6" />}
 
       <div className="mb-6">
         <details>
@@ -307,16 +317,25 @@ export default async function PersonDetailPage({
                 ))}
               </select>
             </label>
-            <label className="text-sm font-semibold text-slate-700">
-              Signature Shot
-              <input
-                type="text"
-                name="signatureShot"
-                defaultValue={person.signature_shot ?? ''}
-                placeholder="e.g. Nasty backhand slam"
-                className={`${inputClass} mt-1`}
-              />
-            </label>
+            <fieldset>
+              <legend className="text-sm font-semibold text-slate-700 mb-1">
+                Signature Shot Badges (up to 4)
+              </legend>
+              <div className="flex flex-wrap gap-3">
+                {SIGNATURE_SHOT_OPTIONS.map((b) => (
+                  <label key={b.value} className="flex items-center gap-1.5 text-sm text-slate-600">
+                    <input
+                      type="checkbox"
+                      name="signatureShot"
+                      value={b.value}
+                      defaultChecked={(person.signature_shot ?? []).includes(b.value)}
+                      className="accent-teal-600"
+                    />
+                    {b.emoji} {b.skillName} — {b.funnyName}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             <fieldset>
               <legend className="text-sm font-semibold text-slate-700 mb-1">Strengths</legend>
               <div className="flex flex-wrap gap-3">
@@ -351,7 +370,7 @@ export default async function PersonDetailPage({
           age={person.age}
           playingStyle={playingStyleLabel}
           paddleBrand={paddleBrandLabel}
-          signatureShot={person.signature_shot}
+          signatureShot={signatureShotLabels}
           strengths={strengthLabels}
           thisMonthGamesWon={thisMonth.gamesWon}
           thisMonthGamesLost={thisMonth.gamesLost}
