@@ -17,11 +17,20 @@ export async function updatePersonProfile(personId: string, formData: FormData) 
   const handedness = (formData.get('handedness') as string) || null;
   const playingStyle = (formData.get('playingStyle') as string) || null;
   const paddleBrand = (formData.get('paddleBrand') as string) || null;
+  const signatureShot = (formData.get('signatureShot') as string)?.trim() || null;
   const strengths = formData.getAll('strengths') as string[];
 
   const { error } = await supabase
     .from('people')
-    .update({ name, age, handedness, playing_style: playingStyle, paddle_brand: paddleBrand, strengths })
+    .update({
+      name,
+      age,
+      handedness,
+      playing_style: playingStyle,
+      paddle_brand: paddleBrand,
+      signature_shot: signatureShot,
+      strengths,
+    })
     .eq('id', personId);
 
   if (error) {

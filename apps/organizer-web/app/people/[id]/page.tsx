@@ -31,7 +31,7 @@ export default async function PersonDetailPage({
 
   const { data: person } = await supabase
     .from('people')
-    .select('id, name, handedness, age, playing_style, paddle_brand, strengths')
+    .select('id, name, handedness, age, playing_style, paddle_brand, signature_shot, strengths')
     .eq('id', id)
     .eq('organizer_id', organizer.id)
     .single();
@@ -209,7 +209,11 @@ export default async function PersonDetailPage({
           'No matches played yet'
         )}
       </p>
-      {profileSummary && <p className="text-sm text-slate-500 mb-6">{profileSummary}</p>}
+      {profileSummary && <p className="text-sm text-slate-500">{profileSummary}</p>}
+      {person.signature_shot && (
+        <p className="text-sm italic text-slate-500 mb-6">🎯 &quot;{person.signature_shot}&quot;</p>
+      )}
+      {!person.signature_shot && profileSummary && <div className="mb-6" />}
 
       <div className="mb-6">
         <details>
@@ -269,6 +273,16 @@ export default async function PersonDetailPage({
                   </option>
                 ))}
               </select>
+            </label>
+            <label className="text-sm font-semibold text-slate-700">
+              Signature Shot
+              <input
+                type="text"
+                name="signatureShot"
+                defaultValue={person.signature_shot ?? ''}
+                placeholder="e.g. Nasty backhand slam"
+                className={`${inputClass} mt-1`}
+              />
             </label>
             <fieldset>
               <legend className="text-sm font-semibold text-slate-700 mb-1">Strengths</legend>
