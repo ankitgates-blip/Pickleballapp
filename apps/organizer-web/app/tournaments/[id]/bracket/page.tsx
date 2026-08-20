@@ -3,13 +3,14 @@ import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
-import { cardClass, accentButtonClass, linkClass, inputClass, primaryButtonClass } from '@/app/components/ui';
+import { cardClass, accentButtonClass, linkClass, inputClass, primaryButtonClass, outlineButtonClass } from '@/app/components/ui';
 import { formatLabel } from '@/lib/tournament/formats';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
 import { computeStandings } from '@/lib/tournament/standings';
+import { canEditScore, canEditTeams } from '@/lib/tournament/completion';
 import { buildMatchGroups } from '@/lib/tournament/resultsExport';
 import type { MatchResult } from '@/lib/types';
-import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, generateLeaguePlayoffsBracket, regenerateLeaguePlayoffsBracket, generateSemifinalMatches, generateFinalMatch, updateMatchTeams } from './actions';
+import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, generateLeaguePlayoffsBracket, regenerateLeaguePlayoffsBracket, generateSemifinalMatches, generateFinalMatch, updateMatchTeams, unlockTournamentResults, lockTournamentResults } from './actions';
 import { enterScore } from '../matches/actions';
 import ShareScheduleButton from './ShareScheduleButton';
 import RegenerateLeagueRoundsButton from './RegenerateLeagueRoundsButton';
@@ -26,7 +27,7 @@ export default async function BracketPage({
   const { data: tournament } = await supabase
     .from('tournaments')
     .select(
-      'name, date, timeslot, format, popcorn_rounds, gauntlet_rounds, claim_the_throne_rounds, up_and_down_the_river_rounds, league_playoffs_rounds, venues(name)'
+      'name, date, timeslot, format, popcorn_rounds, gauntlet_rounds, claim_the_throne_rounds, up_and_down_the_river_rounds, league_playoffs_rounds, completed_at, results_unlocked_at, venues(name)'
     )
     .eq('id', id)
     .single();
@@ -113,6 +114,11 @@ export default async function BracketPage({
   const regenerateLeaguePlayoffsBracketWithId = regenerateLeaguePlayoffsBracket.bind(null, id);
   const generateSemifinalMatchesWithId = generateSemifinalMatches.bind(null, id);
   const generateFinalMatchWithId = generateFinalMatch.bind(null, id);
+  const unlockTournamentResultsWithId = unlockTournamentResults.bind(null, id);
+  const lockTournamentResultsWithId = lockTournamentResults.bind(null, id);
+
+  const canEditScoreValue = canEditScore(tournament?.completed_at ?? null, tournament?.results_unlocked_at ?? null);
+  const canEditTeamsValue = canEditTeams(tournament?.completed_at ?? null, tournament?.results_unlocked_at ?? null);
 
   const gauntletRounds = tournament?.gauntlet_rounds ?? 5;
   const currentGauntletRound =
@@ -257,55 +263,63 @@ export default async function BracketPage({
                   {isComplete ? `${m.score_a}-${m.score_b}` : 'Not yet played'}
                 </span>
               </summary>
-              <form action={enterScoreForMatch} className="flex items-center gap-3 mt-2 pl-1">
-                <input
-                  name="scoreA"
-                  type="number"
-                  defaultValue={m.score_a ?? ''}
-                  placeholder="Team A"
-                  required
-                  className={`${inputClass} w-20`}
-                />
-                <span className="text-slate-400 font-bold">–</span>
-                <input
-                  name="scoreB"
-                  type="number"
-                  defaultValue={m.score_b ?? ''}
-                  placeholder="Team B"
-                  required
-                  className={`${inputClass} w-20`}
-                />
-                <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
-                  Save
-                </SaveButton>
-              </form>
-              <div className="mt-3 pl-1">
-                <p className="text-xs text-slate-400 mb-2">
-                  Standings recalculate automatically when you change a match&apos;s teams. Already-generated
-                  semifinals, finals, and later rounds do <strong>not</strong> update — and if this tournament
-                  has no final match, the champion shown elsewhere can change as a result.
-                </p>
-                <form action={updateMatchTeamsForMatch} className="flex items-center gap-3">
-                  <select name="teamAId" defaultValue={m.team_a_id ?? ''} className={inputClass}>
-                    {(teams ?? []).map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {teamById.get(t.id)}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="text-slate-400 font-bold">vs</span>
-                  <select name="teamBId" defaultValue={m.team_b_id ?? ''} className={inputClass}>
-                    {(teams ?? []).map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {teamById.get(t.id)}
-                      </option>
-                    ))}
-                  </select>
-                  <button type="submit" className={primaryButtonClass}>
-                    Save Teams
-                  </button>
+              {canEditScoreValue ? (
+                <form action={enterScoreForMatch} className="flex items-center gap-3 mt-2 pl-1">
+                  <input
+                    name="scoreA"
+                    type="number"
+                    defaultValue={m.score_a ?? ''}
+                    placeholder="Team A"
+                    required
+                    className={`${inputClass} w-20`}
+                  />
+                  <span className="text-slate-400 font-bold">–</span>
+                  <input
+                    name="scoreB"
+                    type="number"
+                    defaultValue={m.score_b ?? ''}
+                    placeholder="Team B"
+                    required
+                    className={`${inputClass} w-20`}
+                  />
+                  <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
+                    Save
+                  </SaveButton>
                 </form>
-              </div>
+              ) : (
+                <p className="text-sm font-semibold text-slate-700 mt-2 pl-1">
+                  Final: {m.score_a}-{m.score_b}
+                </p>
+              )}
+              {canEditTeamsValue && (
+                <div className="mt-3 pl-1">
+                  <p className="text-xs text-slate-400 mb-2">
+                    Standings recalculate automatically when you change a match&apos;s teams. Already-generated
+                    semifinals, finals, and later rounds do <strong>not</strong> update — and if this tournament
+                    has no final match, the champion shown elsewhere can change as a result.
+                  </p>
+                  <form action={updateMatchTeamsForMatch} className="flex items-center gap-3">
+                    <select name="teamAId" defaultValue={m.team_a_id ?? ''} className={inputClass}>
+                      {(teams ?? []).map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {teamById.get(t.id)}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="text-slate-400 font-bold">vs</span>
+                    <select name="teamBId" defaultValue={m.team_b_id ?? ''} className={inputClass}>
+                      {(teams ?? []).map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {teamById.get(t.id)}
+                        </option>
+                      ))}
+                    </select>
+                    <button type="submit" className={primaryButtonClass}>
+                      Save Teams
+                    </button>
+                  </form>
+                </div>
+              )}
             </details>
           </li>
         );
@@ -322,6 +336,17 @@ export default async function BracketPage({
           {formatLabel(format)}
         </span>
       </div>
+
+      {tournament?.completed_at && (
+        <form
+          action={canEditTeamsValue ? lockTournamentResultsWithId : unlockTournamentResultsWithId}
+          className="mb-6"
+        >
+          <button type="submit" className={outlineButtonClass}>
+            {canEditTeamsValue ? '🔒 Lock Editing' : '🔓 Unlock Editing'}
+          </button>
+        </form>
+      )}
 
       <div className="mb-6">
         <ShareScheduleButton
