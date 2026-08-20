@@ -71,8 +71,9 @@ export default async function TeamsPage({
     (allPlayersRaw ?? []).map((p) => [p.id, p.person_id as string | null])
   );
 
-  // tournamentId/tournamentDate/venueName are unused by buildPersonMatchRecords for this
-  // purpose (only `.won` is read off the resulting records), so they're left as placeholders.
+  // tournamentId/tournamentDate/venueName never affect buildPersonMatchRecords' output beyond
+  // being copied through — only `.won` is read off the resulting records — so they're left as
+  // placeholders here.
   const allTeams: RawTeam[] = (allTeamsRaw ?? [])
     .map((t) => ({
       id: t.id,
@@ -240,7 +241,7 @@ export default async function TeamsPage({
         </h2>
         <ul className="flex flex-wrap gap-2">
           {unpairedPlayers.map((p) => (
-            <li key={p.id} className={`${pillClass} bg-slate-100 text-slate-700 flex items-center gap-1.5`}>
+            <li key={p.id} className={`${pillClass} bg-slate-100 text-slate-700 gap-1.5`}>
               {p.name}
               <ThreatBadge winPercentage={winPercentageForPlayerId(p.id)} />
             </li>

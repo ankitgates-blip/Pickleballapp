@@ -86,8 +86,9 @@ export default async function RosterPage({
     (allPlayersRaw ?? []).map((p) => [p.id, p.person_id as string | null])
   );
 
-  // tournamentId/tournamentDate/venueName are unused by buildPersonMatchRecords for this
-  // purpose (only `.won` is read off the resulting records), so they're left as placeholders.
+  // tournamentId/tournamentDate/venueName never affect buildPersonMatchRecords' output beyond
+  // being copied through — only `.won` is read off the resulting records — so they're left as
+  // placeholders here.
   const allTeams: RawTeam[] = (allTeamsRaw ?? [])
     .map((t) => ({
       id: t.id,
