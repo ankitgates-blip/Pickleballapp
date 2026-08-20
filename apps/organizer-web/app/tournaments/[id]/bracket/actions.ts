@@ -10,6 +10,7 @@ import { generateClaimTheThroneRound } from '@/lib/tournament/claimTheThrone';
 import { generateUpAndDownRiverRound } from '@/lib/tournament/upAndDownTheRiver';
 import { generateSemifinals } from '@/lib/tournament/playoffs';
 import { computeStandings } from '@/lib/tournament/standings';
+import { canEditTeams } from '@/lib/tournament/completion';
 import type {
   MatchResult,
   GauntletRoundResult,
@@ -762,6 +763,23 @@ export async function updateMatchTeams(
   formData: FormData
 ) {
   const { supabase } = await requireOrganizer();
+
+  const { data: tournament, error: tournamentError } = await supabase
+    .from('tournaments')
+    .select('completed_at, results_unlocked_at')
+    .eq('id', tournamentId)
+    .single();
+
+  if (tournamentError) {
+    throw new Error(tournamentError.message);
+  }
+
+  if (!canEditTeams(tournament?.completed_at ?? null, tournament?.results_unlocked_at ?? null)) {
+    throw new Error(
+      'Team changes are only allowed once the tournament is complete and editing is unlocked.'
+    );
+  }
+
   const teamAId = formData.get('teamAId');
   const teamBId = formData.get('teamBId');
 
@@ -799,4 +817,50 @@ export async function updateMatchTeams(
   }
 
   revalidatePath(`/tournaments/${tournamentId}/bracket`);
+}
+
+export async function unlockTournamentResults(tournamentId: string) {
+  const { supabase } = await requireOrganizer();
+
+  const { data: tournament, error: tournamentError } = await supabase
+    .from('tournaments')
+    .select('completed_at')
+    .eq('id', tournamentId)
+    .single();
+
+  if (tournamentError) {
+    throw new Error(tournamentError.message);
+  }
+
+  if (!tournament?.completed_at) {
+    throw new Error('Editing can only be unlocked once the tournament is complete');
+  }
+
+  const { error } = await supabase
+    .from('tournaments')
+    .update({ results_unlocked_at: new Date().toISOString() })
+    .eq('id', tournamentId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}/bracket`);
+  revalidatePath(`/tournaments/${tournamentId}/matches`);
+}
+
+export async function lockTournamentResults(tournamentId: string) {
+  const { supabase } = await requireOrganizer();
+
+  const { error } = await supabase
+    .from('tournaments')
+    .update({ results_unlocked_at: null })
+    .eq('id', tournamentId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}/bracket`);
+  revalidatePath(`/tournaments/${tournamentId}/matches`);
 }
