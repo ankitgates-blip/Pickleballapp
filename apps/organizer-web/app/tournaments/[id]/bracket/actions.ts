@@ -154,7 +154,7 @@ export async function regenerateLeaguePlayoffsBracket(tournamentId: string) {
 
   if (tournamentCompletion?.completed_at) {
     throw new Error(
-      'This tournament is already complete — unlock editing first to regenerate the schedule.'
+      'This tournament is already complete — the League schedule can no longer be regenerated.'
     );
   }
 

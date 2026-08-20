@@ -166,8 +166,13 @@ describe('canEditTeams', () => {
 
 describe('canEditTeams implies canEditScore', () => {
   it('never allows team edits while scores are locked', () => {
+    // expect.hasAssertions() makes this test fail loudly (instead of passing
+    // vacuously) if a future change to canEditTeams ever makes it return
+    // false for every case below, since then the loop body would never run.
+    expect.hasAssertions();
     const cases: Array<[string | null, string | null]> = [
       [null, null],
+      [null, '2026-08-20T11:00:00.000Z'],
       ['2026-08-20T10:00:00.000Z', null],
       ['2026-08-20T10:00:00.000Z', '2026-08-20T11:00:00.000Z'],
     ];
