@@ -5,6 +5,7 @@ import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass, inputClass, primaryButtonClass, pillClass, linkClass } from '@/app/components/ui';
 import { enterScore } from './actions';
+import SaveButton from '@/app/components/SaveButton';
 
 const STAGE_LABELS: Record<string, string> = {
   league: 'League',
@@ -99,9 +100,9 @@ export default async function MatchesPage({
                         required
                         className={`${inputClass} w-24`}
                       />
-                      <button type="submit" className={primaryButtonClass}>
+                      <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
                         Save
-                      </button>
+                      </SaveButton>
                     </form>
                   </div>
                 );
