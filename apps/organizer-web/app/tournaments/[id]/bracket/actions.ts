@@ -831,6 +831,20 @@ export async function skipToFinalMatch(tournamentId: string) {
 export async function generateFinalMatch(tournamentId: string) {
   const { supabase } = await requireOrganizer();
 
+  const { count: existingFinalMatches, error: existingError } = await supabase
+    .from('matches')
+    .select('id', { count: 'exact', head: true })
+    .eq('tournament_id', tournamentId)
+    .eq('stage', 'final');
+
+  if (existingError) {
+    throw new Error(existingError.message);
+  }
+
+  if ((existingFinalMatches ?? 0) > 0) {
+    throw new Error('A final already exists for this tournament.');
+  }
+
   const { data: semifinalMatches, error: matchesError } = await supabase
     .from('matches')
     .select('team_a_id, team_b_id, score_a, score_b, status')
