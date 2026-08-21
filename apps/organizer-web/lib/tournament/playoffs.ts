@@ -26,3 +26,15 @@ export function pickFinalists(
 
   return { teamAId: first.teamId, teamBId: second.teamId };
 }
+
+export function fillStandingsGaps(
+  standings: StandingsRow[],
+  teamIds: string[]
+): StandingsRow[] {
+  const seen = new Set(standings.map((s) => s.teamId));
+  const missing: StandingsRow[] = teamIds
+    .filter((teamId) => !seen.has(teamId))
+    .map((teamId) => ({ teamId, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 }));
+
+  return [...standings, ...missing];
+}

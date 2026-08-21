@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateSemifinals, pickFinalists } from './playoffs';
+import { generateSemifinals, pickFinalists, fillStandingsGaps } from './playoffs';
 import type { StandingsRow } from '@/lib/types';
 
 function row(teamId: string): StandingsRow {
@@ -47,5 +47,30 @@ describe('pickFinalists', () => {
   it('throws when fewer than 2 teams are passed', () => {
     const standings = [row('a')];
     expect(() => pickFinalists(standings)).toThrow();
+  });
+});
+
+describe('fillStandingsGaps', () => {
+  it('returns standings unchanged when every team already has a row', () => {
+    const standings = [row('a'), row('b')];
+    const result = fillStandingsGaps(standings, ['a', 'b']);
+    expect(result).toEqual([row('a'), row('b')]);
+  });
+
+  it('appends a 0-0 row for teams missing from standings, in teamIds order', () => {
+    const standings = [row('a')];
+    const result = fillStandingsGaps(standings, ['a', 'b', 'c']);
+    expect(result).toEqual([row('a'), row('b'), row('c')]);
+  });
+
+  it('handles empty standings (zero matches played)', () => {
+    const result = fillStandingsGaps([], ['a', 'b', 'c', 'd']);
+    expect(result).toEqual([row('a'), row('b'), row('c'), row('d')]);
+  });
+
+  it('does not duplicate a team that already has a real record', () => {
+    const withRecord: StandingsRow = { teamId: 'a', wins: 3, losses: 1, pointsFor: 44, pointsAgainst: 20 };
+    const result = fillStandingsGaps([withRecord], ['a', 'b']);
+    expect(result).toEqual([withRecord, row('b')]);
   });
 });
