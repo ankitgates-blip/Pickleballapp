@@ -697,7 +697,8 @@ export async function generateSemifinalMatches(tournamentId: string) {
     .from('matches')
     .select('team_a_id, team_b_id, score_a, score_b, status')
     .eq('tournament_id', tournamentId)
-    .eq('stage', 'league');
+    .eq('stage', 'league')
+    .order('round', { ascending: true });
 
   if (matchesError) {
     throw new Error(matchesError.message);
@@ -735,11 +736,26 @@ export async function generateSemifinalMatches(tournamentId: string) {
 export async function skipToFinalMatch(tournamentId: string) {
   const { supabase } = await requireOrganizer();
 
+  const { count: existingPlayoffMatches, error: existingError } = await supabase
+    .from('matches')
+    .select('id', { count: 'exact', head: true })
+    .eq('tournament_id', tournamentId)
+    .in('stage', ['semifinal', 'final']);
+
+  if (existingError) {
+    throw new Error(existingError.message);
+  }
+
+  if ((existingPlayoffMatches ?? 0) > 0) {
+    throw new Error('Semifinals or a final already exist for this tournament.');
+  }
+
   const { data: leagueMatches, error: matchesError } = await supabase
     .from('matches')
     .select('team_a_id, team_b_id, score_a, score_b, status')
     .eq('tournament_id', tournamentId)
-    .eq('stage', 'league');
+    .eq('stage', 'league')
+    .order('round', { ascending: true });
 
   if (matchesError) {
     throw new Error(matchesError.message);
