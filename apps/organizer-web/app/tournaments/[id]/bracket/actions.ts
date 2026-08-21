@@ -8,7 +8,7 @@ import { generatePopcornSchedule } from '@/lib/tournament/popcorn';
 import { generateGauntletRound } from '@/lib/tournament/gauntlet';
 import { generateClaimTheThroneRound } from '@/lib/tournament/claimTheThrone';
 import { generateUpAndDownRiverRound } from '@/lib/tournament/upAndDownTheRiver';
-import { generateSemifinals } from '@/lib/tournament/playoffs';
+import { generateSemifinals, pickFinalists } from '@/lib/tournament/playoffs';
 import { computeStandings } from '@/lib/tournament/standings';
 import { canEditTeams } from '@/lib/tournament/completion';
 import type {
@@ -724,6 +724,46 @@ export async function generateSemifinalMatches(tournamentId: string) {
       status: 'pending' as const,
     }))
   );
+
+  if (insertError) {
+    throw new Error(insertError.message);
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}/bracket`);
+}
+
+export async function skipToFinalMatch(tournamentId: string) {
+  const { supabase } = await requireOrganizer();
+
+  const { data: leagueMatches, error: matchesError } = await supabase
+    .from('matches')
+    .select('team_a_id, team_b_id, score_a, score_b, status')
+    .eq('tournament_id', tournamentId)
+    .eq('stage', 'league');
+
+  if (matchesError) {
+    throw new Error(matchesError.message);
+  }
+
+  const matchResults: MatchResult[] = (leagueMatches ?? []).map((m) => ({
+    teamAId: m.team_a_id!,
+    teamBId: m.team_b_id,
+    scoreA: m.score_a,
+    scoreB: m.score_b,
+    status: m.status as 'pending' | 'complete',
+  }));
+
+  const standings = computeStandings(matchResults);
+  const { teamAId, teamBId } = pickFinalists(standings);
+
+  const { error: insertError } = await supabase.from('matches').insert({
+    tournament_id: tournamentId,
+    round: 1,
+    stage: 'final' as const,
+    team_a_id: teamAId,
+    team_b_id: teamBId,
+    status: 'pending' as const,
+  });
 
   if (insertError) {
     throw new Error(insertError.message);
