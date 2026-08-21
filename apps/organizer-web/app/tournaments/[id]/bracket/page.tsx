@@ -10,7 +10,7 @@ import { computeStandings } from '@/lib/tournament/standings';
 import { canEditScore, canEditTeams } from '@/lib/tournament/completion';
 import { buildMatchGroups } from '@/lib/tournament/resultsExport';
 import type { MatchResult } from '@/lib/types';
-import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, generateLeaguePlayoffsBracket, regenerateLeaguePlayoffsBracket, generateSemifinalMatches, generateFinalMatch, updateMatchTeams, unlockTournamentResults, lockTournamentResults } from './actions';
+import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, generateLeaguePlayoffsBracket, regenerateLeaguePlayoffsBracket, generateSemifinalMatches, generateFinalMatch, skipToFinalMatch, updateMatchTeams, unlockTournamentResults, lockTournamentResults } from './actions';
 import { enterScore } from '../matches/actions';
 import ShareScheduleButton from './ShareScheduleButton';
 import RegenerateLeagueRoundsButton from './RegenerateLeagueRoundsButton';
@@ -114,6 +114,7 @@ export default async function BracketPage({
   const regenerateLeaguePlayoffsBracketWithId = regenerateLeaguePlayoffsBracket.bind(null, id);
   const generateSemifinalMatchesWithId = generateSemifinalMatches.bind(null, id);
   const generateFinalMatchWithId = generateFinalMatch.bind(null, id);
+  const skipToFinalMatchWithId = skipToFinalMatch.bind(null, id);
   const unlockTournamentResultsWithId = unlockTournamentResults.bind(null, id);
   const lockTournamentResultsWithId = lockTournamentResults.bind(null, id);
 
@@ -175,7 +176,9 @@ export default async function BracketPage({
     isLeaguePlayoffs &&
     allLeagueComplete &&
     semifinalMatches.length === 0 &&
+    !hasFinalMatch &&
     teamCount >= 4;
+  const showSkipToFinal = showGenerateSemifinals;
   const showGenerateFinal = isLeaguePlayoffs && allSemifinalComplete && !hasFinalMatch;
 
   const leagueStandings = isLeaguePlayoffs
@@ -590,14 +593,26 @@ export default async function BracketPage({
       )}
 
       {showGenerateSemifinals && (
-        <form action={generateSemifinalMatchesWithId} className={`${cardClass} text-center mb-6`}>
+        <div className={`${cardClass} text-center mb-6`}>
           <p className="text-slate-600 mb-4">
-            League complete. Generate the semifinals from the top 4 teams.
+            League complete. Generate the semifinals from the top 4 teams,
+            or skip straight to the final if you're short on time.
           </p>
-          <button type="submit" className={accentButtonClass}>
-            Generate Semifinals
-          </button>
-        </form>
+          <div className="flex items-center justify-center gap-3">
+            <form action={generateSemifinalMatchesWithId}>
+              <button type="submit" className={accentButtonClass}>
+                Generate Semifinals
+              </button>
+            </form>
+            {showSkipToFinal && (
+              <form action={skipToFinalMatchWithId}>
+                <button type="submit" className={outlineButtonClass}>
+                  Skip Semifinals — Go to Final
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
       )}
 
       {semifinalMatches.length > 0 && (
