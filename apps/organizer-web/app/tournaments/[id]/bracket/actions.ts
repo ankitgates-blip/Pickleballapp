@@ -8,7 +8,7 @@ import { generatePopcornSchedule } from '@/lib/tournament/popcorn';
 import { generateGauntletRound } from '@/lib/tournament/gauntlet';
 import { generateClaimTheThroneRound } from '@/lib/tournament/claimTheThrone';
 import { generateUpAndDownRiverRound } from '@/lib/tournament/upAndDownTheRiver';
-import { generateSemifinals, pickFinalists } from '@/lib/tournament/playoffs';
+import { generateSemifinals, pickFinalists, fillStandingsGaps } from '@/lib/tournament/playoffs';
 import { computeStandings } from '@/lib/tournament/standings';
 import { canEditTeams } from '@/lib/tournament/completion';
 import type {
@@ -761,6 +761,16 @@ export async function skipToFinalMatch(tournamentId: string) {
     throw new Error(matchesError.message);
   }
 
+  const { data: teamsData, error: teamsError } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('tournament_id', tournamentId)
+    .order('created_at', { ascending: true });
+
+  if (teamsError) {
+    throw new Error(teamsError.message);
+  }
+
   const matchResults: MatchResult[] = (leagueMatches ?? []).map((m) => ({
     teamAId: m.team_a_id!,
     teamBId: m.team_b_id,
@@ -770,7 +780,9 @@ export async function skipToFinalMatch(tournamentId: string) {
   }));
 
   const standings = computeStandings(matchResults);
-  const { teamAId, teamBId } = pickFinalists(standings);
+  const teamIds = (teamsData ?? []).map((t) => t.id);
+  const completeStandings = fillStandingsGaps(standings, teamIds);
+  const { teamAId, teamBId } = pickFinalists(completeStandings);
 
   const { error: insertError } = await supabase.from('matches').insert({
     tournament_id: tournamentId,
