@@ -8,6 +8,8 @@ export async function createTournament(formData: FormData) {
 
   const name = formData.get('name') as string;
   const date = formData.get('date') as string;
+  const maxPlayersRaw = formData.get('maxPlayers') as string;
+  const maxPlayers = maxPlayersRaw ? Number(maxPlayersRaw) : null;
   const targetScore = Number(formData.get('targetScore'));
   const winBy = Number(formData.get('winBy'));
   const format = formData.get('format') as string;
@@ -25,6 +27,7 @@ export async function createTournament(formData: FormData) {
     .insert({
       name,
       date,
+      max_players: maxPlayers,
       target_score: targetScore,
       win_by: winBy,
       format,

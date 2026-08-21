@@ -25,6 +25,18 @@ export default async function NewTournamentPage() {
             <label className="block text-sm font-semibold text-slate-700 mb-1">Date</label>
             <input name="date" type="date" required className={inputClass} />
           </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">
+              Max players (optional)
+            </label>
+            <input
+              name="maxPlayers"
+              type="number"
+              min={1}
+              placeholder="Leave blank for no limit"
+              className={inputClass}
+            />
+          </div>
           <FormatFields />
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1">Location</label>
