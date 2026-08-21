@@ -178,7 +178,11 @@ export default async function BracketPage({
     semifinalMatches.length === 0 &&
     !hasFinalMatch &&
     teamCount >= 4;
-  const showSkipToFinal = showGenerateSemifinals;
+  const showSkipToFinal =
+    isLeaguePlayoffs &&
+    semifinalMatches.length === 0 &&
+    !hasFinalMatch &&
+    teamCount >= 4;
   const showGenerateFinal = isLeaguePlayoffs && allSemifinalComplete && !hasFinalMatch;
 
   const leagueStandings = isLeaguePlayoffs
@@ -592,25 +596,26 @@ export default async function BracketPage({
         </div>
       )}
 
-      {showGenerateSemifinals && (
+      {showSkipToFinal && (
         <div className={`${cardClass} text-center mb-6`}>
           <p className="text-slate-600 mb-4">
-            League complete. Generate the semifinals from the top 4 teams,
-            or skip straight to the final if you're short on time.
+            {showGenerateSemifinals
+              ? "League complete. Generate the semifinals from the top 4 teams, or skip straight to the final if you're short on time."
+              : 'Short on time? Skip the semifinals and send the top 2 teams (by current standings) straight to the final.'}
           </p>
           <div className="flex items-center justify-center gap-3">
-            <form action={generateSemifinalMatchesWithId}>
-              <button type="submit" className={accentButtonClass}>
-                Generate Semifinals
-              </button>
-            </form>
-            {showSkipToFinal && (
-              <form action={skipToFinalMatchWithId}>
-                <button type="submit" className={outlineButtonClass}>
-                  Skip Semifinals — Go to Final
+            {showGenerateSemifinals && (
+              <form action={generateSemifinalMatchesWithId}>
+                <button type="submit" className={accentButtonClass}>
+                  Generate Semifinals
                 </button>
               </form>
             )}
+            <form action={skipToFinalMatchWithId}>
+              <button type="submit" className={outlineButtonClass}>
+                Skip Semifinals — Go to Final
+              </button>
+            </form>
           </div>
         </div>
       )}
