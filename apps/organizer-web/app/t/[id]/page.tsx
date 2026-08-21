@@ -61,7 +61,7 @@ export default async function PublicTournamentPage({
   );
 
   const venue = tournament.venues as { name: string } | { name: string }[] | null;
-  const venueName = Array.isArray(venue) ? (venue[0]?.name ?? 'Pickle Turf') : (venue?.name ?? 'Pickle Turf');
+  const venueName = Array.isArray(venue) ? (venue[0]?.name ?? 'Pickleturf') : (venue?.name ?? 'Pickleturf');
 
   const isLeaguePlayoffs = tournament.format === 'league_playoffs';
   const leagueMatches = (matches ?? []).filter((m) => m.stage === 'league');

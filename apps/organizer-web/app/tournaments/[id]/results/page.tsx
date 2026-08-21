@@ -53,7 +53,7 @@ export default async function ResultsPage({
   }
 
   const venue = tournament.venues as { name: string } | { name: string }[] | null;
-  const venueName = Array.isArray(venue) ? (venue[0]?.name ?? 'Pickle Turf') : (venue?.name ?? 'Pickle Turf');
+  const venueName = Array.isArray(venue) ? (venue[0]?.name ?? 'Pickleturf') : (venue?.name ?? 'Pickleturf');
 
   const { data: teams } = await supabase
     .from('teams')

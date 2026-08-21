@@ -42,7 +42,7 @@ export default async function RosterPage({
   const isCompleted = Boolean(tournament?.completed_at);
 
   const venue = tournament?.venues as { name: string } | { name: string }[] | null;
-  const venueName = Array.isArray(venue) ? (venue[0]?.name ?? 'Pickle Turf') : (venue?.name ?? 'Pickle Turf');
+  const venueName = Array.isArray(venue) ? (venue[0]?.name ?? 'Pickleturf') : (venue?.name ?? 'Pickleturf');
 
   const isIndividual = isIndividualFormat(tournament?.format ?? '');
 

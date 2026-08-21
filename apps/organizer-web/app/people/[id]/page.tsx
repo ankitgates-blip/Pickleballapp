@@ -64,8 +64,8 @@ export default async function PersonDetailPage({
     (tournaments ?? []).map((t) => {
       const venue = t.venues as { name: string } | { name: string }[] | null;
       const name = Array.isArray(venue)
-        ? (venue[0]?.name ?? 'Pickle Turf')
-        : (venue?.name ?? 'Pickle Turf');
+        ? (venue[0]?.name ?? 'Pickleturf')
+        : (venue?.name ?? 'Pickleturf');
       return [t.id, name];
     })
   );

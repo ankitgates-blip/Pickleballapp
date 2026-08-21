@@ -113,8 +113,8 @@ export default async function TournamentsPage() {
 
   const venueNameFor = (t: { venues: unknown }) => {
     const venue = t.venues as { name: string } | { name: string }[] | null;
-    if (!venue) return 'Pickle Turf';
-    return Array.isArray(venue) ? (venue[0]?.name ?? 'Pickle Turf') : venue.name;
+    if (!venue) return 'Pickleturf';
+    return Array.isArray(venue) ? (venue[0]?.name ?? 'Pickleturf') : venue.name;
   };
 
   return (
