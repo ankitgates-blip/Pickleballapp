@@ -7,7 +7,12 @@ import { updatePersonProfile, uploadPersonPhoto, removePersonPhoto } from './act
 import PersonAvatar from '@/app/components/PersonAvatar';
 import SaveButton from '@/app/components/SaveButton';
 import ThreatBadge from '@/app/components/ThreatBadge';
+import PlayerStatsCard from '@/app/components/PlayerStatsCard';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
+import { winPercentageFromRecords } from '@/lib/stats/winRate';
+import { currentWinStreak } from '@/lib/stats/winStreak';
+import { winsInLastN } from '@/lib/stats/winsInLastN';
+import { winsVsHigherRated } from '@/lib/stats/winsVsHigherRated';
 import { computePersonStats } from '@/lib/stats/personStats';
 import { starRating, renderStars } from '@/lib/stats/starRating';
 import {
@@ -123,6 +128,16 @@ export default async function PersonDetailPage({
 
   const records = buildPersonMatchRecords(person.id, completeMatches, teams);
 
+  // Overall win rate for every person this organizer has ever seen, computed once from the
+  // already-fetched teams/completeMatches — needed for the Wins vs Higher-Rated stat on the
+  // Player Stats Card below (separate from this specific player's own winPercentage).
+  const winPercentageByPersonId = new Map(
+    (allPeople ?? []).map((p) => [
+      p.id,
+      winPercentageFromRecords(buildPersonMatchRecords(p.id, completeMatches, teams)),
+    ])
+  );
+
   // Determine which tournaments this person's team won, reusing Increment 1.1's
   // tested computeStandings per tournament rather than re-deriving ranking logic here.
   const tournamentsWon: TournamentWon[] = [];
@@ -173,6 +188,25 @@ export default async function PersonDetailPage({
   const toughestOpponentLabel = formatHeadToHead(stats.toughestOpponent, personNameById);
   const bestPartnerLabel = formatHeadToHead(stats.bestPartner, personNameById);
   const starLabel = starRatingLabel(stats.winPercentage);
+
+  const thisMonthWinPercentage =
+    stats.monthly.find((m) => m.period === currentMonthKey)?.winPercentage ?? null;
+  const cardRating =
+    stats.winPercentage !== null ? Math.round((stats.winPercentage / 100) * 5 * 100) / 100 : 0;
+  const cardStarCount = starRating(stats.winPercentage ?? 0);
+  const cardFormPercentage = thisMonthWinPercentage ?? stats.winPercentage ?? 0;
+  const cardThreatPercentage = stats.winPercentage ?? 0;
+  const cardWins = stats.matchHistory.filter((m) => m.won).length;
+  const cardLosses = stats.matchHistory.length - cardWins;
+  const cardWinStreak = currentWinStreak(stats.matchHistory);
+  const cardWinsInLast10 = winsInLastN(stats.matchHistory, 10);
+  const cardTrendPoints = stats.weekly[0]?.trendPointsChange ?? null;
+  const cardWinsVsHigherRated = winsVsHigherRated(
+    stats.matchHistory,
+    stats.winPercentage ?? 0,
+    winPercentageByPersonId
+  );
+  const cardTotalMatches = stats.matchHistory.length;
 
   const strengthLabels = (person.strengths ?? []).map(
     (s: string) => STRENGTH_OPTIONS.find((o) => o.value === s)?.label ?? s
@@ -244,6 +278,25 @@ export default async function PersonDetailPage({
         </div>
       )}
       {signatureShotBadges.length === 0 && profileSummary && <div className="mb-6" />}
+
+      <div className="mb-6">
+        <h2 className="text-sm font-bold text-slate-700 mb-2">Player Stats Card</h2>
+        <PlayerStatsCard
+          name={displayName}
+          photoUrl={person.photo_url}
+          rating={cardRating}
+          starCount={cardStarCount}
+          formPercentage={cardFormPercentage}
+          threatPercentage={cardThreatPercentage}
+          wins={cardWins}
+          losses={cardLosses}
+          winStreak={cardWinStreak}
+          trendPoints={cardTrendPoints}
+          winsVsHigherRated={cardWinsVsHigherRated}
+          totalMatches={cardTotalMatches}
+          winsInLast10={cardWinsInLast10}
+        />
+      </div>
 
       <div className="mb-6">
         <details>
