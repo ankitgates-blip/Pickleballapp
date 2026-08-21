@@ -93,3 +93,50 @@ never a crash, never a missing section. The "Wins vs Higher-Rated" and
 - No new rating/ELO system — Rating, Form, and Wins-vs-Higher-Rated stay
   explicitly derived approximations, as agreed earlier in this feature's
   design conversation.
+
+## Correction (post-implementation)
+
+A few details changed from this spec's original wording during
+implementation and final review — recorded here rather than silently
+edited above, since the original text was reviewed and approved as
+written:
+
+- **Star row**: ships as whole stars via the app's existing
+  `starRating`/`renderStars` (already used everywhere else win rate is
+  shown as stars), not a new half-star rounding scheme. A half-star
+  glyph has no proven track record in this codebase's rendered output
+  (HTML, PDF, or now SVG-to-PNG), so introducing one specifically for
+  this card risked a missing/fallback glyph in the exported image with
+  no way to verify it ahead of time. Reusing the existing, already-safe
+  1-5 star convention is also more consistent with the rest of the app.
+- **Side panel header**: reads "PLAYER STATUS" (fixed, generic) rather
+  than the reference image's literal "CRITICAL STATUS" — that heading
+  only makes sense for the top tier; a LOW THREAT player's card
+  shouldn't open with "CRITICAL STATUS". The tier-specific language
+  lives in the "STATUS: \<risk level\>" line and the big tier headline
+  underneath instead.
+- **No circuit-board texture**: the main panel keeps the dark gradient
+  background from the reference image but drops the decorative
+  circuit-line overlay — a purely visual simplification with no effect
+  on any stat or data shown.
+- **Rendering mechanism**: implemented as one Client Component
+  (`PlayerStatsCard.tsx`) that renders the SVG directly, rather than a
+  server-generated SVG wrapped by a separate small client component —
+  simpler, and functionally identical from the page's perspective.
+- **Zero-completed-matches presentation**: rather than suppressing the
+  tier shield/badge entirely (as `ThreatBadge` does for a `null` win
+  percentage), a player with no completed matches shows the full card
+  at its LOW THREAT baseline with 0s throughout. The card's props take
+  plain numbers, not `number | null` — hiding a section of an otherwise
+  always-shown card read as more broken than showing a sensible
+  baseline, and this matches how `starRating(0)` already defaults to a
+  1-star baseline elsewhere in the app rather than showing nothing.
+- **PNG photo embedding**: discovered during final review — an SVG
+  rendered as an `<img>` source runs in the browser's "secure static
+  mode," which never loads external resource references (a remote
+  `<image href>`) at all, regardless of the resource's own CORS
+  headers. Drawing that image straight to canvas would have silently
+  shipped a PNG with a blank photo ring. Fixed by fetching the photo
+  and inlining it as a `data:` URI on a cloned copy of the SVG
+  immediately before serializing for export — the on-page display still
+  uses the fast remote URL directly.
