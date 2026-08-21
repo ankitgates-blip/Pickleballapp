@@ -22,7 +22,7 @@ export type PlayerStatsCardProps = {
 };
 
 const CARD_WIDTH = 640;
-const CARD_HEIGHT = 310;
+const CARD_HEIGHT = 360;
 
 type TierPalette = { accent: string; accentDark: string };
 
@@ -32,14 +32,6 @@ const THREAT_PALETTE: Record<string, TierPalette> = {
   DANGEROUS: { accent: '#ea580c', accentDark: '#1c0a03' },
   'HIGH THREAT': { accent: '#dc2626', accentDark: '#1c0505' },
   'DO NOT PLAY': { accent: '#c026d3', accentDark: '#1a0526' },
-};
-
-const RISK_LABELS: Record<string, string> = {
-  'LOW THREAT': 'LOW RISK',
-  'WATCH OUT': 'MODERATE RISK',
-  DANGEROUS: 'ELEVATED RISK',
-  'HIGH THREAT': 'HIGH RISK',
-  'DO NOT PLAY': 'CRITICAL RISK',
 };
 
 const STATUS_LINES: Record<string, string> = {
@@ -57,6 +49,20 @@ const FORM_COLORS: Record<string, string> = {
   'IN FORM': '#4ade80',
   'ON FIRE': '#f97316',
 };
+
+const CHEVRON_COUNT: Record<string, number> = {
+  'LOW THREAT': 1,
+  'WATCH OUT': 2,
+  DANGEROUS: 3,
+  'HIGH THREAT': 3,
+  'DO NOT PLAY': 2,
+};
+
+function chevronYPositions(count: number): number[] {
+  if (count === 1) return [78];
+  if (count === 2) return [68, 86];
+  return [58, 74, 90];
+}
 
 function renderStarRow(count: number): string {
   return '★'.repeat(count) + '☆'.repeat(5 - count);
@@ -105,9 +111,11 @@ export default function PlayerStatsCard({
   const threatTier = threatTierFor(threatPercentage);
   const formTier = formTierFor(formPercentage);
   const palette = THREAT_PALETTE[threatTier.label] ?? THREAT_PALETTE['LOW THREAT'];
-  const riskLabel = RISK_LABELS[threatTier.label] ?? 'LOW RISK';
   const statusLine = STATUS_LINES[threatTier.label] ?? 'Just warming up.';
   const formColor = FORM_COLORS[formTier.label] ?? '#94a3b8';
+  const chevronCount = CHEVRON_COUNT[threatTier.label] ?? 1;
+  const chevronYs = chevronYPositions(chevronCount);
+  const isDoNotPlay = threatTier.label === 'DO NOT PLAY';
   const initial = name.trim().charAt(0).toUpperCase() || '?';
   const trendLabel =
     trendPoints === null ? '—' : trendPoints > 0 ? `+${trendPoints}` : `${trendPoints}`;
@@ -202,12 +210,25 @@ export default function PlayerStatsCard({
               <stop offset="0%" stopColor={palette.accent} />
               <stop offset="100%" stopColor={palette.accentDark} />
             </linearGradient>
+            <linearGradient id="wingL" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor={palette.accent} stopOpacity="0.1" />
+              <stop offset="100%" stopColor={palette.accent} stopOpacity="0.85" />
+            </linearGradient>
+            <linearGradient id="wingR" x1="1" y1="0" x2="0" y2="0">
+              <stop offset="0%" stopColor={palette.accent} stopOpacity="0.1" />
+              <stop offset="100%" stopColor={palette.accent} stopOpacity="0.85" />
+            </linearGradient>
+            <linearGradient id="ribbonGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor={palette.accentDark} />
+              <stop offset="50%" stopColor={palette.accent} />
+              <stop offset="100%" stopColor={palette.accentDark} />
+            </linearGradient>
             <clipPath id="photoClip">
               <circle cx="66" cy="64" r="34" />
             </clipPath>
           </defs>
 
-          <rect x="0" y="0" width="410" height="310" rx="16" fill="url(#mainBg)" />
+          <rect x="0" y="0" width="410" height={CARD_HEIGHT} rx="16" fill="url(#mainBg)" />
 
           <circle cx="66" cy="64" r="38" fill="none" stroke="url(#goldRing)" strokeWidth="4" />
           {photoUrl && !photoFailed ? (
@@ -238,60 +259,89 @@ export default function PlayerStatsCard({
             </>
           )}
 
-          <text x="118" y="52" fontSize="21" fontWeight="800" fill="#7dd3fc" fontFamily="system-ui, sans-serif">
+          <text x="118" y="50" fontSize="23" fontWeight="900" fill="#f8fafc" fontFamily="system-ui, sans-serif">
             {name}
           </text>
-          <text x="118" y="70" fontSize="10" fill="#94a3b8" letterSpacing="1" fontFamily="system-ui, sans-serif">
+          <text x="118" y="68" fontSize="10" fill="#94a3b8" letterSpacing="1" fontFamily="system-ui, sans-serif">
             PICKLERALLY DXB PLAYER CARD
           </text>
 
-          <rect x="18" y="96" width="118" height="58" rx="8" fill="#1c1917" stroke="#3f3f46" />
-          <text x="77" y="120" fontSize="19" fontWeight="800" fill="#f8fafc" textAnchor="middle" fontFamily="system-ui, sans-serif">
+          <rect x="18" y="94" width="118" height="60" rx="8" fill="#1c1917" stroke="#3f3f46" />
+          <text x="77" y="122" fontSize="21" fontWeight="800" fill="#f8fafc" textAnchor="middle" fontFamily="system-ui, sans-serif">
             {rating.toFixed(2)}
           </text>
-          <text x="77" y="133" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="system-ui, sans-serif">
+          <text x="77" y="136" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="system-ui, sans-serif">
             RATING
           </text>
-          <text x="77" y="146" fontSize="10" fill="#fbbf24" textAnchor="middle" fontFamily="system-ui, sans-serif">
+          <text x="77" y="149" fontSize="11" fill="#fbbf24" textAnchor="middle" fontFamily="system-ui, sans-serif">
             {renderStarRow(starCount)}
           </text>
 
-          <rect x="144" y="96" width="118" height="58" rx="8" fill="#1c1917" stroke="#3f3f46" />
-          <text x="203" y="120" fontSize="19" fontWeight="800" fill={formColor} textAnchor="middle" fontFamily="system-ui, sans-serif">
+          <rect x="144" y="94" width="118" height="60" rx="8" fill="#1c1917" stroke="#3f3f46" />
+          <text x="203" y="122" fontSize="21" fontWeight="800" fill={formColor} textAnchor="middle" fontFamily="system-ui, sans-serif">
             {formPercentage}
           </text>
-          <text x="203" y="133" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="system-ui, sans-serif">
+          <text x="203" y="136" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="system-ui, sans-serif">
             FORM
           </text>
-          <text x="203" y="147" fontSize="10" fill={formColor} textAnchor="middle" fontFamily="system-ui, sans-serif">
+          <text x="203" y="149" fontSize="11" fill={formColor} textAnchor="middle" fontFamily="system-ui, sans-serif">
             {formTier.emoji} {formTier.label}
           </text>
 
-          <rect x="270" y="96" width="118" height="58" rx="8" fill="#1c1917" stroke="#3f3f46" />
-          <text x="329" y="120" fontSize="19" fontWeight="800" fill={palette.accent} textAnchor="middle" fontFamily="system-ui, sans-serif">
+          <rect x="270" y="94" width="118" height="60" rx="8" fill="#1c1917" stroke="#3f3f46" />
+          <text x="329" y="122" fontSize="21" fontWeight="800" fill={palette.accent} textAnchor="middle" fontFamily="system-ui, sans-serif">
             {threatPercentage}
           </text>
-          <text x="329" y="133" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="system-ui, sans-serif">
+          <text x="329" y="136" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="system-ui, sans-serif">
             THREAT LVL
           </text>
           <rect x="278" y="140" width="102" height="6" rx="3" fill="#3f3f46" />
           <rect x="278" y="140" width={meterWidth} height="6" rx="3" fill={palette.accent} />
 
-          <path
-            d="M205 168 L245 182 L245 210 C245 235 227 250 205 258 C183 250 165 235 165 210 L165 182 Z"
-            fill="url(#shieldGrad)"
-            stroke={palette.accent}
-            strokeWidth="1.5"
-          />
-          <text x="205" y="205" fontSize="26" textAnchor="middle" fontFamily="system-ui, sans-serif">
-            {threatTier.emoji}
-          </text>
+          <g transform="translate(133,168) scale(0.8)">
+            <path d="M78 40 L18 30 L26 38 L18 46 L30 50 L20 58 L34 60 L78 52 Z" fill="url(#wingL)" />
+            <path d="M102 40 L162 30 L154 38 L162 46 L150 50 L160 58 L146 60 L102 52 Z" fill="url(#wingR)" />
+            <path
+              d="M90 20 L128 34 L128 78 C128 112 110 132 90 142 C70 132 52 112 52 78 L52 34 Z"
+              fill="url(#shieldGrad)"
+              stroke={palette.accent}
+              strokeWidth="2"
+            />
+            <circle cx="90" cy="46" r="11" fill="#e4e4e7" stroke="#a1a1aa" strokeWidth="1" />
+            <circle cx="86" cy="42" r="1.2" fill="#71717a" />
+            <circle cx="94" cy="42" r="1.2" fill="#71717a" />
+            <circle cx="90" cy="47" r="1.2" fill="#71717a" />
+            <circle cx="85" cy="50" r="1.2" fill="#71717a" />
+            <circle cx="95" cy="50" r="1.2" fill="#71717a" />
+            {chevronYs.map((y) => (
+              <path
+                key={y}
+                d={`M68 ${y} L90 ${y + 12} L112 ${y}`}
+                fill="none"
+                stroke={palette.accent}
+                strokeWidth="6"
+                strokeLinecap="round"
+              />
+            ))}
+            {isDoNotPlay && (
+              <>
+                <circle cx="90" cy="118" r="12" fill="#e4e4e7" />
+                <circle cx="85" cy="116" r="2.4" fill="#27272a" />
+                <circle cx="95" cy="116" r="2.4" fill="#27272a" />
+                <rect x="86" y="122" width="8" height="3" fill="#27272a" rx="1" />
+                <path d="M52 118 C44 110 44 96 52 88" fill="none" stroke={palette.accent} strokeWidth="2.5" />
+                <path d="M128 118 C136 110 136 96 128 88" fill="none" stroke={palette.accent} strokeWidth="2.5" />
+              </>
+            )}
+          </g>
+
+          <rect x="155" y="308" width="100" height="16" rx="3" fill="url(#ribbonGrad)" />
           <text
             x="205"
-            y="275"
-            fontSize="14"
+            y="319"
+            fontSize="10"
             fontWeight="900"
-            fill={palette.accent}
+            fill="#ffffff"
             textAnchor="middle"
             letterSpacing="1"
             fontFamily="system-ui, sans-serif"
@@ -299,75 +349,72 @@ export default function PlayerStatsCard({
             {threatTier.label}
           </text>
 
-          <line x1="18" y1="290" x2="392" y2="290" stroke="#292524" />
-          <text x="59" y="304" fontSize="10" textAnchor="middle" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <line x1="18" y1="330" x2="392" y2="330" stroke="#292524" />
+          <text x="65" y="348" fontSize="13" textAnchor="middle" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             🏆 {wins}-{losses}
           </text>
-          <text x="141" y="304" fontSize="10" textAnchor="middle" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <text x="158" y="348" fontSize="13" textAnchor="middle" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             🔥 {winStreak}
           </text>
-          <text x="223" y="304" fontSize="10" textAnchor="middle" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <text x="252" y="348" fontSize="13" textAnchor="middle" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             📈 {trendLabel}
           </text>
-          <text x="305" y="304" fontSize="10" textAnchor="middle" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <text x="345" y="348" fontSize="13" textAnchor="middle" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             ⚔️ {winsVsHigherRated}
           </text>
-          <text x="374" y="304" fontSize="10" textAnchor="middle" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
-            🎾 {totalMatches}
-          </text>
 
-          <rect x="420" y="0" width="220" height="310" rx="16" fill="url(#sideBg)" stroke={palette.accentDark} />
+          <rect x="420" y="0" width="220" height={CARD_HEIGHT} rx="16" fill="url(#sideBg)" stroke={palette.accentDark} />
+
           <text
             x="530"
-            y="30"
-            fontSize="11"
-            fontWeight="700"
+            y="38"
+            fontSize="14"
+            fontWeight="900"
             fill="#f8fafc"
             textAnchor="middle"
-            letterSpacing="2"
             fontFamily="system-ui, sans-serif"
           >
-            PLAYER STATUS
+            🚨 THREAT LEVEL: <tspan fill={palette.accent}>{threatPercentage}</tspan>
           </text>
 
-          <text x="530" y="80" fontSize="40" textAnchor="middle" fontFamily="system-ui, sans-serif">
-            {threatTier.emoji}
-          </text>
-          <text x="530" y="100" fontSize="10" fontWeight="700" fill={palette.accent} textAnchor="middle" fontFamily="system-ui, sans-serif">
-            STATUS: {riskLabel}
-          </text>
+          <rect x="450" y="52" width="160" height="24" rx="4" fill="url(#ribbonGrad)" />
           <text
             x="530"
-            y="125"
-            fontSize="19"
+            y="68"
+            fontSize="12"
             fontWeight="900"
-            fill={palette.accent}
+            fill="#ffffff"
             textAnchor="middle"
             letterSpacing="1"
             fontFamily="system-ui, sans-serif"
           >
-            {threatTier.label}
+            {threatTier.emoji} {threatTier.label} {threatTier.emoji}
           </text>
 
-          <text x="444" y="155" fontSize="10.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <text x="444" y="110" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             🔥 {winStreak}-game winning streak
           </text>
-          <text x="444" y="176" fontSize="10.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <line x1="444" y1="122" x2="616" y2="122" stroke="#3f1d5c" />
+          <text x="444" y="155" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             🏆 {winsInLast10} wins in last 10 games
           </text>
-          <text x="444" y="197" fontSize="10.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <line x1="444" y1="167" x2="616" y2="167" stroke="#3f1d5c" />
+          <text x="444" y="200" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             📈 {trendLabel} percentage points
           </text>
-          <text x="444" y="218" fontSize="10.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <line x1="444" y1="212" x2="616" y2="212" stroke="#3f1d5c" />
+          <text x="444" y="245" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             ⚔️ {winsVsHigherRated} wins vs higher-rated
           </text>
-          <text x="444" y="239" fontSize="10.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <line x1="444" y1="257" x2="616" y2="257" stroke="#3f1d5c" />
+          <text x="444" y="290" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             🎾 {totalMatches} matches played
           </text>
 
+          <rect x="445" y="310" width="170" height="32" rx="6" fill="none" stroke={palette.accent} strokeWidth="1" />
           <text
             x="530"
-            y="284"
+            y="330"
             fontSize="10.5"
             fontWeight="800"
             fill={palette.accent}
