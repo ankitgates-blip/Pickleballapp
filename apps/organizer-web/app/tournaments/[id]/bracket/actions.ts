@@ -693,6 +693,20 @@ export async function advanceUpAndDownRiverRound(tournamentId: string) {
 export async function generateSemifinalMatches(tournamentId: string) {
   const { supabase } = await requireOrganizer();
 
+  const { count: existingPlayoffMatches, error: existingError } = await supabase
+    .from('matches')
+    .select('id', { count: 'exact', head: true })
+    .eq('tournament_id', tournamentId)
+    .in('stage', ['semifinal', 'final']);
+
+  if (existingError) {
+    throw new Error(existingError.message);
+  }
+
+  if ((existingPlayoffMatches ?? 0) > 0) {
+    throw new Error('Semifinals or a final already exist for this tournament.');
+  }
+
   const { data: leagueMatches, error: matchesError } = await supabase
     .from('matches')
     .select('team_a_id, team_b_id, score_a, score_b, status')
@@ -704,6 +718,17 @@ export async function generateSemifinalMatches(tournamentId: string) {
     throw new Error(matchesError.message);
   }
 
+  const { data: teamsData, error: teamsError } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('tournament_id', tournamentId)
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true });
+
+  if (teamsError) {
+    throw new Error(teamsError.message);
+  }
+
   const matchResults: MatchResult[] = (leagueMatches ?? []).map((m) => ({
     teamAId: m.team_a_id!,
     teamBId: m.team_b_id,
@@ -713,7 +738,9 @@ export async function generateSemifinalMatches(tournamentId: string) {
   }));
 
   const standings = computeStandings(matchResults);
-  const pairings = generateSemifinals(standings.slice(0, 4));
+  const teamIds = (teamsData ?? []).map((t) => t.id);
+  const completeStandings = fillStandingsGaps(standings, teamIds);
+  const pairings = generateSemifinals(completeStandings.slice(0, 4));
 
   const { error: insertError } = await supabase.from('matches').insert(
     pairings.map((p) => ({
