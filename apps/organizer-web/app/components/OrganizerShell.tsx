@@ -52,19 +52,21 @@ export default function OrganizerShell({
             className="ball-texture absolute -top-6 -right-3 h-28 w-28 rounded-full opacity-90 shadow-lg"
             style={{ background: 'radial-gradient(circle at 35% 35%, #f2942e, #d2621c)' }}
           />
+          <div aria-hidden className="header-dots absolute inset-0" />
           {/* pl-[170px] clears the overlapping logo: left-[30px] + 140px width below */}
           <div className="relative max-w-3xl mx-auto px-4 pt-4 pb-2 pl-[170px] min-h-[150px] flex flex-col justify-center">
             <span
-              className="font-brand text-lg tracking-wide leading-none"
-              style={{ textShadow: '0 2px 6px rgba(0,0,0,0.4)' }}
+              className="font-brand text-2xl sm:text-4xl tracking-wide leading-tight"
+              style={{ textShadow: '0 2px 8px rgba(0,0,0,0.45)' }}
             >
               PICKLERALLY DXB
             </span>
+            <div className="w-12 h-[3px] bg-gold rounded-full mt-2 mb-2" />
             <span
-              className="font-script italic text-lg text-[#c9a865] mt-1"
+              className="font-script italic text-lg text-[#c9a865]"
               style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}
             >
-              Premier Dubai Pickle League App
+              Premier Dubai Pickleball League App
             </span>
           </div>
           {organizerName && (

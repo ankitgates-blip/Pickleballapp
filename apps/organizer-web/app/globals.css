@@ -22,13 +22,20 @@
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image: radial-gradient(circle, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+  background-size: 18px 18px;
   color: var(--foreground);
 }
 
 .ball-texture {
   background-image: radial-gradient(circle, rgba(0, 0, 0, 0.15) 2px, transparent 2px);
   background-size: 14px 14px;
+}
+
+.header-dots {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.14) 1.5px, transparent 1.5px);
+  background-size: 20px 20px;
 }
 
 h1, h2, h3 {
