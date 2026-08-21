@@ -62,6 +62,27 @@ function renderStarRow(count: number): string {
   return '★'.repeat(count) + '☆'.repeat(5 - count);
 }
 
+// SVG rendered as an <img> src runs in "secure static mode": external resource references
+// (like a remote <image href>) are never loaded, so drawing that image to canvas would silently
+// omit the player's photo -- not a CORS/taint error, just a blank ring. Fetching the photo and
+// inlining it as a data: URI before serializing (same pattern as SharePlayerStatsButton's PDF
+// export) avoids that entirely.
+async function loadPhotoDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string | null>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
 export default function PlayerStatsCard({
   name,
   photoUrl,
@@ -96,7 +117,20 @@ export default function PlayerStatsCard({
     if (!svgRef.current) return;
     setStatus('generating');
     try {
-      const svgString = new XMLSerializer().serializeToString(svgRef.current);
+      const exportSvg = svgRef.current.cloneNode(true) as SVGSVGElement;
+      const imageEl = exportSvg.querySelector('image');
+      if (imageEl) {
+        const dataUrl = photoUrl && !photoFailed ? await loadPhotoDataUrl(photoUrl) : null;
+        if (dataUrl) {
+          imageEl.setAttribute('href', dataUrl);
+        } else {
+          // Couldn't inline the photo (fetch failed, or there wasn't one to begin with) --
+          // drop the reference rather than shipping a PNG with a blank ring where it'd sit.
+          imageEl.remove();
+        }
+      }
+
+      const svgString = new XMLSerializer().serializeToString(exportSvg);
       const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
       const svgUrl = URL.createObjectURL(svgBlob);
       const img = new Image();
@@ -139,7 +173,7 @@ export default function PlayerStatsCard({
         type="button"
         onClick={handleDownload}
         disabled={status === 'generating'}
-        className="cursor-pointer border-0 bg-transparent p-0"
+        className="block w-full cursor-pointer border-0 bg-transparent p-0"
         aria-label="Download Player Stats Card as an image"
       >
         <svg
@@ -148,6 +182,7 @@ export default function PlayerStatsCard({
           height={CARD_HEIGHT}
           viewBox={`0 0 ${CARD_WIDTH} ${CARD_HEIGHT}`}
           xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-auto max-w-[640px]"
         >
           <defs>
             <linearGradient id="mainBg" x1="0" y1="0" x2="1" y2="1">
