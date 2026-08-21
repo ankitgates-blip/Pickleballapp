@@ -174,15 +174,10 @@ export default async function BracketPage({
 
   const showGenerateSemifinals =
     isLeaguePlayoffs &&
-    allLeagueComplete &&
     semifinalMatches.length === 0 &&
     !hasFinalMatch &&
     teamCount >= 4;
-  const showSkipToFinal =
-    isLeaguePlayoffs &&
-    semifinalMatches.length === 0 &&
-    !hasFinalMatch &&
-    teamCount >= 4;
+  const showSkipToFinal = showGenerateSemifinals;
   const showGenerateFinal = isLeaguePlayoffs && allSemifinalComplete && !hasFinalMatch;
 
   const leagueStandings = isLeaguePlayoffs
@@ -599,18 +594,16 @@ export default async function BracketPage({
       {showSkipToFinal && (
         <div className={`${cardClass} text-center mb-6`}>
           <p className="text-slate-600 mb-4">
-            {showGenerateSemifinals
+            {allLeagueComplete
               ? "League complete. Generate the semifinals from the top 4 teams, or skip straight to the final if you're short on time."
-              : 'Short on time? Skip the semifinals and send the top 2 teams (by current standings) straight to the final.'}
+              : "Short on time? You don't have to finish every round — generate the semifinals from the top 4 teams by current standings, or skip straight to the final with the top 2."}
           </p>
           <div className="flex items-center justify-center gap-3">
-            {showGenerateSemifinals && (
-              <form action={generateSemifinalMatchesWithId}>
-                <button type="submit" className={accentButtonClass}>
-                  Generate Semifinals
-                </button>
-              </form>
-            )}
+            <form action={generateSemifinalMatchesWithId}>
+              <button type="submit" className={accentButtonClass}>
+                Generate Semifinals
+              </button>
+            </form>
             <form action={skipToFinalMatchWithId}>
               <button type="submit" className={outlineButtonClass}>
                 Skip Semifinals — Go to Final
