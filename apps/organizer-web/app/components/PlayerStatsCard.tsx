@@ -468,22 +468,10 @@ export default function PlayerStatsCard({
             strokeOpacity="0.4"
           />
 
+          <rect x="450" y="36" width="160" height="24" rx="4" fill="url(#ribbonGrad)" />
           <text
             x="530"
-            y="38"
-            fontSize="14"
-            fontWeight="900"
-            fill="#f8fafc"
-            textAnchor="middle"
-            fontFamily="system-ui, sans-serif"
-          >
-            🚨 THREAT LEVEL: <tspan fill={palette.accent}>{threatPercentage}</tspan>
-          </text>
-
-          <rect x="450" y="52" width="160" height="24" rx="4" fill="url(#ribbonGrad)" />
-          <text
-            x="530"
-            y="68"
+            y="52"
             fontSize="12"
             fontWeight="900"
             fill="#ffffff"
@@ -494,34 +482,34 @@ export default function PlayerStatsCard({
             {threatTier.emoji} {threatTier.label} {threatTier.emoji}
           </text>
 
-          <text x="444" y="100" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <text x="444" y="84" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             🏆 {wins}-{losses} record
           </text>
-          <line x1="444" y1="110" x2="616" y2="110" stroke="#3f1d5c" />
-          <text x="444" y="138" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <line x1="444" y1="94" x2="616" y2="94" stroke="#3f1d5c" />
+          <text x="444" y="122" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             🔥 {winStreak}-game winning streak
           </text>
-          <line x1="444" y1="148" x2="616" y2="148" stroke="#3f1d5c" />
-          <text x="444" y="176" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <line x1="444" y1="132" x2="616" y2="132" stroke="#3f1d5c" />
+          <text x="444" y="160" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             🏆 {winsInLast10} wins in last 10 games
           </text>
-          <line x1="444" y1="186" x2="616" y2="186" stroke="#3f1d5c" />
-          <text x="444" y="214" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <line x1="444" y1="170" x2="616" y2="170" stroke="#3f1d5c" />
+          <text x="444" y="198" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             📈 {trendLabel} percentage points
           </text>
-          <line x1="444" y1="224" x2="616" y2="224" stroke="#3f1d5c" />
-          <text x="444" y="252" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <line x1="444" y1="208" x2="616" y2="208" stroke="#3f1d5c" />
+          <text x="444" y="236" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             ⚔️ {winsVsHigherRated} wins vs higher-rated
           </text>
-          <line x1="444" y1="262" x2="616" y2="262" stroke="#3f1d5c" />
-          <text x="444" y="290" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <line x1="444" y1="246" x2="616" y2="246" stroke="#3f1d5c" />
+          <text x="444" y="274" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             🎾 {totalMatches} matches played
           </text>
 
-          <rect x="445" y="310" width="170" height="32" rx="6" fill="none" stroke={palette.accent} strokeWidth="1" />
+          <rect x="445" y="294" width="170" height="32" rx="6" fill="none" stroke={palette.accent} strokeWidth="1" />
           <text
             x="530"
-            y="330"
+            y="314"
             fontSize="10.5"
             fontWeight="800"
             fill={palette.accent}
