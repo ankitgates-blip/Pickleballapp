@@ -229,6 +229,16 @@ export default async function PersonDetailPage({
   // in a doc.text() call corrupts the entire string into mojibake, so the PDF gets a plain-text
   // label without the emoji while the on-page pills keep it.
   const signatureShotPdfLabels = signatureShotBadges.map((b) => `${b.skillName} — ${b.funnyName}`);
+  const ageHandednessParts = [
+    person.age ? `Age ${person.age}` : null,
+    handednessLabel,
+  ].filter((part): part is string => Boolean(part));
+  const ageHandednessLabel =
+    ageHandednessParts.length > 0 ? ageHandednessParts.join(' · ') : null;
+  const cardSignatureShots = signatureShotBadges.map((b) => ({
+    emoji: b.emoji,
+    skillName: b.skillName,
+  }));
   const profileSummaryParts = [
     handednessLabel,
     person.age ? `Age ${person.age}` : null,
@@ -284,6 +294,8 @@ export default async function PersonDetailPage({
         <PlayerStatsCard
           name={displayName}
           photoUrl={person.photo_url}
+          ageHandednessLabel={ageHandednessLabel}
+          signatureShots={cardSignatureShots}
           rating={cardRating}
           starCount={cardStarCount}
           formPercentage={cardFormPercentage}

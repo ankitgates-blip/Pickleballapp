@@ -8,6 +8,7 @@ import { sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
 export type PlayerStatsCardProps = {
   name: string;
   photoUrl: string | null;
+  ageHandednessLabel: string | null;
   rating: number;
   starCount: 1 | 2 | 3 | 4 | 5;
   formPercentage: number;
@@ -19,10 +20,12 @@ export type PlayerStatsCardProps = {
   winsVsHigherRated: number;
   totalMatches: number;
   winsInLast10: number;
+  signatureShots: { emoji: string; skillName: string }[];
 };
 
 const CARD_WIDTH = 640;
 const CARD_HEIGHT = 360;
+const MAX_SIGNATURE_SHOTS_SHOWN = 5;
 
 type TierPalette = { accent: string; accentDark: string };
 
@@ -92,6 +95,7 @@ async function loadPhotoDataUrl(url: string): Promise<string | null> {
 export default function PlayerStatsCard({
   name,
   photoUrl,
+  ageHandednessLabel,
   rating,
   starCount,
   formPercentage,
@@ -103,6 +107,7 @@ export default function PlayerStatsCard({
   winsVsHigherRated,
   totalMatches,
   winsInLast10,
+  signatureShots,
 }: PlayerStatsCardProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [photoFailed, setPhotoFailed] = useState(false);
@@ -120,6 +125,8 @@ export default function PlayerStatsCard({
   const trendLabel =
     trendPoints === null ? '—' : trendPoints > 0 ? `+${trendPoints}` : `${trendPoints}`;
   const meterWidth = (Math.max(0, Math.min(100, threatPercentage)) / 100) * 102;
+  const shownShots = signatureShots.slice(0, MAX_SIGNATURE_SHOTS_SHOWN);
+  const extraShotsCount = Math.max(0, signatureShots.length - MAX_SIGNATURE_SHOTS_SHOWN);
 
   const handleDownload = async () => {
     if (!svgRef.current) return;
@@ -262,7 +269,12 @@ export default function PlayerStatsCard({
           <text x="118" y="50" fontSize="23" fontWeight="900" fill="#f8fafc" fontFamily="system-ui, sans-serif">
             {name}
           </text>
-          <text x="118" y="68" fontSize="10" fill="#94a3b8" letterSpacing="1" fontFamily="system-ui, sans-serif">
+          {ageHandednessLabel && (
+            <text x="118" y="64" fontSize="11" fill="#c9a865" fontFamily="system-ui, sans-serif">
+              {ageHandednessLabel}
+            </text>
+          )}
+          <text x="118" y="79" fontSize="10" fill="#94a3b8" letterSpacing="1" fontFamily="system-ui, sans-serif">
             PICKLERALLY DXB PLAYER CARD
           </text>
 
@@ -298,7 +310,40 @@ export default function PlayerStatsCard({
           <rect x="278" y="140" width="102" height="6" rx="3" fill="#3f3f46" />
           <rect x="278" y="140" width={meterWidth} height="6" rx="3" fill={palette.accent} />
 
-          <g transform="translate(133,168) scale(0.8)">
+          {shownShots.length > 0 && (
+            <>
+              <text x="18" y="176" fontSize="12" fontWeight="700" fill="#94a3b8" letterSpacing="1.5" fontFamily="system-ui, sans-serif">
+                SIGNATURE SHOTS
+              </text>
+              {shownShots.map((shot, i) => (
+                <text
+                  key={`${shot.skillName}-${i}`}
+                  x="18"
+                  y={196 + i * 18}
+                  fontSize="13"
+                  fontStyle="italic"
+                  fill="#e2e8f0"
+                  fontFamily="system-ui, sans-serif"
+                >
+                  {shot.emoji} {shot.skillName}
+                </text>
+              ))}
+              {extraShotsCount > 0 && (
+                <text
+                  x="18"
+                  y={196 + shownShots.length * 18}
+                  fontSize="13"
+                  fontStyle="italic"
+                  fill="#94a3b8"
+                  fontFamily="system-ui, sans-serif"
+                >
+                  +{extraShotsCount} more
+                </text>
+              )}
+            </>
+          )}
+
+          <g transform="translate(248,168) scale(0.8)">
             <path d="M78 40 L18 30 L26 38 L18 46 L30 50 L20 58 L34 60 L78 52 Z" fill="url(#wingL)" />
             <path d="M102 40 L162 30 L154 38 L162 46 L150 50 L160 58 L146 60 L102 52 Z" fill="url(#wingR)" />
             <path
@@ -335,9 +380,9 @@ export default function PlayerStatsCard({
             )}
           </g>
 
-          <rect x="155" y="308" width="100" height="16" rx="3" fill="url(#ribbonGrad)" />
+          <rect x="270" y="308" width="100" height="16" rx="3" fill="url(#ribbonGrad)" />
           <text
-            x="205"
+            x="320"
             y="319"
             fontSize="10"
             fontWeight="900"
@@ -347,20 +392,6 @@ export default function PlayerStatsCard({
             fontFamily="system-ui, sans-serif"
           >
             {threatTier.label}
-          </text>
-
-          <line x1="18" y1="330" x2="392" y2="330" stroke="#292524" />
-          <text x="65" y="348" fontSize="13" textAnchor="middle" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
-            🏆 {wins}-{losses}
-          </text>
-          <text x="158" y="348" fontSize="13" textAnchor="middle" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
-            🔥 {winStreak}
-          </text>
-          <text x="252" y="348" fontSize="13" textAnchor="middle" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
-            📈 {trendLabel}
-          </text>
-          <text x="345" y="348" fontSize="13" textAnchor="middle" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
-            ⚔️ {winsVsHigherRated}
           </text>
 
           <rect x="420" y="0" width="220" height={CARD_HEIGHT} rx="16" fill="url(#sideBg)" stroke={palette.accentDark} />
@@ -391,22 +422,26 @@ export default function PlayerStatsCard({
             {threatTier.emoji} {threatTier.label} {threatTier.emoji}
           </text>
 
-          <text x="444" y="110" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <text x="444" y="100" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+            🏆 {wins}-{losses} record
+          </text>
+          <line x1="444" y1="110" x2="616" y2="110" stroke="#3f1d5c" />
+          <text x="444" y="138" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             🔥 {winStreak}-game winning streak
           </text>
-          <line x1="444" y1="122" x2="616" y2="122" stroke="#3f1d5c" />
-          <text x="444" y="155" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <line x1="444" y1="148" x2="616" y2="148" stroke="#3f1d5c" />
+          <text x="444" y="176" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             🏆 {winsInLast10} wins in last 10 games
           </text>
-          <line x1="444" y1="167" x2="616" y2="167" stroke="#3f1d5c" />
-          <text x="444" y="200" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <line x1="444" y1="186" x2="616" y2="186" stroke="#3f1d5c" />
+          <text x="444" y="214" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             📈 {trendLabel} percentage points
           </text>
-          <line x1="444" y1="212" x2="616" y2="212" stroke="#3f1d5c" />
-          <text x="444" y="245" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <line x1="444" y1="224" x2="616" y2="224" stroke="#3f1d5c" />
+          <text x="444" y="252" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             ⚔️ {winsVsHigherRated} wins vs higher-rated
           </text>
-          <line x1="444" y1="257" x2="616" y2="257" stroke="#3f1d5c" />
+          <line x1="444" y1="262" x2="616" y2="262" stroke="#3f1d5c" />
           <text x="444" y="290" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
             🎾 {totalMatches} matches played
           </text>
