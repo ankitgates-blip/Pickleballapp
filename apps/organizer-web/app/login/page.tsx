@@ -26,7 +26,7 @@ export default async function LoginPage({
         <div className="text-center text-white">
           <Image src="/logo.png" alt="PicklerAlly DXB" width={64} height={64} className="mx-auto mb-3 rounded-full" />
           <h1 className="text-3xl font-bold tracking-tight">PICKLERALLY DXB</h1>
-          <p className="text-teal-50 text-sm mt-1 font-medium">Run your tournaments, not a spreadsheet.</p>
+          <p className="text-teal-50 text-sm mt-1 font-medium">Run your leagues, not a spreadsheet.</p>
         </div>
 
         {error && (

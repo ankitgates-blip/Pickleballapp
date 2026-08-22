@@ -12,12 +12,12 @@ export default async function NewTournamentPage() {
 
   return (
     <OrganizerShell organizerName={organizer.name}>
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">New Tournament</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-6">New League</h1>
       <div className={cardClass}>
         <form action={createTournament} className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1">
-              Tournament name
+              League name
             </label>
             <input name="name" type="text" placeholder="e.g. Saturday Round Robin" required className={inputClass} />
           </div>
@@ -77,7 +77,7 @@ export default async function NewTournamentPage() {
             </div>
           </div>
           <button type="submit" className={`${accentButtonClass} w-full`}>
-            Create Tournament
+            Create League
           </button>
         </form>
       </div>

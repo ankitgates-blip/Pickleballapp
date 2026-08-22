@@ -139,7 +139,7 @@ export default function SharePlayerStatsButton({
       y += 6;
       doc.setFontSize(10);
       doc.text(
-        `Games Won: ${thisMonthGamesWon}   Games Lost: ${thisMonthGamesLost}   Tournaments Won: ${thisMonthTournamentsWon}`,
+        `Games Won: ${thisMonthGamesWon}   Games Lost: ${thisMonthGamesLost}   Leagues Won: ${thisMonthTournamentsWon}`,
         14,
         y
       );

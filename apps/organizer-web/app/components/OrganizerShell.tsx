@@ -116,7 +116,7 @@ export default function OrganizerShell({
               <path d="M12 5v14M5 12h14" />
             </svg>
           </span>
-          <span className="mt-9 text-[10px] font-extrabold text-white">Create Tournament</span>
+          <span className="mt-9 text-[10px] font-extrabold text-white">Create League</span>
         </Link>
         <Link
           href="/locations"

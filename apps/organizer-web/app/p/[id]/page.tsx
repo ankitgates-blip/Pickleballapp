@@ -201,7 +201,7 @@ export default async function PublicPersonPage({
               <div className="text-2xl font-extrabold text-amber-500">
                 {thisMonth.tournamentsWon}
               </div>
-              <div className="text-xs text-slate-500">Tournaments won</div>
+              <div className="text-xs text-slate-500">Leagues won</div>
             </div>
           </div>
         </div>

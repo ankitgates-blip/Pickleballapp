@@ -46,7 +46,7 @@ export async function generateBracket(tournamentId: string) {
 
   if (tournament?.format === 'custom') {
     throw new Error(
-      'Custom Tournament schedules are built manually — add matches one at a time instead.'
+      'Custom League schedules are built manually — add matches one at a time instead.'
     );
   }
 
@@ -965,7 +965,7 @@ export async function addCustomMatch(tournamentId: string, formData: FormData) {
   }
 
   if (tournament?.format !== 'custom') {
-    throw new Error('Matches can only be added manually for the Custom Tournament format.');
+    throw new Error('Matches can only be added manually for the Custom League format.');
   }
 
   if (!canEditScore(tournament?.completed_at ?? null, tournament?.results_unlocked_at ?? null)) {

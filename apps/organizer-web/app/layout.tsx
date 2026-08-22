@@ -32,7 +32,7 @@ const dancingScript = Dancing_Script({
 
 export const metadata: Metadata = {
   title: "PICKLERALLY DXB",
-  description: "Run pickleball tournaments in Dubai",
+  description: "Run pickleball leagues in Dubai",
 };
 
 export default function RootLayout({

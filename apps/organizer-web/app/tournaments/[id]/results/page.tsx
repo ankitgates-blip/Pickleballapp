@@ -47,7 +47,7 @@ export default async function ResultsPage({
   if (!tournament) {
     return (
       <OrganizerShell organizerName={organizer.name}>
-        <p className="text-slate-500">Tournament not found.</p>
+        <p className="text-slate-500">League not found.</p>
       </OrganizerShell>
     );
   }

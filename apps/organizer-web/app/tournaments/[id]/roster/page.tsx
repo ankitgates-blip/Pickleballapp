@@ -257,7 +257,7 @@ export default async function RosterPage({
 
       {!isCompleted && (
         <div className={`${cardClass} mb-6`}>
-          <h2 className="text-lg font-bold text-slate-900 mb-2">Tournament Details</h2>
+          <h2 className="text-lg font-bold text-slate-900 mb-2">League Details</h2>
           <form action={updateTournamentDetailsWithId} className="flex flex-col sm:flex-row gap-3">
             <select
               name="venueId"

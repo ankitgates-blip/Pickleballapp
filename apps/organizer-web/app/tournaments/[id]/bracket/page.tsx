@@ -377,7 +377,7 @@ export default async function BracketPage({
         <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6">
           {formatLabel(format)} isn't available yet — bracket generation for this format is
           coming soon. Round Robin, League + Playoffs, Double Header, Popcorn, Gauntlet, Claim
-          the Throne, Up and Down the River, and Custom Tournament are the only formats that
+          the Throne, Up and Down the River, and Custom League are the only formats that
           work today.
         </div>
       )}
