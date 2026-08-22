@@ -121,10 +121,12 @@ export async function updateTournamentDetails(tournamentId: string, formData: Fo
 
   const venueId = formData.get('venueId') as string;
   const timeslot = formData.get('timeslot') as string;
+  const maxPlayersRaw = formData.get('maxPlayers') as string;
+  const maxPlayers = maxPlayersRaw ? Number(maxPlayersRaw) : null;
 
   const { error } = await supabase
     .from('tournaments')
-    .update({ venue_id: venueId, timeslot })
+    .update({ venue_id: venueId, timeslot, max_players: maxPlayers })
     .eq('id', tournamentId);
 
   if (error) {

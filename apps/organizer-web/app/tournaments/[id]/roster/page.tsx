@@ -35,7 +35,7 @@ export default async function RosterPage({
 
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('name, date, format, completed_at, venue_id, timeslot, venues(name)')
+    .select('name, date, format, completed_at, venue_id, timeslot, max_players, venues(name)')
     .eq('id', id)
     .single();
 
@@ -268,6 +268,14 @@ export default async function RosterPage({
                 </option>
               ))}
             </select>
+            <input
+              name="maxPlayers"
+              type="number"
+              min={1}
+              placeholder="Max players"
+              defaultValue={tournament?.max_players ?? ''}
+              className="w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            />
             <button type="submit" className={primaryButtonClass}>
               Save
             </button>
