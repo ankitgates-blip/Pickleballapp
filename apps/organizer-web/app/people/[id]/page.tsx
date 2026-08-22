@@ -39,7 +39,7 @@ export default async function PersonDetailPage({
 
   const { data: person } = await supabase
     .from('people')
-    .select('id, name, nickname, handedness, age, playing_style, paddle_brand, signature_shot, photo_url, strengths')
+    .select('id, name, nickname, handedness, age, playing_style, paddle_brand, signature_shot, photo_url, strengths, player_number')
     .eq('id', id)
     .eq('organizer_id', organizer.id)
     .single();
@@ -294,6 +294,7 @@ export default async function PersonDetailPage({
         <PlayerStatsCard
           name={displayName}
           photoUrl={person.photo_url}
+          playerNumber={person.player_number}
           ageHandednessLabel={ageHandednessLabel}
           signatureShots={cardSignatureShots}
           rating={cardRating}
@@ -350,6 +351,18 @@ export default async function PersonDetailPage({
                 name="name"
                 defaultValue={person.name}
                 required
+                className={`${inputClass} mt-1`}
+              />
+            </label>
+            <label className="text-sm font-semibold text-slate-700">
+              Player No.
+              <input
+                type="text"
+                name="playerNumber"
+                defaultValue={person.player_number ?? ''}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="e.g. 7"
                 className={`${inputClass} mt-1`}
               />
             </label>

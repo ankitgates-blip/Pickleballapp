@@ -7,6 +7,7 @@ import { shareOrDownloadFile, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
 export type PlayerStatsCardProps = {
   name: string;
   photoUrl: string | null;
+  playerNumber: string | null;
   ageHandednessLabel: string | null;
   rating: number;
   starCount: 1 | 2 | 3 | 4 | 5;
@@ -90,6 +91,7 @@ async function loadPhotoDataUrl(url: string): Promise<string | null> {
 export default function PlayerStatsCard({
   name,
   photoUrl,
+  playerNumber,
   ageHandednessLabel,
   rating,
   starCount,
@@ -304,6 +306,19 @@ export default function PlayerStatsCard({
           <text x="118" y="50" fontSize="23" fontWeight="900" fill="#f8fafc" fontFamily="system-ui, sans-serif">
             {name}
           </text>
+          {playerNumber && (
+            <text
+              x="392"
+              y="52"
+              fontSize="46"
+              fontWeight="900"
+              fill="#c9a865"
+              textAnchor="end"
+              fontFamily="system-ui, sans-serif"
+            >
+              #{playerNumber}
+            </text>
+          )}
           {ageHandednessLabel && (
             <text x="118" y="64" fontSize="11" fill="#c9a865" fontFamily="system-ui, sans-serif">
               {ageHandednessLabel}

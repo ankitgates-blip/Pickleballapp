@@ -17,6 +17,12 @@ export async function updatePersonProfile(personId: string, formData: FormData) 
 
   const nickname = (formData.get('nickname') as string)?.trim() || null;
 
+  const playerNumberRaw = (formData.get('playerNumber') as string)?.trim() || '';
+  if (playerNumberRaw && !/^\d+$/.test(playerNumberRaw)) {
+    throw new Error('Player No. must contain only numbers');
+  }
+  const playerNumber = playerNumberRaw || null;
+
   const ageRaw = formData.get('age') as string;
   const ageNum = ageRaw ? Number(ageRaw) : NaN;
   const age = Number.isInteger(ageNum) && ageNum > 0 && ageNum < 130 ? ageNum : null;
@@ -34,6 +40,7 @@ export async function updatePersonProfile(personId: string, formData: FormData) 
     .update({
       name,
       nickname,
+      player_number: playerNumber,
       age,
       handedness,
       playing_style: playingStyle,
