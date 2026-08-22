@@ -487,7 +487,7 @@ export default function PlayerStatsCard({
           </text>
           <line x1="444" y1="94" x2="616" y2="94" stroke="#3f1d5c" />
           <text x="444" y="122" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
-            🔥 {winStreak}-game winning streak
+            🔥 Best streak: {winStreak} games
           </text>
           <line x1="444" y1="132" x2="616" y2="132" stroke="#3f1d5c" />
           <text x="444" y="160" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { currentWinStreak } from './winStreak';
+import { longestWinStreak } from './winStreak';
 import type { PersonMatchRecord } from './types';
 
 function match(won: boolean): PersonMatchRecord {
@@ -15,20 +15,46 @@ function match(won: boolean): PersonMatchRecord {
   };
 }
 
-describe('currentWinStreak', () => {
-  it('returns 0 when the most recent match is a loss', () => {
-    expect(currentWinStreak([match(false), match(true)])).toBe(0);
+describe('longestWinStreak', () => {
+  it('returns 0 for an empty match history', () => {
+    expect(longestWinStreak([])).toBe(0);
   });
 
-  it('counts consecutive wins from the most recent match', () => {
-    expect(currentWinStreak([match(true), match(true), match(false), match(true)])).toBe(2);
+  it('returns 0 when every match was lost', () => {
+    expect(longestWinStreak([match(false), match(false)])).toBe(0);
   });
 
   it('returns the full length when every match was won', () => {
-    expect(currentWinStreak([match(true), match(true), match(true)])).toBe(3);
+    expect(longestWinStreak([match(true), match(true), match(true)])).toBe(3);
   });
 
-  it('returns 0 for an empty match history', () => {
-    expect(currentWinStreak([])).toBe(0);
+  it('returns the longest run of consecutive wins, not just the most recent run', () => {
+    // Two wins, a loss, then four wins -- the longest run (4) beats the earlier
+    // run (2), even though the earlier run happened first.
+    expect(
+      longestWinStreak([
+        match(true),
+        match(true),
+        match(false),
+        match(true),
+        match(true),
+        match(true),
+        match(true),
+      ])
+    ).toBe(4);
+  });
+
+  it('a loss after the best streak does not shrink the recorded best', () => {
+    // Best run (3) happened, then a loss, then a shorter run (1) -- the record stays 3.
+    expect(
+      longestWinStreak([match(true), match(true), match(true), match(false), match(true)])
+    ).toBe(3);
+  });
+
+  it('gives the same result regardless of most-recent-first or chronological order', () => {
+    const chronological = [match(true), match(true), match(false), match(true), match(true), match(true)];
+    const mostRecentFirst = [...chronological].reverse();
+    expect(longestWinStreak(chronological)).toBe(longestWinStreak(mostRecentFirst));
+    expect(longestWinStreak(chronological)).toBe(3);
   });
 });

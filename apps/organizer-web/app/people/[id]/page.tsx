@@ -10,7 +10,7 @@ import ThreatBadge from '@/app/components/ThreatBadge';
 import PlayerStatsCard from '@/app/components/PlayerStatsCard';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { winPercentageFromRecords } from '@/lib/stats/winRate';
-import { currentWinStreak } from '@/lib/stats/winStreak';
+import { longestWinStreak } from '@/lib/stats/winStreak';
 import { winsInLastN } from '@/lib/stats/winsInLastN';
 import { winsVsHigherRated } from '@/lib/stats/winsVsHigherRated';
 import { computePersonStats } from '@/lib/stats/personStats';
@@ -198,7 +198,7 @@ export default async function PersonDetailPage({
   const cardThreatPercentage = stats.winPercentage ?? 0;
   const cardWins = stats.matchHistory.filter((m) => m.won).length;
   const cardLosses = stats.matchHistory.length - cardWins;
-  const cardWinStreak = currentWinStreak(stats.matchHistory);
+  const cardWinStreak = longestWinStreak(stats.matchHistory);
   const cardWinsInLast10 = winsInLastN(stats.matchHistory, 10);
   const cardTrendPoints = stats.weekly[0]?.trendPointsChange ?? null;
   const cardWinsVsHigherRated = winsVsHigherRated(
