@@ -2,7 +2,6 @@
 
 import { useRef, useState } from 'react';
 import { threatTierFor } from '@/lib/stats/threatLevel';
-import { formTierFor } from '@/lib/stats/form';
 import { shareOrDownloadFile, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
 
 export type PlayerStatsCardProps = {
@@ -26,15 +25,19 @@ export type PlayerStatsCardProps = {
 const CARD_WIDTH = 640;
 const CARD_HEIGHT = 360;
 const MAX_SIGNATURE_SHOTS_SHOWN = 5;
+const SIGNATURE_SHOTS_START_Y = 222;
+const SIGNATURE_SHOTS_END_Y = 340;
+const SIGNATURE_SHOTS_MIN_SPACING = 18;
+const SIGNATURE_SHOTS_MAX_SPACING = 32;
 
-type TierPalette = { accent: string; accentDark: string };
+type TierPalette = { accent: string; accentDark: string; accentLight: string };
 
 const THREAT_PALETTE: Record<string, TierPalette> = {
-  'LOW THREAT': { accent: '#16a34a', accentDark: '#052e16' },
-  'WATCH OUT': { accent: '#ca8a04', accentDark: '#1c1503' },
-  DANGEROUS: { accent: '#ea580c', accentDark: '#1c0a03' },
-  'HIGH THREAT': { accent: '#dc2626', accentDark: '#1c0505' },
-  'DO NOT PLAY': { accent: '#c026d3', accentDark: '#1a0526' },
+  'LOW THREAT': { accent: '#16a34a', accentDark: '#052e16', accentLight: '#86efac' },
+  'WATCH OUT': { accent: '#ca8a04', accentDark: '#1c1503', accentLight: '#fde047' },
+  DANGEROUS: { accent: '#ea580c', accentDark: '#1c0a03', accentLight: '#fdba74' },
+  'HIGH THREAT': { accent: '#dc2626', accentDark: '#1c0505', accentLight: '#fca5a5' },
+  'DO NOT PLAY': { accent: '#c026d3', accentDark: '#1a0526', accentLight: '#f0abfc' },
 };
 
 const STATUS_LINES: Record<string, string> = {
@@ -43,14 +46,6 @@ const STATUS_LINES: Record<string, string> = {
   DANGEROUS: "Don't underestimate.",
   'HIGH THREAT': 'Serious competition.',
   'DO NOT PLAY': 'You have been warned.',
-};
-
-const FORM_COLORS: Record<string, string> = {
-  COLD: '#38bdf8',
-  'COOLING OFF': '#60a5fa',
-  STEADY: '#94a3b8',
-  'IN FORM': '#4ade80',
-  'ON FIRE': '#f97316',
 };
 
 const CHEVRON_COUNT: Record<string, number> = {
@@ -114,19 +109,43 @@ export default function PlayerStatsCard({
   const [status, setStatus] = useState<'idle' | 'generating' | 'error'>('idle');
 
   const threatTier = threatTierFor(threatPercentage);
-  const formTier = formTierFor(formPercentage);
   const palette = THREAT_PALETTE[threatTier.label] ?? THREAT_PALETTE['LOW THREAT'];
   const statusLine = STATUS_LINES[threatTier.label] ?? 'Just warming up.';
-  const formColor = FORM_COLORS[formTier.label] ?? '#94a3b8';
   const chevronCount = CHEVRON_COUNT[threatTier.label] ?? 1;
   const chevronYs = chevronYPositions(chevronCount);
   const isDoNotPlay = threatTier.label === 'DO NOT PLAY';
   const initial = name.trim().charAt(0).toUpperCase() || '?';
   const trendLabel =
     trendPoints === null ? '—' : trendPoints > 0 ? `+${trendPoints}` : `${trendPoints}`;
-  const meterWidth = (Math.max(0, Math.min(100, threatPercentage)) / 100) * 102;
+  // Position (x) of the bright marker along each stat's fixed gold->orange->red
+  // heat-scale track (102 wide), clamped so an out-of-range percentage can't push
+  // the marker off either end of the bar.
+  const HEAT_SCALE_WIDTH = 102;
+  const HEAT_SCALE_MARKER_WIDTH = 2.5;
+  const heatScaleMarkerX = (trackX: number, pct: number) =>
+    trackX +
+    (Math.max(0, Math.min(100, pct)) / 100) * HEAT_SCALE_WIDTH -
+    HEAT_SCALE_MARKER_WIDTH / 2;
+  const formMarkerX = heatScaleMarkerX(152, formPercentage);
+  const threatMarkerX = heatScaleMarkerX(278, threatPercentage);
   const shownShots = signatureShots.slice(0, MAX_SIGNATURE_SHOTS_SHOWN);
   const extraShotsCount = Math.max(0, signatureShots.length - MAX_SIGNATURE_SHOTS_SHOWN);
+  // Spread the shown lines across the whole reserved band (rather than a fixed line
+  // height) so a short list still fills the space down toward the shield/ribbon instead
+  // of stopping short and leaving a block of empty card below it. Clamped so a single
+  // line doesn't jump way down, and a full 5-shots-plus-"+more" list never overflows
+  // past the reserved band.
+  const signatureLineCount = shownShots.length + (extraShotsCount > 0 ? 1 : 0);
+  const signatureLineSpacing =
+    signatureLineCount > 1
+      ? Math.min(
+          SIGNATURE_SHOTS_MAX_SPACING,
+          Math.max(
+            SIGNATURE_SHOTS_MIN_SPACING,
+            (SIGNATURE_SHOTS_END_Y - SIGNATURE_SHOTS_START_Y) / (signatureLineCount - 1)
+          )
+        )
+      : SIGNATURE_SHOTS_MIN_SPACING;
 
   const handleDownload = async () => {
     if (!svgRef.current) return;
@@ -209,17 +228,23 @@ export default function PlayerStatsCard({
               <stop offset="0%" stopColor={palette.accentDark} />
               <stop offset="100%" stopColor="#0c0a09" />
             </linearGradient>
-            <linearGradient id="shieldGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={palette.accent} />
+            <radialGradient id="shieldGloss" cx="32%" cy="22%" r="85%">
+              <stop offset="0%" stopColor={palette.accentLight} />
+              <stop offset="45%" stopColor={palette.accent} />
               <stop offset="100%" stopColor={palette.accentDark} />
+            </radialGradient>
+            <linearGradient id="shieldShadow" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="55%" stopColor="#000000" stopOpacity="0" />
+              <stop offset="100%" stopColor="#000000" stopOpacity="0.35" />
             </linearGradient>
-            <linearGradient id="wingL" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor={palette.accent} stopOpacity="0.1" />
-              <stop offset="100%" stopColor={palette.accent} stopOpacity="0.85" />
-            </linearGradient>
-            <linearGradient id="wingR" x1="1" y1="0" x2="0" y2="0">
-              <stop offset="0%" stopColor={palette.accent} stopOpacity="0.1" />
-              <stop offset="100%" stopColor={palette.accent} stopOpacity="0.85" />
+            <radialGradient id="ballGrad" cx="35%" cy="30%" r="75%">
+              <stop offset="0%" stopColor="#ffffff" />
+              <stop offset="100%" stopColor="#cbd5e1" />
+            </radialGradient>
+            <linearGradient id="heatScale" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#fbbf24" />
+              <stop offset="50%" stopColor="#f97316" />
+              <stop offset="100%" stopColor="#dc2626" />
             </linearGradient>
             <linearGradient id="ribbonGrad" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor={palette.accentDark} />
@@ -229,9 +254,23 @@ export default function PlayerStatsCard({
             <clipPath id="photoClip">
               <circle cx="66" cy="64" r="34" />
             </clipPath>
+            <pattern id="cardTexture" width="14" height="14" patternUnits="userSpaceOnUse">
+              <circle cx="1.5" cy="1.5" r="1.5" fill="#ffffff" fillOpacity="0.05" />
+            </pattern>
           </defs>
 
           <rect x="0" y="0" width="410" height={CARD_HEIGHT} rx="16" fill="url(#mainBg)" />
+          <rect x="0" y="0" width="410" height={CARD_HEIGHT} rx="16" fill="url(#cardTexture)" />
+          <rect
+            x="1"
+            y="1"
+            width="408"
+            height={CARD_HEIGHT - 2}
+            rx="15"
+            fill="none"
+            stroke="#475569"
+            strokeOpacity="0.4"
+          />
 
           <circle cx="66" cy="64" r="38" fill="none" stroke="url(#goldRing)" strokeWidth="4" />
           {photoUrl && !photoFailed ? (
@@ -247,13 +286,13 @@ export default function PlayerStatsCard({
             />
           ) : (
             <>
-              <circle cx="66" cy="64" r="34" fill="#3f3f46" />
+              <circle cx="66" cy="64" r="34" fill="url(#goldRing)" />
               <text
                 x="66"
                 y="73"
                 fontSize="26"
                 fontWeight="700"
-                fill="#fbbf24"
+                fill="#451a03"
                 textAnchor="middle"
                 fontFamily="system-ui, sans-serif"
               >
@@ -274,49 +313,48 @@ export default function PlayerStatsCard({
             PICKLERALLY DXB PLAYER CARD
           </text>
 
-          <rect x="18" y="94" width="118" height="60" rx="8" fill="#1c1917" stroke="#3f3f46" />
-          <text x="77" y="122" fontSize="21" fontWeight="800" fill="#f8fafc" textAnchor="middle" fontFamily="system-ui, sans-serif">
+          <rect x="18" y="114" width="118" height="60" rx="8" fill="#1c1917" stroke="#3f3f46" />
+          <text x="77" y="142" fontSize="21" fontWeight="800" fill="#f8fafc" textAnchor="middle" fontFamily="system-ui, sans-serif">
             {rating.toFixed(2)}
           </text>
-          <text x="77" y="136" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="system-ui, sans-serif">
+          <text x="77" y="156" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="system-ui, sans-serif">
             RATING
           </text>
-          <text x="77" y="149" fontSize="11" fill="#fbbf24" textAnchor="middle" fontFamily="system-ui, sans-serif">
+          <text x="77" y="169" fontSize="11" fill="#fbbf24" textAnchor="middle" fontFamily="system-ui, sans-serif">
             {renderStarRow(starCount)}
           </text>
 
-          <rect x="144" y="94" width="118" height="60" rx="8" fill="#1c1917" stroke="#3f3f46" />
-          <text x="203" y="122" fontSize="21" fontWeight="800" fill={formColor} textAnchor="middle" fontFamily="system-ui, sans-serif">
+          <rect x="144" y="114" width="118" height="60" rx="8" fill="#1c1917" stroke="#3f3f46" />
+          <text x="203" y="142" fontSize="21" fontWeight="800" fill={palette.accent} textAnchor="middle" fontFamily="system-ui, sans-serif">
             {formPercentage}
           </text>
-          <text x="203" y="136" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="system-ui, sans-serif">
+          <text x="203" y="156" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="system-ui, sans-serif">
             FORM
           </text>
-          <text x="203" y="149" fontSize="11" fill={formColor} textAnchor="middle" fontFamily="system-ui, sans-serif">
-            {formTier.emoji} {formTier.label}
-          </text>
+          <rect x="152" y="161" width="102" height="6" rx="3" fill="url(#heatScale)" />
+          <rect x={formMarkerX} y="159" width="2.5" height="10" rx="1.25" fill="#ffffff" />
 
-          <rect x="270" y="94" width="118" height="60" rx="8" fill="#1c1917" stroke="#3f3f46" />
-          <text x="329" y="122" fontSize="21" fontWeight="800" fill={palette.accent} textAnchor="middle" fontFamily="system-ui, sans-serif">
+          <rect x="270" y="114" width="118" height="60" rx="8" fill="#1c1917" stroke="#3f3f46" />
+          <text x="329" y="142" fontSize="21" fontWeight="800" fill={palette.accent} textAnchor="middle" fontFamily="system-ui, sans-serif">
             {threatPercentage}
           </text>
-          <text x="329" y="136" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="system-ui, sans-serif">
+          <text x="329" y="156" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="system-ui, sans-serif">
             THREAT LVL
           </text>
-          <rect x="278" y="140" width="102" height="6" rx="3" fill="#3f3f46" />
-          <rect x="278" y="140" width={meterWidth} height="6" rx="3" fill={palette.accent} />
+          <rect x="278" y="161" width="102" height="6" rx="3" fill="url(#heatScale)" />
+          <rect x={threatMarkerX} y="159" width="2.5" height="10" rx="1.25" fill="#ffffff" />
 
           {shownShots.length > 0 && (
             <>
-              <text x="18" y="176" fontSize="12" fontWeight="700" fill="#94a3b8" letterSpacing="1.5" fontFamily="system-ui, sans-serif">
+              <text x="18" y="198" fontSize="12" fontWeight="700" fill="#94a3b8" letterSpacing="1.5" fontFamily="system-ui, sans-serif">
                 SIGNATURE SHOTS
               </text>
               {shownShots.map((shot, i) => (
                 <text
                   key={`${shot.skillName}-${i}`}
                   x="18"
-                  y={196 + i * 18}
-                  fontSize="13"
+                  y={SIGNATURE_SHOTS_START_Y + i * signatureLineSpacing}
+                  fontSize="14"
                   fontStyle="italic"
                   fill="#e2e8f0"
                   fontFamily="system-ui, sans-serif"
@@ -327,8 +365,8 @@ export default function PlayerStatsCard({
               {extraShotsCount > 0 && (
                 <text
                   x="18"
-                  y={196 + shownShots.length * 18}
-                  fontSize="13"
+                  y={SIGNATURE_SHOTS_START_Y + shownShots.length * signatureLineSpacing}
+                  fontSize="14"
                   fontStyle="italic"
                   fill="#94a3b8"
                   fontFamily="system-ui, sans-serif"
@@ -339,30 +377,58 @@ export default function PlayerStatsCard({
             </>
           )}
 
-          <g transform="translate(248,168) scale(0.8)">
-            <path d="M78 40 L18 30 L26 38 L18 46 L30 50 L20 58 L34 60 L78 52 Z" fill="url(#wingL)" />
-            <path d="M102 40 L162 30 L154 38 L162 46 L150 50 L160 58 L146 60 L102 52 Z" fill="url(#wingR)" />
+          <g transform="translate(248,188) scale(0.8)">
+            <ellipse cx="90" cy="152" rx="46" ry="8" fill="#000000" opacity="0.35" />
             <path
               d="M90 20 L128 34 L128 78 C128 112 110 132 90 142 C70 132 52 112 52 78 L52 34 Z"
-              fill="url(#shieldGrad)"
-              stroke={palette.accent}
-              strokeWidth="2"
+              fill="url(#shieldGloss)"
+              stroke={palette.accentDark}
+              strokeWidth="2.5"
             />
-            <circle cx="90" cy="46" r="11" fill="#e4e4e7" stroke="#a1a1aa" strokeWidth="1" />
-            <circle cx="86" cy="42" r="1.2" fill="#71717a" />
-            <circle cx="94" cy="42" r="1.2" fill="#71717a" />
-            <circle cx="90" cy="47" r="1.2" fill="#71717a" />
-            <circle cx="85" cy="50" r="1.2" fill="#71717a" />
-            <circle cx="95" cy="50" r="1.2" fill="#71717a" />
+            <path
+              d="M90 20 L128 34 L128 78 C128 112 110 132 90 142 C70 132 52 112 52 78 L52 34 Z"
+              fill="url(#shieldShadow)"
+            />
+            <path d="M62 32 L78 26 L68 68 L54 74 Z" fill="#ffffff" fillOpacity="0.25" />
+            <path
+              d="M90 26 L122 38 L122 78 C122 106 107 123 90 133 C73 123 58 106 58 78 L58 38 Z"
+              fill="none"
+              stroke="#ffffff"
+              strokeOpacity="0.18"
+              strokeWidth="1.2"
+            />
+            <circle cx="90" cy="44" r="13" fill="url(#ballGrad)" stroke="#94a3b8" strokeWidth="1.2" />
+            {[
+              [84, 38],
+              [96, 38],
+              [90, 42],
+              [80, 44],
+              [100, 44],
+              [84, 50],
+              [96, 50],
+              [90, 46],
+              [87, 54],
+              [93, 54],
+            ].map(([cx, cy], i) => (
+              <circle key={i} cx={cx} cy={cy} r="1.1" fill="#64748b" />
+            ))}
             {chevronYs.map((y) => (
-              <path
-                key={y}
-                d={`M68 ${y} L90 ${y + 12} L112 ${y}`}
-                fill="none"
-                stroke={palette.accent}
-                strokeWidth="6"
-                strokeLinecap="round"
-              />
+              <g key={y}>
+                <path
+                  d={`M68 ${y + 1.5} L90 ${y + 13.5} L112 ${y + 1.5}`}
+                  fill="none"
+                  stroke={palette.accentDark}
+                  strokeWidth="7"
+                  strokeLinecap="round"
+                />
+                <path
+                  d={`M68 ${y} L90 ${y + 12} L112 ${y}`}
+                  fill="none"
+                  stroke={palette.accentLight}
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                />
+              </g>
             ))}
             {isDoNotPlay && (
               <>
@@ -376,13 +442,12 @@ export default function PlayerStatsCard({
             )}
           </g>
 
-          <rect x="270" y="308" width="100" height="16" rx="3" fill="url(#ribbonGrad)" />
           <text
             x="320"
-            y="319"
-            fontSize="10"
+            y="347"
+            fontSize="13"
             fontWeight="900"
-            fill="#ffffff"
+            fill={palette.accent}
             textAnchor="middle"
             letterSpacing="1"
             fontFamily="system-ui, sans-serif"
@@ -391,6 +456,17 @@ export default function PlayerStatsCard({
           </text>
 
           <rect x="420" y="0" width="220" height={CARD_HEIGHT} rx="16" fill="url(#sideBg)" stroke={palette.accentDark} />
+          <rect x="420" y="0" width="220" height={CARD_HEIGHT} rx="16" fill="url(#cardTexture)" />
+          <rect
+            x="421"
+            y="1"
+            width="218"
+            height={CARD_HEIGHT - 2}
+            rx="15"
+            fill="none"
+            stroke="#475569"
+            strokeOpacity="0.4"
+          />
 
           <text
             x="530"
