@@ -57,6 +57,14 @@ export default function FormatFields() {
           <input name="upAndDownRiverRounds" type="number" defaultValue={5} min={1} className={inputClass} />
         </div>
       )}
+      {format === 'custom' && (
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-1">
+            Number of rounds (Custom Tournament only)
+          </label>
+          <input name="customRounds" type="number" defaultValue={5} min={1} className={inputClass} />
+        </div>
+      )}
     </>
   );
 }

@@ -7,6 +7,7 @@ export const TOURNAMENT_FORMATS = [
   { value: 'cream_of_the_crop', label: 'Cream of the Crop' },
   { value: 'double_header', label: 'Double Header' },
   { value: 'league_playoffs', label: 'League + Playoffs' },
+  { value: 'custom', label: 'Custom Tournament' },
 ] as const;
 
 export type TournamentFormat = (typeof TOURNAMENT_FORMATS)[number]['value'];
