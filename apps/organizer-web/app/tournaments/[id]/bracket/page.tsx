@@ -72,6 +72,9 @@ export default async function BracketPage({
       `${playerById.get(t.player_1_id)} / ${playerById.get(t.player_2_id)}`,
     ])
   );
+  const teamPlayerIdsById = new Map(
+    (teams ?? []).map((t) => [t.id, [t.player_1_id, t.player_2_id] as [string, string]])
+  );
 
   const { data: matches } = await supabase
     .from('matches')
@@ -213,6 +216,34 @@ export default async function BracketPage({
     }
     return rounds;
   };
+
+  const leagueRoundsMap = roundsFor(leagueMatches);
+
+  // Popcorn and Gauntlet re-pair players fresh each round and, when the player count
+  // isn't a multiple of 4, some players sit out that round (rotating fairly — see
+  // generatePopcornSchedule/generateGauntletRound). Nothing persists who sat out, so
+  // derive it here: whoever isn't on either team of any match in that round sat out.
+  // Other formats never leave a registered player out of every match, so this is
+  // always empty for them.
+  const showSitOuts = isPopcorn || isGauntlet;
+  const sitOutNamesByRound = new Map<number, string[]>();
+  if (showSitOuts) {
+    for (const [round, roundMatches] of leagueRoundsMap) {
+      const playingIds = new Set<string>();
+      for (const m of roundMatches) {
+        for (const teamId of [m.team_a_id, m.team_b_id]) {
+          const teamPlayers = teamId ? teamPlayerIdsById.get(teamId) : undefined;
+          if (teamPlayers) teamPlayers.forEach((pid) => playingIds.add(pid));
+        }
+      }
+      const sittingOut = (players ?? [])
+        .filter((p) => !playingIds.has(p.id))
+        .map((p) => p.name);
+      if (sittingOut.length > 0) {
+        sitOutNamesByRound.set(round, sittingOut);
+      }
+    }
+  }
 
   const renderMatchList = (list: MatchRow[], isFinal: boolean = false) => (
     <ul className="space-y-2">
@@ -649,11 +680,16 @@ export default async function BracketPage({
 
       {hasLeagueMatches && (
         <div className="space-y-4 mb-6">
-          {Array.from(roundsFor(leagueMatches).entries()).map(([round, roundMatches]) => (
+          {Array.from(leagueRoundsMap.entries()).map(([round, roundMatches]) => (
             <div key={round} className={cardClass}>
               <h2 className="text-sm font-bold text-teal-700 uppercase tracking-wide mb-2">
                 League — Round {round}
               </h2>
+              {showSitOuts && sitOutNamesByRound.has(round) && (
+                <p className="text-xs text-slate-500 mb-2">
+                  Sitting out: {sitOutNamesByRound.get(round)!.join(', ')}
+                </p>
+              )}
               {renderMatchList(roundMatches)}
             </div>
           ))}
