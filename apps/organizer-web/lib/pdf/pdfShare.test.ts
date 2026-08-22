@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { shareOrDownloadPdf, sanitizeFileNamePart } from './pdfShare';
+import { shareOrDownloadPdf, shareOrDownloadFile, sanitizeFileNamePart } from './pdfShare';
 
 const blob = new Blob(['test'], { type: 'application/pdf' });
 
@@ -86,6 +86,50 @@ describe('shareOrDownloadPdf', () => {
     const result = await shareOrDownloadPdf(blob, 'test.pdf', 'Test Title');
     expect(result).toBe('downloaded');
     expect(clickMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('shareOrDownloadFile', () => {
+  it('shares the file via navigator.share with the given mime type, and returns "shared"', async () => {
+    const shareMock = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', {
+      canShare: () => true,
+      share: shareMock,
+    });
+
+    const result = await shareOrDownloadFile(blob, 'card.png', 'Test Title', 'image/png');
+
+    expect(result).toBe('shared');
+    expect(shareMock).toHaveBeenCalledTimes(1);
+    const callArg = shareMock.mock.calls[0][0];
+    expect(callArg.title).toBe('Test Title');
+    expect(callArg.files).toHaveLength(1);
+    expect(callArg.files[0].name).toBe('card.png');
+    expect(callArg.files[0].type).toBe('image/png');
+  });
+
+  it('falls back to a download when canShare is absent, and returns "downloaded"', async () => {
+    vi.stubGlobal('navigator', {});
+    const clickMock = vi.fn();
+    const anchorStub = { href: '', download: '', click: clickMock };
+    vi.stubGlobal('document', {
+      createElement: vi.fn(() => anchorStub),
+    });
+    const createObjectURLMock = vi.fn(() => 'blob:mock-url');
+    const revokeObjectURLMock = vi.fn();
+    vi.stubGlobal('URL', {
+      createObjectURL: createObjectURLMock,
+      revokeObjectURL: revokeObjectURLMock,
+    });
+
+    const result = await shareOrDownloadFile(blob, 'card.png', 'Test Title', 'image/png');
+
+    expect(result).toBe('downloaded');
+    expect(createObjectURLMock).toHaveBeenCalledWith(blob);
+    expect(anchorStub.href).toBe('blob:mock-url');
+    expect(anchorStub.download).toBe('card.png');
+    expect(clickMock).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURLMock).toHaveBeenCalledWith('blob:mock-url');
   });
 });
 

@@ -1,11 +1,12 @@
 export type ShareOrDownloadResult = 'shared' | 'downloaded' | 'cancelled';
 
-export async function shareOrDownloadPdf(
+export async function shareOrDownloadFile(
   blob: Blob,
   fileName: string,
-  title: string
+  title: string,
+  mimeType: string
 ): Promise<ShareOrDownloadResult> {
-  const file = new File([blob], fileName, { type: 'application/pdf' });
+  const file = new File([blob], fileName, { type: mimeType });
 
   if (navigator.canShare?.({ files: [file] })) {
     try {
@@ -26,6 +27,14 @@ export async function shareOrDownloadPdf(
   a.click();
   URL.revokeObjectURL(url);
   return 'downloaded';
+}
+
+export async function shareOrDownloadPdf(
+  blob: Blob,
+  fileName: string,
+  title: string
+): Promise<ShareOrDownloadResult> {
+  return shareOrDownloadFile(blob, fileName, title, 'application/pdf');
 }
 
 export function sanitizeFileNamePart(name: string): string {
