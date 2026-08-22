@@ -130,6 +130,14 @@ export default function PlayerStatsCard({
     HEAT_SCALE_MARKER_WIDTH / 2;
   const formMarkerX = heatScaleMarkerX(152, formPercentage);
   const threatMarkerX = heatScaleMarkerX(278, threatPercentage);
+  // The player-number badge sits above the name row now (not sharing its baseline),
+  // so the full panel width is available to the name/nickname at full size for all
+  // but pathologically long combinations -- this is just a safety net so an
+  // extreme name+nickname never runs past the card edge, not a routine shrink.
+  const nameNeedsCompression = name.length > 30;
+  const PLAYER_NUMBER_BADGE_RIGHT = 392;
+  const playerNumberBadgeWidth = playerNumber ? Math.max(46, 26 + playerNumber.length * 16) : 0;
+  const playerNumberBadgeX = PLAYER_NUMBER_BADGE_RIGHT - playerNumberBadgeWidth;
   const shownShots = signatureShots.slice(0, MAX_SIGNATURE_SHOTS_SHOWN);
   const extraShotsCount = Math.max(0, signatureShots.length - MAX_SIGNATURE_SHOTS_SHOWN);
   // Spread the shown lines across the whole reserved band (rather than a fixed line
@@ -253,6 +261,10 @@ export default function PlayerStatsCard({
               <stop offset="50%" stopColor={palette.accent} />
               <stop offset="100%" stopColor={palette.accentDark} />
             </linearGradient>
+            <linearGradient id="numberBadgeGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#ef4444" />
+              <stop offset="100%" stopColor="#991b1b" />
+            </linearGradient>
             <clipPath id="photoClip">
               <circle cx="66" cy="64" r="34" />
             </clipPath>
@@ -303,21 +315,50 @@ export default function PlayerStatsCard({
             </>
           )}
 
-          <text x="118" y="50" fontSize="23" fontWeight="900" fill="#f8fafc" fontFamily="system-ui, sans-serif">
+          <text
+            x="118"
+            y="50"
+            fontSize="23"
+            fontWeight="900"
+            fill="#f8fafc"
+            fontFamily="system-ui, sans-serif"
+            {...(nameNeedsCompression ? { textLength: 270, lengthAdjust: 'spacingAndGlyphs' } : {})}
+          >
             {name}
           </text>
           {playerNumber && (
-            <text
-              x="392"
-              y="52"
-              fontSize="46"
-              fontWeight="900"
-              fill="#c9a865"
-              textAnchor="end"
-              fontFamily="system-ui, sans-serif"
-            >
-              #{playerNumber}
-            </text>
+            <>
+              <rect
+                x={playerNumberBadgeX + 1.5}
+                y="13.5"
+                width={playerNumberBadgeWidth}
+                height="27"
+                rx="7"
+                fill="#000000"
+                opacity="0.35"
+              />
+              <rect
+                x={playerNumberBadgeX}
+                y="12"
+                width={playerNumberBadgeWidth}
+                height="27"
+                rx="7"
+                fill="url(#numberBadgeGrad)"
+                stroke="#7f1d1d"
+                strokeWidth="1.5"
+              />
+              <text
+                x={playerNumberBadgeX + playerNumberBadgeWidth / 2}
+                y="31.5"
+                fontSize="18"
+                fontWeight="900"
+                fill="#ffffff"
+                textAnchor="middle"
+                fontFamily="system-ui, sans-serif"
+              >
+                #{playerNumber}
+              </text>
+            </>
           )}
           {ageHandednessLabel && (
             <text x="118" y="64" fontSize="11" fill="#c9a865" fontFamily="system-ui, sans-serif">
