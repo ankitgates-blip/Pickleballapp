@@ -41,6 +41,7 @@ export default async function BracketPage({
   const isClaimTheThrone = format === 'claim_the_throne';
   const isUpAndDownRiver = format === 'up_and_down_the_river';
   const isCustom = format === 'custom';
+  const customTargetRounds = tournament?.custom_rounds ?? 5;
   const isSupported =
     isRoundRobin ||
     isLeaguePlayoffs ||
@@ -106,6 +107,11 @@ export default async function BracketPage({
   const allSemifinalComplete =
     semifinalMatches.length === 2 && semifinalMatches.every((m) => m.status === 'complete');
   const hasFinalMatch = finalMatches.length > 0;
+
+  const currentCustomMaxRound =
+    isCustom && leagueMatches.length > 0
+      ? Math.max(...leagueMatches.map((m) => m.round))
+      : 0;
 
   const generateBracketWithId = generateBracket.bind(null, id);
   const generatePopcornBracketWithId = generatePopcornBracket.bind(null, id);
@@ -371,7 +377,8 @@ export default async function BracketPage({
         <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6">
           {formatLabel(format)} isn't available yet — bracket generation for this format is
           coming soon. Round Robin, League + Playoffs, Double Header, Popcorn, Gauntlet, Claim
-          the Throne, and Up and Down the River are the only formats that work today.
+          the Throne, Up and Down the River, and Custom Tournament are the only formats that
+          work today.
         </div>
       )}
 
@@ -499,6 +506,7 @@ export default async function BracketPage({
         !isClaimTheThrone &&
         !isUpAndDownRiver &&
         !isLeaguePlayoffs &&
+        !isCustom &&
         teamCount < 2 && (
         <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
           Need at least 2 teams to generate a bracket — you have {teamCount}. Go back and
@@ -513,6 +521,7 @@ export default async function BracketPage({
         !isClaimTheThrone &&
         !isUpAndDownRiver &&
         !isLeaguePlayoffs &&
+        !isCustom &&
         teamCount >= 2 && (
         <form action={generateBracketWithId} className={`${cardClass} text-center mb-6`}>
           <p className="text-slate-600 mb-4">
@@ -577,9 +586,13 @@ export default async function BracketPage({
 
       {isCustom && canEditScoreValue && (
         <form action={addCustomMatchWithId} className={`${cardClass} mb-6`}>
-          <h2 className="text-sm font-bold text-teal-700 uppercase tracking-wide mb-3">
+          <h2 className="text-sm font-bold text-teal-700 uppercase tracking-wide mb-1">
             Add Match
           </h2>
+          <p className="text-xs text-slate-400 mb-3">
+            Target: {customTargetRounds} round{customTargetRounds === 1 ? '' : 's'} — highest
+            round added so far: {currentCustomMaxRound || 'none yet'}.
+          </p>
           {teamCount < 2 ? (
             <p className="text-sm text-red-700">
               Need at least 2 teams before you can add a match — go back and pair more teams
@@ -594,6 +607,7 @@ export default async function BracketPage({
                   type="number"
                   defaultValue={1}
                   min={1}
+                  max={customTargetRounds}
                   required
                   className={`${inputClass} w-20`}
                 />

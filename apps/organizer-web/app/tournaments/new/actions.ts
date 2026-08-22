@@ -21,7 +21,13 @@ export async function createTournament(formData: FormData) {
     format === 'claim_the_throne' ? Number(formData.get('claimTheThroneRounds')) : null;
   const upAndDownRiverRounds =
     format === 'up_and_down_the_river' ? Number(formData.get('upAndDownRiverRounds')) : null;
-  const customRounds = format === 'custom' ? Number(formData.get('customRounds')) : null;
+  const customRoundsInput = format === 'custom' ? Number(formData.get('customRounds')) : null;
+  const customRounds =
+    format === 'custom'
+      ? Number.isFinite(customRoundsInput) && (customRoundsInput as number) >= 1
+        ? customRoundsInput
+        : 5
+      : null;
 
   const { data: tournament, error } = await supabase
     .from('tournaments')

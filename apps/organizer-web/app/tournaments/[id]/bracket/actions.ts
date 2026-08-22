@@ -10,7 +10,7 @@ import { generateClaimTheThroneRound } from '@/lib/tournament/claimTheThrone';
 import { generateUpAndDownRiverRound } from '@/lib/tournament/upAndDownTheRiver';
 import { generateSemifinals, pickFinalists, fillStandingsGaps } from '@/lib/tournament/playoffs';
 import { computeStandings } from '@/lib/tournament/standings';
-import { canEditTeams } from '@/lib/tournament/completion';
+import { canEditScore, canEditTeams } from '@/lib/tournament/completion';
 import type {
   MatchResult,
   GauntletRoundResult,
@@ -42,6 +42,12 @@ export async function generateBracket(tournamentId: string) {
 
   if (tournamentError) {
     throw new Error(tournamentError.message);
+  }
+
+  if (tournament?.format === 'custom') {
+    throw new Error(
+      'Custom Tournament schedules are built manually — add matches one at a time instead.'
+    );
   }
 
   const pairings =
@@ -948,11 +954,30 @@ export async function updateMatchTeams(
 export async function addCustomMatch(tournamentId: string, formData: FormData) {
   const { supabase } = await requireOrganizer();
 
+  const { data: tournament, error: tournamentError } = await supabase
+    .from('tournaments')
+    .select('format, custom_rounds, completed_at, results_unlocked_at')
+    .eq('id', tournamentId)
+    .single();
+
+  if (tournamentError) {
+    throw new Error(tournamentError.message);
+  }
+
+  if (tournament?.format !== 'custom') {
+    throw new Error('Matches can only be added manually for the Custom Tournament format.');
+  }
+
+  if (!canEditScore(tournament?.completed_at ?? null, tournament?.results_unlocked_at ?? null)) {
+    throw new Error('Scores are locked — unlock editing first to add a match.');
+  }
+
+  const targetRounds = tournament?.custom_rounds ?? 5;
   const roundRaw = formData.get('round');
   const round = typeof roundRaw === 'string' ? Number(roundRaw) : NaN;
 
-  if (!Number.isFinite(round) || round < 1) {
-    throw new Error('Round must be a positive number');
+  if (!Number.isInteger(round) || round < 1 || round > targetRounds) {
+    throw new Error(`Round must be a whole number between 1 and ${targetRounds}`);
   }
 
   const teamAId = formData.get('teamAId');
