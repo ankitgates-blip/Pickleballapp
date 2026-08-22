@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import { matchNamesToPeople } from '@/lib/people/matchNames';
+import { slotsRemaining } from '@/lib/tournament/capacity';
 
 export async function startAddPlayers(tournamentId: string, formData: FormData) {
   const raw = formData.get('names') as string;
@@ -17,6 +18,32 @@ export async function addExistingPeople(tournamentId: string, formData: FormData
   const personIds = formData.getAll('personIds') as string[];
   if (personIds.length === 0) {
     redirect(`/tournaments/${tournamentId}/roster`);
+  }
+
+  const { data: tournament, error: tournamentError } = await supabase
+    .from('tournaments')
+    .select('max_players')
+    .eq('id', tournamentId)
+    .single();
+
+  if (tournamentError) {
+    throw new Error(tournamentError.message);
+  }
+
+  const { count: currentPlayerCount, error: countError } = await supabase
+    .from('players')
+    .select('id', { count: 'exact', head: true })
+    .eq('tournament_id', tournamentId);
+
+  if (countError) {
+    throw new Error(countError.message);
+  }
+
+  const remaining = slotsRemaining(tournament?.max_players ?? null, currentPlayerCount ?? 0);
+  if (remaining !== null && personIds.length > remaining) {
+    throw new Error(
+      `Only ${remaining} slot${remaining === 1 ? '' : 's'} left — you tried to add ${personIds.length} players.`
+    );
   }
 
   const { data: people, error: peopleError } = await supabase
@@ -56,6 +83,32 @@ export async function confirmAddPlayers(tournamentId: string, formData: FormData
 
   if (names.length === 0) {
     redirect(`/tournaments/${tournamentId}/roster`);
+  }
+
+  const { data: tournament, error: tournamentError } = await supabase
+    .from('tournaments')
+    .select('max_players')
+    .eq('id', tournamentId)
+    .single();
+
+  if (tournamentError) {
+    throw new Error(tournamentError.message);
+  }
+
+  const { count: currentPlayerCount, error: countError } = await supabase
+    .from('players')
+    .select('id', { count: 'exact', head: true })
+    .eq('tournament_id', tournamentId);
+
+  if (countError) {
+    throw new Error(countError.message);
+  }
+
+  const remaining = slotsRemaining(tournament?.max_players ?? null, currentPlayerCount ?? 0);
+  if (remaining !== null && names.length > remaining) {
+    throw new Error(
+      `Only ${remaining} slot${remaining === 1 ? '' : 's'} left — you tried to add ${names.length} players.`
+    );
   }
 
   const { data: existingPeople, error: peopleError } = await supabase

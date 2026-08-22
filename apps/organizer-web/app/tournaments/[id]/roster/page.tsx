@@ -8,6 +8,7 @@ import { matchNamesToPeople } from '@/lib/people/matchNames';
 import { TIME_SLOTS, timeslotLabel } from '@/lib/tournament/timeslots';
 import { formatLabel, isIndividualFormat } from '@/lib/tournament/formats';
 import { buildRosterTeams, buildUnpairedPlayerNames } from '@/lib/tournament/rosterExport';
+import { isRosterFull } from '@/lib/tournament/capacity';
 import ThreatBadge from '@/app/components/ThreatBadge';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { winPercentageFromRecords } from '@/lib/stats/winRate';
@@ -53,6 +54,8 @@ export default async function RosterPage({
     .select('id, name, person_id')
     .eq('tournament_id', id)
     .order('created_at', { ascending: true });
+
+  const rosterFull = isRosterFull(tournament?.max_players ?? null, (players ?? []).length);
 
   const { data: allTournaments } = await supabase
     .from('tournaments')
@@ -283,7 +286,7 @@ export default async function RosterPage({
         </div>
       )}
 
-      {!isCompleted && availablePeople.length > 0 && (
+      {!isCompleted && !rosterFull && availablePeople.length > 0 && (
         <div className={`${cardClass} mb-6`}>
           <h2 className="text-lg font-bold text-slate-900 mb-2">Add Existing Players</h2>
           <p className="text-sm text-slate-500 mb-3">
@@ -308,7 +311,7 @@ export default async function RosterPage({
         </div>
       )}
 
-      {!isCompleted && (
+      {!isCompleted && !rosterFull && (
         <div className={`${cardClass} mb-6`}>
           <h2 className="text-lg font-bold text-slate-900 mb-2">Add New Players</h2>
           <form action={startAddPlayersWithId} className="space-y-3">
@@ -326,9 +329,16 @@ export default async function RosterPage({
         </div>
       )}
 
+      {!isCompleted && rosterFull && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6 font-semibold">
+          All Slots Full — no more sign up.
+        </div>
+      )}
+
       <div className={cardClass}>
         <h2 className="text-lg font-bold text-slate-900 mb-2">
-          Players ({(players ?? []).length})
+          Players ({(players ?? []).length}
+          {tournament?.max_players ? `/${tournament.max_players}` : ''})
         </h2>
         {duplicateNames.size > 0 && (
           <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
