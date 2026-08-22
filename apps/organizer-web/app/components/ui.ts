@@ -20,4 +20,10 @@ export const linkClass = 'text-navy-mid font-semibold hover:text-navy-deep hover
 export const pillClass =
   'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold';
 
+export const playerCardClass =
+  'aspect-square bg-gradient-to-br from-sky-600 to-navy-deep rounded-2xl border border-gold/40 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_20px_rgba(12,24,48,0.3)] hover:border-gold/70 flex flex-col items-center justify-center gap-2.5 p-4 text-center';
+
+export const playerCardAvatarClass =
+  'w-14 h-14 rounded-full bg-gradient-to-br from-[#fde68a] to-[#f59e0b] flex items-center justify-center text-xl font-black text-[#451a03]';
+
 export const headingClass = 'font-heading font-bold tracking-tight text-navy-deep';
