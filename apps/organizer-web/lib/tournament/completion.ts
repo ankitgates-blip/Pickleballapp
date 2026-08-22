@@ -18,7 +18,8 @@ export function isTournamentComplete(
     format === 'gauntlet' ||
     format === 'claim_the_throne' ||
     format === 'up_and_down_the_river' ||
-    format === 'league_playoffs'
+    format === 'league_playoffs' ||
+    format === 'custom'
   ) {
     if (!allComplete) return false;
     const maxRound = Math.max(...matches.map((m) => m.round));
