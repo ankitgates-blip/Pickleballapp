@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import { ALLOWED_PHOTO_MIME_TO_EXT, validatePhotoFile } from '@/lib/people/photoValidation';
 
@@ -126,4 +127,37 @@ export async function removePersonPhoto(personId: string) {
 
   revalidatePath(`/people/${personId}`);
   revalidatePath(`/p/${personId}`);
+}
+
+// Permanently removes this person and every players/teams/matches row they're part of,
+// across every tournament -- not just this organizer's memory of the name, the actual
+// database rows. Deleting their `players` rows first (rather than relying on any cascade
+// from `people`, since there isn't one) cascades to remove any team they were paired into
+// and any match that team played, exactly like the existing per-tournament "remove player"
+// action already does -- this is the same behavior, just applied across every tournament
+// at once instead of one.
+export async function deletePerson(personId: string) {
+  const { supabase, organizer } = await requireOrganizer();
+
+  const { error: playersError } = await supabase
+    .from('players')
+    .delete()
+    .eq('person_id', personId);
+
+  if (playersError) {
+    throw new Error(playersError.message);
+  }
+
+  const { error: deleteError } = await supabase
+    .from('people')
+    .delete()
+    .eq('id', personId)
+    .eq('organizer_id', organizer.id);
+
+  if (deleteError) {
+    throw new Error(deleteError.message);
+  }
+
+  revalidatePath('/people');
+  redirect('/people');
 }

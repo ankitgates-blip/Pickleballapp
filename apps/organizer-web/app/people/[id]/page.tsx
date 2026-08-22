@@ -3,7 +3,8 @@ import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, pillClass, inputClass, primaryButtonClass } from '@/app/components/ui';
 import { HANDEDNESS_OPTIONS, PLAYING_STYLE_OPTIONS, STRENGTH_OPTIONS, PADDLE_BRAND_OPTIONS, SIGNATURE_SHOT_OPTIONS } from '@/lib/people/profileOptions';
-import { updatePersonProfile, uploadPersonPhoto, removePersonPhoto } from './actions';
+import { updatePersonProfile, uploadPersonPhoto, removePersonPhoto, deletePerson } from './actions';
+import DeletePersonButton from './DeletePersonButton';
 import PersonAvatar from '@/app/components/PersonAvatar';
 import SaveButton from '@/app/components/SaveButton';
 import ThreatBadge from '@/app/components/ThreatBadge';
@@ -249,6 +250,7 @@ export default async function PersonDetailPage({
   const profileSummary = profileSummaryParts.length > 0 ? profileSummaryParts.join(' · ') : null;
 
   const updatePersonProfileWithId = updatePersonProfile.bind(null, person.id);
+  const deletePersonWithId = deletePerson.bind(null, person.id);
   const uploadPersonPhotoWithId = uploadPersonPhoto.bind(null, person.id);
   const removePersonPhotoWithId = removePersonPhoto.bind(null, person.id);
   const displayName = person.nickname ? `${person.name} (${person.nickname})` : person.name;
@@ -460,6 +462,16 @@ export default async function PersonDetailPage({
             </SaveButton>
           </form>
         </details>
+      </div>
+
+      <div className={`${cardClass} border-red-200 bg-red-50 mb-6 max-w-md`}>
+        <h2 className="text-sm font-bold text-red-800 mb-1">Danger Zone</h2>
+        <p className="text-xs text-red-700 mb-3">
+          Permanently deletes this player from the database — not just this profile, but
+          every tournament roster, team, and match they're part of. Use this to remove a
+          wrongly-created or misspelled player, not to undo a real result.
+        </p>
+        <DeletePersonButton personName={person.name} deleteAction={deletePersonWithId} />
       </div>
 
       <div className="mb-6">
