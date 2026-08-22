@@ -10,7 +10,7 @@ import { computeStandings } from '@/lib/tournament/standings';
 import { canEditScore, canEditTeams } from '@/lib/tournament/completion';
 import { buildMatchGroups } from '@/lib/tournament/resultsExport';
 import type { MatchResult } from '@/lib/types';
-import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, generateLeaguePlayoffsBracket, regenerateLeaguePlayoffsBracket, generateSemifinalMatches, generateFinalMatch, skipToFinalMatch, updateMatchTeams, unlockTournamentResults, lockTournamentResults } from './actions';
+import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, generateLeaguePlayoffsBracket, regenerateLeaguePlayoffsBracket, generateSemifinalMatches, generateFinalMatch, skipToFinalMatch, updateMatchTeams, addCustomMatch, unlockTournamentResults, lockTournamentResults } from './actions';
 import { enterScore } from '../matches/actions';
 import ShareScheduleButton from './ShareScheduleButton';
 import RegenerateLeagueRoundsButton from './RegenerateLeagueRoundsButton';
@@ -27,7 +27,7 @@ export default async function BracketPage({
   const { data: tournament } = await supabase
     .from('tournaments')
     .select(
-      'name, date, timeslot, format, popcorn_rounds, gauntlet_rounds, claim_the_throne_rounds, up_and_down_the_river_rounds, league_playoffs_rounds, completed_at, results_unlocked_at, venues(name)'
+      'name, date, timeslot, format, popcorn_rounds, gauntlet_rounds, claim_the_throne_rounds, up_and_down_the_river_rounds, league_playoffs_rounds, custom_rounds, completed_at, results_unlocked_at, venues(name)'
     )
     .eq('id', id)
     .single();
@@ -40,6 +40,7 @@ export default async function BracketPage({
   const isGauntlet = format === 'gauntlet';
   const isClaimTheThrone = format === 'claim_the_throne';
   const isUpAndDownRiver = format === 'up_and_down_the_river';
+  const isCustom = format === 'custom';
   const isSupported =
     isRoundRobin ||
     isLeaguePlayoffs ||
@@ -47,7 +48,8 @@ export default async function BracketPage({
     isPopcorn ||
     isGauntlet ||
     isClaimTheThrone ||
-    isUpAndDownRiver;
+    isUpAndDownRiver ||
+    isCustom;
 
   const venue = tournament?.venues as { name: string } | { name: string }[] | null;
   const venueName = Array.isArray(venue) ? (venue[0]?.name ?? 'Pickleturf') : (venue?.name ?? 'Pickleturf');
@@ -115,6 +117,7 @@ export default async function BracketPage({
   const generateSemifinalMatchesWithId = generateSemifinalMatches.bind(null, id);
   const generateFinalMatchWithId = generateFinalMatch.bind(null, id);
   const skipToFinalMatchWithId = skipToFinalMatch.bind(null, id);
+  const addCustomMatchWithId = addCustomMatch.bind(null, id);
   const unlockTournamentResultsWithId = unlockTournamentResults.bind(null, id);
   const lockTournamentResultsWithId = lockTournamentResults.bind(null, id);
 
@@ -570,6 +573,64 @@ export default async function BracketPage({
             hasScoredMatches={hasScoredLeagueMatches}
           />
         </div>
+      )}
+
+      {isCustom && canEditScoreValue && (
+        <form action={addCustomMatchWithId} className={`${cardClass} mb-6`}>
+          <h2 className="text-sm font-bold text-teal-700 uppercase tracking-wide mb-3">
+            Add Match
+          </h2>
+          {teamCount < 2 ? (
+            <p className="text-sm text-red-700">
+              Need at least 2 teams before you can add a match — go back and pair more teams
+              first.
+            </p>
+          ) : (
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Round</label>
+                <input
+                  name="round"
+                  type="number"
+                  defaultValue={1}
+                  min={1}
+                  required
+                  className={`${inputClass} w-20`}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Team A</label>
+                <select name="teamAId" defaultValue="" required className={inputClass}>
+                  <option value="" disabled>
+                    Select team
+                  </option>
+                  {(teams ?? []).map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {teamById.get(t.id)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <span className="text-slate-400 font-bold pb-2">vs</span>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Team B</label>
+                <select name="teamBId" defaultValue="" required className={inputClass}>
+                  <option value="" disabled>
+                    Select team
+                  </option>
+                  {(teams ?? []).map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {teamById.get(t.id)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button type="submit" className={accentButtonClass}>
+                Add Match
+              </button>
+            </div>
+          )}
+        </form>
       )}
 
       {hasLeagueMatches && (

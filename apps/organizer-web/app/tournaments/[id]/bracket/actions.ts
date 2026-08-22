@@ -945,6 +945,58 @@ export async function updateMatchTeams(
   revalidatePath(`/tournaments/${tournamentId}/bracket`);
 }
 
+export async function addCustomMatch(tournamentId: string, formData: FormData) {
+  const { supabase } = await requireOrganizer();
+
+  const roundRaw = formData.get('round');
+  const round = typeof roundRaw === 'string' ? Number(roundRaw) : NaN;
+
+  if (!Number.isFinite(round) || round < 1) {
+    throw new Error('Round must be a positive number');
+  }
+
+  const teamAId = formData.get('teamAId');
+  const teamBId = formData.get('teamBId');
+
+  if (typeof teamAId !== 'string' || typeof teamBId !== 'string' || !teamAId || !teamBId) {
+    throw new Error('Both teams must be selected');
+  }
+
+  if (teamAId === teamBId) {
+    throw new Error('Team A and Team B must be different teams');
+  }
+
+  const { data: validTeams, error: teamsError } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('tournament_id', tournamentId)
+    .in('id', [teamAId, teamBId]);
+
+  if (teamsError) {
+    throw new Error(teamsError.message);
+  }
+
+  const validIds = new Set((validTeams ?? []).map((t) => t.id));
+  if (!validIds.has(teamAId) || !validIds.has(teamBId)) {
+    throw new Error('Selected teams must belong to this tournament');
+  }
+
+  const { error } = await supabase.from('matches').insert({
+    tournament_id: tournamentId,
+    round,
+    stage: 'league' as const,
+    team_a_id: teamAId,
+    team_b_id: teamBId,
+    status: 'pending' as const,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}/bracket`);
+}
+
 export async function unlockTournamentResults(tournamentId: string) {
   const { supabase } = await requireOrganizer();
 
