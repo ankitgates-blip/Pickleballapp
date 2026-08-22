@@ -200,15 +200,27 @@ export default async function RosterPage({
             {newNames.length === 0 && <li className="text-sm text-slate-400">None</li>}
           </ul>
 
-          <form action={confirmAddPlayersWithId} className="flex items-center gap-4">
-            <input type="hidden" name="names" value={pendingNames} />
-            <button type="submit" className={accentButtonClass}>
-              Confirm
-            </button>
-            <Link href={`/tournaments/${id}/roster`} className={linkClass}>
-              Cancel
-            </Link>
-          </form>
+          {rosterFull ? (
+            <div className="space-y-3">
+              <p className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 font-semibold">
+                All Slots Full — the roster filled up since you started this. These players can't
+                be added.
+              </p>
+              <Link href={`/tournaments/${id}/roster`} className={linkClass}>
+                Back to roster
+              </Link>
+            </div>
+          ) : (
+            <form action={confirmAddPlayersWithId} className="flex items-center gap-4">
+              <input type="hidden" name="names" value={pendingNames} />
+              <button type="submit" className={accentButtonClass}>
+                Confirm
+              </button>
+              <Link href={`/tournaments/${id}/roster`} className={linkClass}>
+                Cancel
+              </Link>
+            </form>
+          )}
         </div>
       </OrganizerShell>
     );
@@ -276,6 +288,7 @@ export default async function RosterPage({
               type="number"
               min={1}
               placeholder="Max players"
+              aria-label="Max players"
               defaultValue={tournament?.max_players ?? ''}
               className="w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
             />
