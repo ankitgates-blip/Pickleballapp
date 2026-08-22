@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { threatTierFor } from '@/lib/stats/threatLevel';
 import { formTierFor } from '@/lib/stats/form';
-import { sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
+import { shareOrDownloadFile, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
 
 export type PlayerStatsCardProps = {
   name: string;
@@ -169,12 +169,8 @@ export default function PlayerStatsCard({
       );
       if (!blob) throw new Error('Failed to generate image');
 
-      const downloadUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = `${sanitizeFileNamePart(name)}-stats-card.png`;
-      link.click();
-      URL.revokeObjectURL(downloadUrl);
+      const fileName = `${sanitizeFileNamePart(name)}-stats-card.png`;
+      await shareOrDownloadFile(blob, fileName, name, 'image/png');
       setStatus('idle');
     } catch (err) {
       console.error(err);
@@ -460,7 +456,7 @@ export default function PlayerStatsCard({
           </text>
         </svg>
       </button>
-      <p className="text-xs text-slate-400 mt-1.5">Click the card to download it as an image.</p>
+      <p className="text-xs text-slate-400 mt-1.5">Click the card to share or download it as an image.</p>
       {status === 'error' && (
         <p className="text-xs text-red-600 mt-1">Couldn&apos;t generate the image. Try again.</p>
       )}
