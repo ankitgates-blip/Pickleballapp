@@ -2,7 +2,18 @@
 import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
+import EmptyState from '@/app/components/EmptyState';
 import { cardClass, vibrantCardClass } from '@/app/components/ui';
+
+function CalendarIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <rect x="3.5" y="5" width="17" height="15" rx="2.5" stroke="currentColor" strokeWidth={2} />
+      <path d="M3.5 9.5h17" stroke="currentColor" strokeWidth={2} />
+      <path d="M8 3v4M16 3v4" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+    </svg>
+  );
+}
 import { timeslotLabel } from '@/lib/tournament/timeslots';
 import { formatLabel } from '@/lib/tournament/formats';
 import { computeTournamentChampionName } from '@/lib/tournament/champion';
@@ -120,8 +131,8 @@ export default async function TournamentsPage() {
   return (
     <OrganizerShell organizerName={organizer.name}>
       {(tournaments ?? []).length === 0 && (
-        <div className={`${cardClass} text-center text-slate-500`}>
-          No tournaments yet — create your first one.
+        <div className={cardClass}>
+          <EmptyState icon={<CalendarIcon />}>No leagues yet — create your first one.</EmptyState>
         </div>
       )}
 

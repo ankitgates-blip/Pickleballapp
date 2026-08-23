@@ -6,9 +6,7 @@ import { formatLabel, isIndividualFormat } from '@/lib/tournament/formats';
 import { pairTeam, shuffleRemaining, removeTeam } from './actions';
 import ThreatBadge from '@/app/components/ThreatBadge';
 import SaveButton from '@/app/components/SaveButton';
-import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
-import { winPercentageFromRecords } from '@/lib/stats/winRate';
-import type { RawMatch, RawTeam } from '@/lib/stats/types';
+import { buildWinPercentageByPersonId } from '@/lib/stats/buildWinPercentageByPersonId';
 
 const LEAGUE_PLAYOFFS_TEAM_CAP = 8;
 
@@ -40,71 +38,11 @@ export default async function TeamsPage({
     .select('id, player_1_id, player_2_id')
     .eq('tournament_id', id);
 
-  const { data: allTournaments } = await supabase
-    .from('tournaments')
-    .select('id')
-    .eq('organizer_id', organizer.id);
-
-  const allTournamentIds = (allTournaments ?? []).map((t) => t.id);
-
-  const { data: allTeamsRaw } = allTournamentIds.length
-    ? await supabase
-        .from('teams')
-        .select('id, player_1_id, player_2_id')
-        .in('tournament_id', allTournamentIds)
-    : { data: [] };
-
-  const { data: allPlayersRaw } = allTournamentIds.length
-    ? await supabase
-        .from('players')
-        .select('id, person_id')
-        .in('tournament_id', allTournamentIds)
-    : { data: [] };
-
-  const { data: allMatchesRaw } = allTournamentIds.length
-    ? await supabase
-        .from('matches')
-        .select('tournament_id, team_a_id, team_b_id, score_a, score_b, status')
-        .in('tournament_id', allTournamentIds)
-    : { data: [] };
-
-  const personIdByAllPlayerId = new Map(
-    (allPlayersRaw ?? []).map((p) => [p.id, p.person_id as string | null])
+  const winPercentageByPersonId = await buildWinPercentageByPersonId(
+    supabase,
+    organizer.id,
+    (players ?? []).map((p) => p.person_id)
   );
-
-  // tournamentId/tournamentDate/venueName never affect buildPersonMatchRecords' output beyond
-  // being copied through — only `.won` is read off the resulting records — so they're left as
-  // placeholders here.
-  const allTeams: RawTeam[] = (allTeamsRaw ?? [])
-    .map((t) => ({
-      id: t.id,
-      tournamentId: '',
-      player1PersonId: personIdByAllPlayerId.get(t.player_1_id) ?? '',
-      player2PersonId: personIdByAllPlayerId.get(t.player_2_id) ?? '',
-    }))
-    .filter((t) => t.player1PersonId && t.player2PersonId);
-
-  const allCompleteMatches: RawMatch[] = (allMatchesRaw ?? [])
-    .filter((m) => m.team_b_id !== null && m.status === 'complete')
-    .map((m) => ({
-      tournamentId: m.tournament_id,
-      tournamentDate: '',
-      venueName: '',
-      teamAId: m.team_a_id!,
-      teamBId: m.team_b_id!,
-      scoreA: m.score_a ?? 0,
-      scoreB: m.score_b ?? 0,
-      status: 'complete' as const,
-    }));
-
-  const winPercentageByPersonId = new Map<string, number | null>();
-  for (const p of players ?? []) {
-    if (!p.person_id || winPercentageByPersonId.has(p.person_id)) continue;
-    winPercentageByPersonId.set(
-      p.person_id,
-      winPercentageFromRecords(buildPersonMatchRecords(p.person_id, allCompleteMatches, allTeams))
-    );
-  }
 
   const { count: leagueMatchCount } = await supabase
     .from('matches')

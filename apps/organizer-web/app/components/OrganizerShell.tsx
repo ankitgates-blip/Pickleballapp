@@ -10,8 +10,9 @@ import SaveButton from './SaveButton';
 function PersonIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="8" r="4" fill="currentColor" />
-      <path d="M4 21v-1a7 7 0 0 1 14 0v1" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+      <rect x="3" y="4" width="18" height="16" rx="4" stroke="currentColor" strokeWidth={2} />
+      <circle cx="12" cy="10.25" r="2.75" fill="currentColor" />
+      <path d="M6.75 17c0-2.21 2.35-3.5 5.25-3.5s5.25 1.29 5.25 3.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
     </svg>
   );
 }
@@ -19,8 +20,12 @@ function PersonIcon() {
 function LeaderboardIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <path d="M6 20V13M12 20V7M18 20V10" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
-      <path d="M12 1.5l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1z" fill="currentColor" />
+      <path d="M8 3h8v5.25a4 4 0 0 1-8 0V3z" fill="currentColor" />
+      <path d="M8 4.25H5.25a2.75 2.75 0 0 0 2.75 4.5" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
+      <path d="M16 4.25h2.75a2.75 2.75 0 0 1-2.75 4.5" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
+      <path d="M12 12.25v2.75" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+      <path d="M8.25 20h7.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+      <path d="M9.25 20v-2.25a2.75 2.75 0 0 1 5.5 0V20" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

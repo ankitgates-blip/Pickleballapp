@@ -1,5 +1,11 @@
 export const cardClass = 'bg-white rounded-2xl shadow-sm border border-[#eee7db] p-6';
 
+// For cards whose entire purpose is a single action the organizer needs to take
+// (generate/skip a round, add a match) — a warm gold-tinted card that stands apart
+// from the plain white read-only cards (match lists, standings) around it.
+export const actionCardClass =
+  'bg-gradient-to-br from-[#fdf6e8] to-white rounded-2xl shadow-[0_4px_14px_rgba(168,135,79,0.18)] border-2 border-gold/50 p-6';
+
 export const vibrantCardClass =
   'bg-white rounded-2xl p-4 border border-[#eee7db] shadow-[0_10px_25px_rgba(12,24,48,0.12)] relative overflow-hidden';
 

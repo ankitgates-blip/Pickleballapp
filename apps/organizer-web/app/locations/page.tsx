@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass } from '@/app/components/ui';
+import EmptyState from '@/app/components/EmptyState';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computeLocationLeaderboard } from '@/lib/stats/locationLeaderboard';
 import { winPercentageFromRecords } from '@/lib/stats/winRate';
@@ -10,6 +11,16 @@ import { computeStandings } from '@/lib/tournament/standings';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
 import type { MatchResult } from '@/lib/types';
 import ShareLeaderboardButton from './ShareLeaderboardButton';
+
+function PaddleIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <ellipse cx="12" cy="9" rx="6" ry="7" stroke="currentColor" strokeWidth={2} />
+      <path d="M12 16v6" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+      <path d="M9 22h6" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+    </svg>
+  );
+}
 
 export default async function LocationsPage() {
   const { supabase, organizer } = await requireOrganizer();
@@ -206,7 +217,7 @@ export default async function LocationsPage() {
               ))}
             </ul>
           ) : (
-            <p className="text-slate-400 text-sm">No matches played here yet.</p>
+            <EmptyState icon={<PaddleIcon />}>No matches played here yet.</EmptyState>
           )}
         </div>
       ))}
