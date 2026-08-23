@@ -97,7 +97,12 @@ function toExportMatch(m: ExportRawMatch, teamById: Map<string, string>): Export
     round: m.stage === 'league' ? m.round : null,
     teamAName: (m.team_a_id && teamById.get(m.team_a_id)) ?? 'Unknown',
     teamBName: (m.team_b_id && teamById.get(m.team_b_id)) ?? 'Unknown',
-    scoreLabel: m.status === 'complete' ? `${m.score_a}-${m.score_b}` : 'Not yet played',
+    scoreLabel:
+      m.status === 'complete'
+        ? `${m.score_a}-${m.score_b}`
+        : m.status === 'skipped'
+          ? 'Skipped'
+          : 'Not yet played',
   };
 }
 

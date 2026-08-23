@@ -1,5 +1,12 @@
 import type { CompletionCheckMatch } from '@/lib/types';
 
+// A skipped match is resolved the same as a scored one for completion purposes --
+// it just never contributes a result (see computeStandings, which only reads
+// 'complete' matches, so a skipped match stays out of anyone's record).
+function isResolved(status: CompletionCheckMatch['status']): boolean {
+  return status === 'complete' || status === 'skipped';
+}
+
 export function isTournamentComplete(
   format: string,
   teamCount: number,
@@ -8,11 +15,11 @@ export function isTournamentComplete(
 ): boolean {
   if (format === 'league_playoffs' && teamCount >= 4) {
     const finalMatch = matches.find((m) => m.stage === 'final');
-    return Boolean(finalMatch && finalMatch.status === 'complete');
+    return Boolean(finalMatch && isResolved(finalMatch.status));
   }
 
   const realMatches = matches.filter((m) => m.teamBId !== null);
-  const allComplete = realMatches.length > 0 && realMatches.every((m) => m.status === 'complete');
+  const allComplete = realMatches.length > 0 && realMatches.every((m) => isResolved(m.status));
 
   if (
     format === 'gauntlet' ||

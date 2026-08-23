@@ -19,6 +19,30 @@ describe('isTournamentComplete', () => {
     expect(isTournamentComplete('round_robin', 2, matches)).toBe(true);
   });
 
+  it('treats a skipped match as resolved, not as still pending', () => {
+    const matches: CompletionCheckMatch[] = [
+      { stage: 'league', status: 'complete', teamBId: 't2', round: 1 },
+      { stage: 'league', status: 'skipped', teamBId: 't3', round: 1 },
+    ];
+    expect(isTournamentComplete('round_robin', 2, matches)).toBe(true);
+  });
+
+  it('still returns false when a real match is genuinely pending, skipped ones aside', () => {
+    const matches: CompletionCheckMatch[] = [
+      { stage: 'league', status: 'skipped', teamBId: 't2', round: 1 },
+      { stage: 'league', status: 'pending', teamBId: 't3', round: 1 },
+    ];
+    expect(isTournamentComplete('round_robin', 2, matches)).toBe(false);
+  });
+
+  it('treats a skipped final match as resolved for league_playoffs with 4+ teams', () => {
+    const matches: CompletionCheckMatch[] = [
+      { stage: 'league', status: 'complete', teamBId: 't2', round: 1 },
+      { stage: 'final', status: 'skipped', teamBId: 't5', round: 1 },
+    ];
+    expect(isTournamentComplete('league_playoffs', 4, matches)).toBe(true);
+  });
+
   it('returns false for league_playoffs with fewer than 4 teams when fewer rounds than the target have been played', () => {
     const matches: CompletionCheckMatch[] = [
       { stage: 'league', status: 'complete', teamBId: 't2', round: 1 },

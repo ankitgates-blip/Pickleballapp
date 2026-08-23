@@ -11,7 +11,7 @@ import { canEditScore, canEditTeams } from '@/lib/tournament/completion';
 import { buildMatchGroups } from '@/lib/tournament/resultsExport';
 import type { MatchResult } from '@/lib/types';
 import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, generateLeaguePlayoffsBracket, regenerateLeaguePlayoffsBracket, generateSemifinalMatches, generateFinalMatch, skipToFinalMatch, updateMatchTeams, addCustomMatch, unlockTournamentResults, lockTournamentResults } from './actions';
-import { enterScore } from '../matches/actions';
+import { enterScore, skipMatch } from '../matches/actions';
 import ShareScheduleButton from './ShareScheduleButton';
 import RegenerateLeagueRoundsButton from './RegenerateLeagueRoundsButton';
 import SaveButton from '@/app/components/SaveButton';
@@ -271,9 +271,11 @@ export default async function BracketPage({
         }
 
         const isComplete = m.status === 'complete';
+        const isSkipped = m.status === 'skipped';
         const teamAWon = isComplete && (m.score_a ?? 0) > (m.score_b ?? 0);
         const teamBWon = isComplete && (m.score_b ?? 0) > (m.score_a ?? 0);
         const enterScoreForMatch = enterScore.bind(null, id, m.id);
+        const skipMatchForMatch = skipMatch.bind(null, id, m.id);
         const updateMatchTeamsForMatch = updateMatchTeams.bind(null, id, m.id);
 
         const teamALabel = (
@@ -314,32 +316,50 @@ export default async function BracketPage({
                   {teamBLabel}
                 </span>
                 <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">
-                  {isComplete ? `${m.score_a}-${m.score_b}` : 'Not yet played'}
+                  {isComplete ? `${m.score_a}-${m.score_b}` : isSkipped ? 'Skipped' : 'Not yet played'}
                 </span>
               </summary>
               {canEditScoreValue ? (
-                <form action={enterScoreForMatch} className="flex items-center gap-3 mt-2 pl-1">
-                  <input
-                    name="scoreA"
-                    type="number"
-                    defaultValue={m.score_a ?? ''}
-                    placeholder="Team A"
-                    required
-                    className={`${inputClass} w-20`}
-                  />
-                  <span className="text-slate-400 font-bold">–</span>
-                  <input
-                    name="scoreB"
-                    type="number"
-                    defaultValue={m.score_b ?? ''}
-                    placeholder="Team B"
-                    required
-                    className={`${inputClass} w-20`}
-                  />
-                  <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
-                    Save
-                  </SaveButton>
-                </form>
+                <>
+                  <form action={enterScoreForMatch} className="flex items-center gap-3 mt-2 pl-1">
+                    <input
+                      name="scoreA"
+                      type="number"
+                      defaultValue={m.score_a ?? ''}
+                      placeholder="Team A"
+                      required
+                      className={`${inputClass} w-20`}
+                    />
+                    <span className="text-slate-400 font-bold">–</span>
+                    <input
+                      name="scoreB"
+                      type="number"
+                      defaultValue={m.score_b ?? ''}
+                      placeholder="Team B"
+                      required
+                      className={`${inputClass} w-20`}
+                    />
+                    <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
+                      Save
+                    </SaveButton>
+                  </form>
+                  {isSkipped ? (
+                    <p className="text-xs text-slate-400 mt-2 pl-1">
+                      Marked as skipped — enter a score above to un-skip it.
+                    </p>
+                  ) : (
+                    <form action={skipMatchForMatch} className="mt-2 pl-1">
+                      <SaveButton
+                        className="text-xs font-semibold text-slate-500 hover:text-slate-700 underline"
+                        pendingLabel="Skipping…"
+                      >
+                        Skip this match (not played)
+                      </SaveButton>
+                    </form>
+                  )}
+                </>
+              ) : isSkipped ? (
+                <p className="text-sm font-semibold text-slate-500 mt-2 pl-1">Skipped — not played.</p>
               ) : (
                 <p className="text-sm font-semibold text-slate-700 mt-2 pl-1">
                   Final: {m.score_a}-{m.score_b}

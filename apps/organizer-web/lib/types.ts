@@ -10,7 +10,7 @@ export type MatchResult = {
   teamBId: string | null; // null = bye
   scoreA: number | null;
   scoreB: number | null;
-  status: 'pending' | 'complete';
+  status: 'pending' | 'complete' | 'skipped';
 };
 
 export type StandingsRow = {
@@ -29,7 +29,7 @@ export type RoundRobinPairing = {
 
 export type CompletionCheckMatch = {
   stage: 'league' | 'semifinal' | 'final';
-  status: 'pending' | 'complete';
+  status: 'pending' | 'complete' | 'skipped';
   teamBId: string | null;
   round: number;
 };

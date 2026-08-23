@@ -192,6 +192,7 @@ export default async function ResultsPage({
     const teamAName = teamById.get(m.team_a_id!) ?? 'Unknown';
     const teamBName = teamById.get(m.team_b_id!) ?? 'Unknown';
     const isComplete = m.status === 'complete';
+    const isSkipped = m.status === 'skipped';
     const teamAWon = isComplete && (m.score_a ?? 0) > (m.score_b ?? 0);
     const teamBWon = isComplete && (m.score_b ?? 0) > (m.score_a ?? 0);
 
@@ -218,7 +219,9 @@ export default async function ResultsPage({
             {m.score_a}-{m.score_b}
           </div>
         ) : (
-          <div className="text-center text-slate-400 text-xs mt-1">Not yet played</div>
+          <div className="text-center text-slate-400 text-xs mt-1">
+            {isSkipped ? 'Skipped' : 'Not yet played'}
+          </div>
         )}
       </li>
     );
