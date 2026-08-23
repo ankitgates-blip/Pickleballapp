@@ -7,9 +7,8 @@ import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computeLocationLeaderboard } from '@/lib/stats/locationLeaderboard';
 import { winPercentageFromRecords } from '@/lib/stats/winRate';
 import ThreatBadge from '@/app/components/ThreatBadge';
-import { computeStandings } from '@/lib/tournament/standings';
+import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
-import type { MatchResult } from '@/lib/types';
 import ShareLeaderboardButton from './ShareLeaderboardButton';
 
 function PaddleIcon() {
@@ -29,7 +28,7 @@ export default async function LocationsPage() {
 
   const { data: tournaments } = await supabase
     .from('tournaments')
-    .select('id, date, venue_id')
+    .select('id, date, venue_id, format, completed_at')
     .eq('organizer_id', organizer.id);
 
   const { data: people } = await supabase
@@ -59,9 +58,11 @@ export default async function LocationsPage() {
   const { data: matchesRaw } = tournamentIds.length
     ? await supabase
         .from('matches')
-        .select('tournament_id, team_a_id, team_b_id, score_a, score_b, status')
+        .select('tournament_id, stage, round, court, team_a_id, team_b_id, score_a, score_b, status')
         .in('tournament_id', tournamentIds)
     : { data: [] };
+
+  const tournamentById = new Map((tournaments ?? []).map((t) => [t.id, t]));
 
   const personIdByPlayerId = new Map(
     (players ?? []).map((p) => [p.id, p.person_id as string | null])
@@ -119,26 +120,30 @@ export default async function LocationsPage() {
         status: 'complete' as const,
       }));
 
+    // Uses the same champion-detection rules as the tournaments list page (final-match
+    // winner when a final exists, individual/ladder standings for individual-pairing
+    // formats, and only once the tournament is actually completed) — see
+    // computeTournamentChampionPersonIds. Reimplementing this ad hoc previously credited
+    // "League Won" to whoever's ephemeral per-round pairing happened to have the best
+    // record in Popcorn/Gauntlet tournaments, which isn't how those formats crown a winner.
     const tournamentWinsByPersonId = new Map<string, number>();
     for (const tournamentId of venueTournamentIds) {
-      const tournamentTeams = teams.filter((t) => t.tournamentId === tournamentId);
-      const tournamentMatches: MatchResult[] = (matchesRaw ?? [])
-        .filter((m) => m.tournament_id === tournamentId)
-        .map((m) => ({
-          teamAId: m.team_a_id!,
-          teamBId: m.team_b_id,
-          scoreA: m.score_a,
-          scoreB: m.score_b,
-          status: m.status as 'pending' | 'complete',
-        }));
+      const tournament = tournamentById.get(tournamentId);
+      if (!tournament) continue;
 
-      const standings = computeStandings(tournamentMatches);
-      if (standings.length === 0) continue;
+      const tournamentTeams = teams
+        .filter((t) => t.tournamentId === tournamentId)
+        .map((t) => ({ id: t.id, person1Id: t.player1PersonId, person2Id: t.player2PersonId }));
+      const tournamentMatches = (matchesRaw ?? []).filter((m) => m.tournament_id === tournamentId);
 
-      const winningTeam = tournamentTeams.find((t) => t.id === standings[0].teamId);
-      if (!winningTeam) continue;
+      const championPersonIds = computeTournamentChampionPersonIds({
+        format: tournament.format,
+        completedAt: tournament.completed_at,
+        matches: tournamentMatches,
+        teams: tournamentTeams,
+      });
 
-      for (const personId of [winningTeam.player1PersonId, winningTeam.player2PersonId]) {
+      for (const personId of championPersonIds ?? []) {
         tournamentWinsByPersonId.set(personId, (tournamentWinsByPersonId.get(personId) ?? 0) + 1);
       }
     }

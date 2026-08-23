@@ -17,28 +17,28 @@ type ChampionMatch = {
   court: number | null;
 };
 
-type ChampionTeam = {
-  id: string;
-  player_1_id: string;
-  player_2_id: string;
-};
+// Generic team shape: id + two member ids. The member-id space is whatever the
+// caller wants back out of computeChampionCore (players.id for the name-lookup
+// path below, people.id for the cross-tournament person-id path) — the standings
+// math never inspects what the ids mean.
+type CoreTeam = { id: string; member1Id: string; member2Id: string };
 
-type ChampionPlayer = {
-  id: string;
-  name: string;
-};
-
-export function computeTournamentChampionName(params: {
+/**
+ * Single source of truth for "who actually won this tournament" — shared by
+ * computeTournamentChampionName (players.id space, for display) and
+ * computeTournamentChampionPersonIds (people.id space, for cross-tournament
+ * stats like League Wins). Do not reimplement this logic elsewhere.
+ */
+function computeChampionCore(params: {
   format: string;
   completedAt: string | null;
   matches: ChampionMatch[];
-  teams: ChampionTeam[];
-  players: ChampionPlayer[];
-}): string | undefined {
-  const { format, completedAt, matches, teams, players } = params;
+  teams: CoreTeam[];
+}): { teamId?: string; playerId?: string } {
+  const { format, completedAt, matches, teams } = params;
 
   if (!completedAt) {
-    return undefined;
+    return {};
   }
 
   const isLadderFormat = format === 'claim_the_throne' || format === 'up_and_down_the_river';
@@ -60,8 +60,8 @@ export function computeTournamentChampionName(params: {
   const teamsForIndividual: Team[] = teams.map((t) => ({
     id: t.id,
     tournamentId: '',
-    player1Id: t.player_1_id,
-    player2Id: t.player_2_id,
+    player1Id: t.member1Id,
+    player2Id: t.member2Id,
   }));
   const individualStandings = isIndividual && !isLadderFormat
     ? computeIndividualStandings(leagueMatchResults, teamsForIndividual)
@@ -84,8 +84,8 @@ export function computeTournamentChampionName(params: {
           const teamB = teamById2.get(m.team_b_id)!;
           return {
             court: m.court,
-            teamAPlayerIds: [teamA.player_1_id, teamA.player_2_id] as [string, string],
-            teamBPlayerIds: [teamB.player_1_id, teamB.player_2_id] as [string, string],
+            teamAPlayerIds: [teamA.member1Id, teamA.member2Id] as [string, string],
+            teamBPlayerIds: [teamB.member1Id, teamB.member2Id] as [string, string],
             scoreA: m.score_a,
             scoreB: m.score_b,
           };
@@ -112,19 +112,78 @@ export function computeTournamentChampionName(params: {
       ? individualStandings[0]?.playerId
       : undefined;
 
-  const playerById = new Map(players.map((p) => [p.id, p.name]));
-  const teamById = new Map(
-    teams.map((t) => [
-      t.id,
-      `${playerById.get(t.player_1_id)} / ${playerById.get(t.player_2_id)}`,
-    ])
-  );
+  return {
+    teamId: championTeamId ?? undefined,
+    playerId: championPlayerId ?? undefined,
+  };
+}
 
-  if (championPlayerId) {
-    return playerById.get(championPlayerId);
+type ChampionTeam = {
+  id: string;
+  player_1_id: string;
+  player_2_id: string;
+};
+
+type ChampionPlayer = {
+  id: string;
+  name: string;
+};
+
+export function computeTournamentChampionName(params: {
+  format: string;
+  completedAt: string | null;
+  matches: ChampionMatch[];
+  teams: ChampionTeam[];
+  players: ChampionPlayer[];
+}): string | undefined {
+  const { teams, players, ...rest } = params;
+  const coreTeams: CoreTeam[] = teams.map((t) => ({
+    id: t.id,
+    member1Id: t.player_1_id,
+    member2Id: t.player_2_id,
+  }));
+
+  const { teamId, playerId } = computeChampionCore({ ...rest, teams: coreTeams });
+
+  const playerById = new Map(players.map((p) => [p.id, p.name]));
+
+  if (playerId) {
+    return playerById.get(playerId);
   }
-  if (championTeamId) {
-    return teamById.get(championTeamId);
+  if (teamId) {
+    const team = coreTeams.find((t) => t.id === teamId);
+    if (!team) return undefined;
+    return `${playerById.get(team.member1Id)} / ${playerById.get(team.member2Id)}`;
+  }
+  return undefined;
+}
+
+// Cross-tournament version of the same logic (e.g. for a "League Wins" leaderboard
+// stat spanning many tournaments): same champion-detection rules, but the teams
+// passed in are already in people.id space (person1Id/person2Id) rather than
+// players.id space, so the result can be matched against a people.id-keyed map
+// without any players-table lookup. Returns 1 person id for individual/ladder
+// formats, 2 for team-based formats (both members of the winning team), or
+// undefined if the tournament isn't complete or has no determinable winner.
+export function computeTournamentChampionPersonIds(params: {
+  format: string;
+  completedAt: string | null;
+  matches: ChampionMatch[];
+  teams: { id: string; person1Id: string; person2Id: string }[];
+}): string[] | undefined {
+  const coreTeams: CoreTeam[] = params.teams.map((t) => ({
+    id: t.id,
+    member1Id: t.person1Id,
+    member2Id: t.person2Id,
+  }));
+
+  const { teamId, playerId } = computeChampionCore({ ...params, teams: coreTeams });
+
+  if (playerId) return [playerId];
+  if (teamId) {
+    const team = coreTeams.find((t) => t.id === teamId);
+    if (!team) return undefined;
+    return [team.member1Id, team.member2Id];
   }
   return undefined;
 }
