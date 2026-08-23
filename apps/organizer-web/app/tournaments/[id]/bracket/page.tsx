@@ -144,6 +144,8 @@ export default async function BracketPage({
     currentGauntletRoundMatches.every((m) => m.status === 'complete');
   const showGenerateNextGauntletRound =
     isGauntlet && hasLeagueMatches && currentGauntletRoundComplete && currentGauntletRound < gauntletRounds;
+  const showSkipGauntletRound =
+    isGauntlet && hasLeagueMatches && !currentGauntletRoundComplete && currentGauntletRound < gauntletRounds;
 
   const claimTheThroneRounds = tournament?.claim_the_throne_rounds ?? 5;
   const currentClaimTheThroneRound =
@@ -158,6 +160,11 @@ export default async function BracketPage({
     isClaimTheThrone &&
     hasLeagueMatches &&
     currentClaimTheThroneRoundComplete &&
+    currentClaimTheThroneRound < claimTheThroneRounds;
+  const showSkipClaimTheThroneRound =
+    isClaimTheThrone &&
+    hasLeagueMatches &&
+    !currentClaimTheThroneRoundComplete &&
     currentClaimTheThroneRound < claimTheThroneRounds;
   const claimTheThronePlayerCountValid = playerCount > 0 && playerCount % 4 === 0;
 
@@ -174,6 +181,11 @@ export default async function BracketPage({
     isUpAndDownRiver &&
     hasLeagueMatches &&
     currentUpAndDownRiverRoundComplete &&
+    currentUpAndDownRiverRound < upAndDownRiverRounds;
+  const showSkipUpAndDownRiverRound =
+    isUpAndDownRiver &&
+    hasLeagueMatches &&
+    !currentUpAndDownRiverRoundComplete &&
     currentUpAndDownRiverRound < upAndDownRiverRounds;
   const upAndDownRiverPlayerCountValid = playerCount > 0 && playerCount % 4 === 0;
 
@@ -461,6 +473,19 @@ export default async function BracketPage({
         </form>
       )}
 
+      {showSkipGauntletRound && (
+        <form action={advanceGauntletRoundWithId} className={`${cardClass} text-center mb-6`}>
+          <p className="text-slate-600 mb-4">
+            Round {currentGauntletRound} isn't finished yet. Skip it and generate Round{' '}
+            {currentGauntletRound + 1} anyway — any unplayed matches in Round{' '}
+            {currentGauntletRound} stay unscored and won't count toward anyone's record.
+          </p>
+          <button type="submit" className={outlineButtonClass}>
+            Skip to Round {currentGauntletRound + 1}
+          </button>
+        </form>
+      )}
+
       {isSupported && !hasLeagueMatches && isClaimTheThrone && !claimTheThronePlayerCountValid && (
         <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
           Claim the Throne needs a player count that's a multiple of 4 — you have {playerCount}.
@@ -490,6 +515,22 @@ export default async function BracketPage({
           </p>
           <button type="submit" className={accentButtonClass}>
             Generate Round {currentClaimTheThroneRound + 1}
+          </button>
+        </form>
+      )}
+
+      {showSkipClaimTheThroneRound && (
+        <form
+          action={advanceClaimTheThroneRoundWithId}
+          className={`${cardClass} text-center mb-6`}
+        >
+          <p className="text-slate-600 mb-4">
+            Round {currentClaimTheThroneRound} isn't finished yet. Skip it and generate Round{' '}
+            {currentClaimTheThroneRound + 1} anyway — any unplayed matches in Round{' '}
+            {currentClaimTheThroneRound} stay unscored and won't count toward anyone's record.
+          </p>
+          <button type="submit" className={outlineButtonClass}>
+            Skip to Round {currentClaimTheThroneRound + 1}
           </button>
         </form>
       )}
@@ -526,6 +567,22 @@ export default async function BracketPage({
           </p>
           <button type="submit" className={accentButtonClass}>
             Generate Round {currentUpAndDownRiverRound + 1}
+          </button>
+        </form>
+      )}
+
+      {showSkipUpAndDownRiverRound && (
+        <form
+          action={advanceUpAndDownRiverRoundWithId}
+          className={`${cardClass} text-center mb-6`}
+        >
+          <p className="text-slate-600 mb-4">
+            Round {currentUpAndDownRiverRound} isn't finished yet. Skip it and generate Round{' '}
+            {currentUpAndDownRiverRound + 1} anyway — any unplayed matches in Round{' '}
+            {currentUpAndDownRiverRound} stay unscored and won't count toward anyone's record.
+          </p>
+          <button type="submit" className={outlineButtonClass}>
+            Skip to Round {currentUpAndDownRiverRound + 1}
           </button>
         </form>
       )}
