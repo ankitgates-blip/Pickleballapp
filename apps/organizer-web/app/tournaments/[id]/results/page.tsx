@@ -199,7 +199,7 @@ export default async function ResultsPage({
     return (
       <li key={m.id} className="text-sm border-b border-slate-100 last:border-0 pb-2">
         {m.stage === 'league' && (
-          <div className="text-xs font-semibold text-teal-700 uppercase tracking-wide mb-1">
+          <div className="text-xs font-semibold text-navy-mid uppercase tracking-wide mb-1">
             Round {m.round}
           </div>
         )}
@@ -215,7 +215,7 @@ export default async function ResultsPage({
           </span>
         </div>
         {isComplete ? (
-          <div className="text-center font-bold text-teal-700 mt-1">
+          <div className="text-center font-bold text-navy-mid mt-1">
             {m.score_a}-{m.score_b}
           </div>
         ) : (
@@ -276,7 +276,7 @@ export default async function ResultsPage({
               <li key={p.id}>
                 <Link
                   href={`/p/${p.person_id}`}
-                  className="block rounded-lg bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-100 transition-colors"
+                  className="block rounded-lg bg-navy-tint px-3 py-2 text-sm font-semibold text-navy-deep hover:bg-navy-mid/10 transition-colors"
                 >
                   {p.name}
                 </Link>
@@ -321,8 +321,8 @@ export default async function ResultsPage({
                         {medal && <span className="mr-1.5">{medal}</span>}
                         {playerById.get(s.playerId)}
                       </td>
-                      <td className="py-2 text-center text-teal-700 font-extrabold">{s.ladderPoints}</td>
-                      <td className="py-2 text-center text-teal-700 font-extrabold">{s.wins}</td>
+                      <td className="py-2 text-center text-navy-mid font-extrabold">{s.ladderPoints}</td>
+                      <td className="py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
                       <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
                       <td className="py-2 text-center font-bold">
                         {avgDiff >= 0 ? '+' : ''}
@@ -340,7 +340,7 @@ export default async function ResultsPage({
                           {medal && <span className="mr-1.5">{medal}</span>}
                           {playerById.get(s.playerId)}
                         </td>
-                        <td className="py-2 text-center text-teal-700 font-extrabold">{s.wins}</td>
+                        <td className="py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
                         <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
                         <td className="py-2 text-center font-bold">
                           {s.pointsFor - s.pointsAgainst > 0 ? '+' : ''}
@@ -357,7 +357,7 @@ export default async function ResultsPage({
                           {medal && <span className="mr-1.5">{medal}</span>}
                           {teamById.get(s.teamId)}
                         </td>
-                        <td className="py-2 text-center text-teal-700 font-extrabold">{s.wins}</td>
+                        <td className="py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
                         <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
                         <td className="py-2 text-center font-bold">
                           {s.pointsFor - s.pointsAgainst > 0 ? '+' : ''}

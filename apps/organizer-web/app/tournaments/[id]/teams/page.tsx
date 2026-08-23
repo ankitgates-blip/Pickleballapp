@@ -69,7 +69,7 @@ export default async function TeamsPage({
   const pairTeamWithId = pairTeam.bind(null, id);
   const shuffleRemainingWithId = shuffleRemaining.bind(null, id);
   const selectClass =
-    'rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 flex-1';
+    'rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-mid focus:border-navy-mid flex-1';
 
   return (
     <OrganizerShell organizerName={organizer.name}>
@@ -77,7 +77,7 @@ export default async function TeamsPage({
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Pair Teams</h1>
         {isLeaguePlayoffs && (
-          <span className="text-sm font-semibold text-teal-700 bg-teal-50 rounded-full px-3 py-1">
+          <span className="text-sm font-semibold text-navy-mid bg-navy-tint rounded-full px-3 py-1">
             {teamCount}/{LEAGUE_PLAYOFFS_TEAM_CAP} teams
           </span>
         )}
@@ -92,7 +92,7 @@ export default async function TeamsPage({
       )}
 
       {isAutoPaired ? (
-        <div className="rounded-lg bg-teal-50 border border-teal-200 text-teal-800 text-sm px-4 py-3 mb-6">
+        <div className="rounded-lg bg-navy-tint border border-navy-mid/25 text-navy-deep text-sm px-4 py-3 mb-6">
           {formatLabel(tournament?.format ?? '')} auto-generates partners each round — head to
           Bracket to generate the schedule.
         </div>
@@ -146,7 +146,7 @@ export default async function TeamsPage({
             return (
               <li
                 key={t.id}
-                className="flex items-center justify-between gap-2 rounded-lg bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-900"
+                className="flex items-center justify-between gap-2 rounded-lg bg-navy-tint px-3 py-2 text-sm font-semibold text-navy-deep"
               >
                 <span className="flex items-center gap-2 flex-wrap">
                   <span className="h-2 w-2 rounded-full bg-amber-400" />
@@ -162,7 +162,7 @@ export default async function TeamsPage({
                 </span>
                 <form action={removeTeamForTeam}>
                   <SaveButton
-                    className="text-xs font-semibold text-teal-700 hover:text-red-600 transition-colors disabled:opacity-50"
+                    className="text-xs font-semibold text-navy-mid hover:text-red-600 transition-colors disabled:opacity-50"
                     pendingLabel="Removing…"
                   >
                     Remove

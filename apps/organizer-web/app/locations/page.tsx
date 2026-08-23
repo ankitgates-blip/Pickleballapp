@@ -215,7 +215,7 @@ export default async function LocationsPage() {
                     {entry.matchWins} win{entry.matchWins === 1 ? '' : 's'} ·{' '}
                     {entry.losses} loss{entry.losses === 1 ? '' : 'es'}
                     {entry.winPercentage !== null && (
-                      <span className="text-teal-700"> · {entry.winPercentage}% winning</span>
+                      <span className="text-navy-mid"> · {entry.winPercentage}% winning</span>
                     )}
                   </p>
                 </li>

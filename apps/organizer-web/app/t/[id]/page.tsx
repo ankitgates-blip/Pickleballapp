@@ -105,7 +105,7 @@ export default async function PublicTournamentPage({
                 <li key={p.id}>
                   <Link
                     href={`/p/${p.person_id}`}
-                    className="block rounded-lg bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-100 transition-colors"
+                    className="block rounded-lg bg-navy-tint px-3 py-2 text-sm font-semibold text-navy-deep hover:bg-navy-mid/10 transition-colors"
                   >
                     {p.name}
                   </Link>
@@ -143,7 +143,7 @@ export default async function PublicTournamentPage({
                       {medal && <span className="mr-1.5">{medal}</span>}
                       {teamById.get(s.teamId)}
                     </td>
-                    <td className="py-2 text-center text-teal-700 font-extrabold">{s.wins}</td>
+                    <td className="py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
                     <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
                   </tr>
                 );
@@ -175,7 +175,7 @@ export default async function PublicTournamentPage({
                       </span>
                     </span>
                     {m.status === 'complete' && (
-                      <span className="font-bold text-teal-700">
+                      <span className="font-bold text-navy-mid">
                         {m.score_a}-{m.score_b}
                       </span>
                     )}

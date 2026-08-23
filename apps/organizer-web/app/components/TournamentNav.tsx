@@ -25,8 +25,8 @@ export default function TournamentNav({
             href={`/tournaments/${tournamentId}/${step.key}`}
             className={
               isActive
-                ? 'rounded-full bg-teal-600 text-white text-sm font-semibold px-4 py-1.5'
-                : 'rounded-full bg-white border border-slate-300 text-slate-600 hover:border-teal-400 hover:text-teal-700 text-sm font-semibold px-4 py-1.5 transition-colors'
+                ? 'rounded-full bg-navy-mid text-white text-sm font-semibold px-4 py-1.5'
+                : 'rounded-full bg-white border border-slate-300 text-slate-600 hover:border-navy-light hover:text-navy-mid text-sm font-semibold px-4 py-1.5 transition-colors'
             }
           >
             {step.label}

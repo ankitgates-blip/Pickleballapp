@@ -24,11 +24,9 @@ import {
   starRatingLabel,
 } from '@/lib/stats/personStatsExport';
 import SharePlayerStatsButton from './SharePlayerStatsButton';
-import { computeStandings } from '@/lib/tournament/standings';
-import { isIndividualFormat } from '@/lib/tournament/formats';
+import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
 import { renderTrend, trendColorClass } from '@/lib/stats/trend';
 import type { RawMatch, RawTeam, TournamentWon } from '@/lib/stats/types';
-import type { MatchResult } from '@/lib/types';
 
 export default async function PersonDetailPage({
   params,
@@ -55,12 +53,12 @@ export default async function PersonDetailPage({
 
   const { data: tournaments } = await supabase
     .from('tournaments')
-    .select('id, name, date, format, venues(name)')
+    .select('id, name, date, format, completed_at, venues(name)')
     .eq('organizer_id', organizer.id);
 
   const tournamentIds = (tournaments ?? []).map((t) => t.id);
   const tournamentDateById = new Map((tournaments ?? []).map((t) => [t.id, t.date]));
-  const tournamentFormatById = new Map((tournaments ?? []).map((t) => [t.id, t.format]));
+  const tournamentById = new Map((tournaments ?? []).map((t) => [t.id, t]));
   const venueNameByTournamentId = new Map(
     (tournaments ?? []).map((t) => {
       const venue = t.venues as { name: string } | { name: string }[] | null;
@@ -88,7 +86,7 @@ export default async function PersonDetailPage({
   const { data: matchesRaw } = tournamentIds.length
     ? await supabase
         .from('matches')
-        .select('tournament_id, team_a_id, team_b_id, score_a, score_b, status')
+        .select('tournament_id, stage, round, court, team_a_id, team_b_id, score_a, score_b, status')
         .in('tournament_id', tournamentIds)
     : { data: [] };
 
@@ -139,31 +137,30 @@ export default async function PersonDetailPage({
     ])
   );
 
-  // Determine which tournaments this person's team won, reusing Increment 1.1's
-  // tested computeStandings per tournament rather than re-deriving ranking logic here.
+  // Uses the same champion-detection rules as the tournaments list and locations
+  // leaderboard (final-match winner when a final exists, individual/ladder standings
+  // for individual-pairing formats, only once completed) — see
+  // computeTournamentChampionPersonIds. The previous logic here skipped individual
+  // formats (Popcorn, Gauntlet, Claim the Throne, Up and Down the River) entirely,
+  // so a player who actually won one of those got 0 credit toward "Leagues won."
   const tournamentsWon: TournamentWon[] = [];
   for (const tournamentId of tournamentIds) {
-    const format = tournamentFormatById.get(tournamentId);
-    if (format && isIndividualFormat(format)) continue;
+    const tournament = tournamentById.get(tournamentId);
+    if (!tournament) continue;
 
-    const tournamentTeams = teams.filter((t) => t.tournamentId === tournamentId);
-    const myTeam = tournamentTeams.find(
-      (t) => t.player1PersonId === person.id || t.player2PersonId === person.id
-    );
-    if (!myTeam) continue;
+    const tournamentTeams = teams
+      .filter((t) => t.tournamentId === tournamentId)
+      .map((t) => ({ id: t.id, person1Id: t.player1PersonId, person2Id: t.player2PersonId }));
+    const tournamentMatches = (matchesRaw ?? []).filter((m) => m.tournament_id === tournamentId);
 
-    const tournamentMatches: MatchResult[] = (matchesRaw ?? [])
-      .filter((m) => m.tournament_id === tournamentId)
-      .map((m) => ({
-        teamAId: m.team_a_id!,
-        teamBId: m.team_b_id,
-        scoreA: m.score_a,
-        scoreB: m.score_b,
-        status: m.status as 'pending' | 'complete',
-      }));
+    const championPersonIds = computeTournamentChampionPersonIds({
+      format: tournament.format,
+      completedAt: tournament.completed_at,
+      matches: tournamentMatches,
+      teams: tournamentTeams,
+    });
 
-    const standings = computeStandings(tournamentMatches);
-    if (standings.length > 0 && standings[0].teamId === myTeam.id) {
+    if (championPersonIds?.includes(person.id)) {
       tournamentsWon.push({
         tournamentId,
         date: tournamentDateById.get(tournamentId) ?? '',
@@ -315,7 +312,7 @@ export default async function PersonDetailPage({
 
       <div className="mb-6">
         <details>
-          <summary className="cursor-pointer text-sm font-bold text-teal-700 hover:text-teal-800 list-none mb-3">
+          <summary className="cursor-pointer text-sm font-bold text-navy-mid hover:text-navy-deep list-none mb-3">
             ✏️ Edit Profile
           </summary>
           <div className={`${cardClass} flex flex-col gap-3 max-w-md mb-3`}>
@@ -433,7 +430,7 @@ export default async function PersonDetailPage({
                       name="signatureShot"
                       value={b.value}
                       defaultChecked={signatureShotValues.includes(b.value)}
-                      className="accent-teal-600"
+                      className="accent-navy-mid"
                     />
                     {b.emoji} {b.skillName} — {b.funnyName}
                   </label>
@@ -450,7 +447,7 @@ export default async function PersonDetailPage({
                       name="strengths"
                       value={s.value}
                       defaultChecked={(person.strengths ?? []).includes(s.value)}
-                      className="accent-teal-600"
+                      className="accent-navy-mid"
                     />
                     {s.label}
                   </label>
@@ -507,7 +504,7 @@ export default async function PersonDetailPage({
         <h2 className="text-lg font-bold text-slate-900 mb-3">This Month</h2>
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-2xl font-extrabold text-teal-700">
+            <div className="text-2xl font-extrabold text-navy-mid">
               {thisMonth.gamesWon}
             </div>
             <div className="text-xs text-slate-500">Games won</div>
@@ -540,7 +537,7 @@ export default async function PersonDetailPage({
                 >
                   <span className="font-semibold text-slate-900">{l.location}</span>
                   <span className="text-right">
-                    <span className="font-bold text-teal-700">
+                    <span className="font-bold text-navy-mid">
                       {l.count} match{l.count === 1 ? '' : 'es'}
                     </span>
                     <span className="block text-xs text-slate-500">
@@ -660,7 +657,7 @@ export default async function PersonDetailPage({
                 <span className={`${pillClass} ${m.won ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                   {m.won ? 'W' : 'L'}
                 </span>
-                <span className={m.won ? 'font-bold text-teal-700' : 'font-bold text-slate-400'}>
+                <span className={m.won ? 'font-bold text-navy-mid' : 'font-bold text-slate-400'}>
                   {m.scoreFor}-{m.scoreAgainst}
                 </span>
               </span>

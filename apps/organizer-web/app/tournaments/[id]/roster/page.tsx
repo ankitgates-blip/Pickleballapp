@@ -122,7 +122,7 @@ export default async function RosterPage({
           </h2>
           <ul className="flex flex-wrap gap-2 mb-4">
             {matched.map((m, i) => (
-              <li key={i} className={`${pillClass} bg-teal-50 text-teal-800`}>
+              <li key={i} className={`${pillClass} bg-navy-tint text-navy-deep`}>
                 {m.name}
               </li>
             ))}
@@ -202,7 +202,7 @@ export default async function RosterPage({
               name="venueId"
               required
               defaultValue={tournament?.venue_id ?? ''}
-              className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-mid focus:border-navy-mid"
             >
               {(venues ?? []).map((v) => (
                 <option key={v.id} value={v.id}>
@@ -214,7 +214,7 @@ export default async function RosterPage({
               name="timeslot"
               required
               defaultValue={tournament?.timeslot ?? ''}
-              className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-mid focus:border-navy-mid"
             >
               {TIME_SLOTS.map((t) => (
                 <option key={t.value} value={t.value}>
@@ -229,7 +229,7 @@ export default async function RosterPage({
               placeholder="Max players"
               aria-label="Max players"
               defaultValue={tournament?.max_players ?? ''}
-              className="w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-mid focus:border-navy-mid"
             />
             <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
               Save
@@ -249,9 +249,9 @@ export default async function RosterPage({
               {availablePeople.map((p) => (
                 <label
                   key={p.id}
-                  className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm cursor-pointer hover:border-teal-400"
+                  className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm cursor-pointer hover:border-navy-light"
                 >
-                  <input type="checkbox" name="personIds" value={p.id} className="accent-teal-600" />
+                  <input type="checkbox" name="personIds" value={p.id} className="accent-navy-mid" />
                   {p.name}
                 </label>
               ))}
@@ -272,7 +272,7 @@ export default async function RosterPage({
               rows={8}
               placeholder="One player name per line"
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-navy-mid focus:border-navy-mid"
             />
             <SaveButton className={primaryButtonClass} pendingLabel="Adding…">
               Add Players
@@ -304,7 +304,7 @@ export default async function RosterPage({
             return (
               <li
                 key={p.id}
-                className="flex items-center justify-between gap-2 rounded-lg bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-900"
+                className="flex items-center justify-between gap-2 rounded-lg bg-navy-tint px-3 py-2 text-sm font-semibold text-navy-deep"
               >
                 <span className="flex items-center gap-2 flex-wrap">
                   {p.name}
@@ -315,7 +315,7 @@ export default async function RosterPage({
                 {!isCompleted && (
                   <form action={removePlayerForPlayer}>
                     <SaveButton
-                      className="text-xs font-semibold text-teal-700 hover:text-red-600 transition-colors disabled:opacity-50"
+                      className="text-xs font-semibold text-navy-mid hover:text-red-600 transition-colors disabled:opacity-50"
                       pendingLabel="Removing…"
                     >
                       Remove

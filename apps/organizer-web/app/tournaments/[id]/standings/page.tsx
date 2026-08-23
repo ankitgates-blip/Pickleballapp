@@ -107,7 +107,7 @@ export default async function StandingsPage({
     : [];
 
   const winPillClass =
-    'inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-full bg-teal-100 text-teal-800 font-extrabold';
+    'inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-full bg-navy-tint text-navy-deep font-extrabold';
   const lossPillClass =
     'inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-full bg-slate-100 text-slate-500 font-extrabold';
   const rowClass = (rank: number) =>
@@ -152,7 +152,7 @@ export default async function StandingsPage({
                         {medal && <span className="mr-1.5">{medal}</span>}
                         {playerById.get(s.playerId)}
                       </td>
-                      <td className="py-2 text-center text-teal-700 font-extrabold">{s.ladderPoints}</td>
+                      <td className="py-2 text-center text-navy-mid font-extrabold">{s.ladderPoints}</td>
                       <td className="py-2 text-center">
                         <span className={winPillClass}>{s.wins}</span>
                       </td>

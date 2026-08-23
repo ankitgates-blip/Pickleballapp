@@ -283,7 +283,7 @@ export default async function BracketPage({
             {isFinal && teamAWon && <span className="mr-1">🏆</span>}
             {teamById.get(m.team_a_id!)}
             {!isFinal && isComplete && (teamAWon || teamBWon) && (
-              <span className={teamAWon ? 'text-teal-700 font-bold' : 'text-slate-400'}>
+              <span className={teamAWon ? 'text-navy-mid font-bold' : 'text-slate-400'}>
                 {' '}
                 ({teamAWon ? 'W' : 'L'})
               </span>
@@ -295,7 +295,7 @@ export default async function BracketPage({
             {isFinal && teamBWon && <span className="mr-1">🏆</span>}
             {teamById.get(m.team_b_id)}
             {!isFinal && isComplete && (teamAWon || teamBWon) && (
-              <span className={teamBWon ? 'text-teal-700 font-bold' : 'text-slate-400'}>
+              <span className={teamBWon ? 'text-navy-mid font-bold' : 'text-slate-400'}>
                 {' '}
                 ({teamBWon ? 'W' : 'L'})
               </span>
@@ -406,7 +406,7 @@ export default async function BracketPage({
       <TournamentNav tournamentId={id} current="bracket" />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Bracket</h1>
-        <span className="text-sm font-semibold text-teal-700 bg-teal-50 rounded-full px-3 py-1">
+        <span className="text-sm font-semibold text-navy-mid bg-navy-tint rounded-full px-3 py-1">
           {formatLabel(format)}
         </span>
       </div>
@@ -697,7 +697,7 @@ export default async function BracketPage({
 
       {isCustom && canEditScoreValue && (
         <form action={addCustomMatchWithId} className={`${actionCardClass} mb-6`}>
-          <h2 className="text-sm font-bold text-teal-700 uppercase tracking-wide mb-1">
+          <h2 className="text-sm font-bold text-navy-mid uppercase tracking-wide mb-1">
             Add Match
           </h2>
           <p className="text-xs text-slate-400 mb-3">
@@ -762,7 +762,7 @@ export default async function BracketPage({
         <div className="space-y-4 mb-6">
           {Array.from(leagueRoundsMap.entries()).map(([round, roundMatches]) => (
             <div key={round} className={cardClass}>
-              <h2 className="text-sm font-bold text-teal-700 uppercase tracking-wide mb-2">
+              <h2 className="text-sm font-bold text-navy-mid uppercase tracking-wide mb-2">
                 League — Round {round}
               </h2>
               {showSitOuts && sitOutNamesByRound.has(round) && (
@@ -777,7 +777,7 @@ export default async function BracketPage({
       )}
 
       {isLeaguePlayoffs && allLeagueComplete && teamCount < 4 && (
-        <div className="rounded-lg bg-teal-50 border border-teal-200 text-teal-800 text-sm px-4 py-3 mb-6">
+        <div className="rounded-lg bg-navy-tint border border-navy-mid/25 text-navy-deep text-sm px-4 py-3 mb-6">
           Fewer than 4 teams — no playoff stage. League standings decide the champion.
         </div>
       )}
@@ -806,7 +806,7 @@ export default async function BracketPage({
 
       {semifinalMatches.length > 0 && (
         <div className={`${cardClass} mb-6`}>
-          <h2 className="text-sm font-bold text-teal-700 uppercase tracking-wide mb-2">
+          <h2 className="text-sm font-bold text-navy-mid uppercase tracking-wide mb-2">
             Semifinals
           </h2>
           {renderMatchList(semifinalMatches)}
@@ -824,14 +824,14 @@ export default async function BracketPage({
 
       {finalMatches.length > 0 && (
         <div className={`${cardClass} mb-6`}>
-          <h2 className="text-sm font-bold text-teal-700 uppercase tracking-wide mb-2">Final</h2>
+          <h2 className="text-sm font-bold text-navy-mid uppercase tracking-wide mb-2">Final</h2>
           {renderMatchList(finalMatches, true)}
         </div>
       )}
 
       {isLeaguePlayoffs && leagueStandings.length > 0 && (
         <div className={`${cardClass} mb-6 overflow-x-auto`}>
-          <h2 className="text-sm font-bold text-teal-700 uppercase tracking-wide mb-2">
+          <h2 className="text-sm font-bold text-navy-mid uppercase tracking-wide mb-2">
             League Standings
           </h2>
           <table className="w-full text-sm">
@@ -846,7 +846,7 @@ export default async function BracketPage({
               {leagueStandings.map((s) => (
                 <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
                   <td className="py-2 font-semibold text-slate-900">{teamById.get(s.teamId)}</td>
-                  <td className="py-2 text-center text-teal-700 font-bold">{s.wins}</td>
+                  <td className="py-2 text-center text-navy-mid font-bold">{s.wins}</td>
                   <td className="py-2 text-center text-slate-500">{s.losses}</td>
                 </tr>
               ))}
