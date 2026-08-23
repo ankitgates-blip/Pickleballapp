@@ -20,12 +20,16 @@ type PodiumEntry = {
   avatars: (string | null)[];
 };
 
-// [2nd, 1st, 3rd] -- heights/colors are data-driven so plain inline styles are used
-// rather than Tailwind classes (which can't express a dynamic height cleanly).
+// Indexed by true placement (rank 0 = 1st, 1 = 2nd, 2 = 3rd) -- matches how `rank` is
+// computed below (top3.indexOf), NOT the left-to-right render order (which is visually
+// [2nd, 1st, 3rd] so 1st ends up centered). Heights/colors are data-driven so plain
+// inline styles are used rather than Tailwind classes. 1st is dramatically taller than
+// 2nd/3rd; 2nd is only slightly taller than 3rd, matching a real podium's proportions
+// rather than an even step down.
 const PODIUM_BLOCK_STYLE = [
-  { height: 64, background: 'linear-gradient(180deg,#cbd5e1,#94a3b8)' }, // 2nd -- silver
-  { height: 92, background: 'linear-gradient(180deg,#fde68a,#d4a017)' }, // 1st -- gold
-  { height: 44, background: 'linear-gradient(180deg,#fdba74,#c2703d)' }, // 3rd -- bronze
+  { height: 108, background: 'linear-gradient(180deg,#fde68a,#d4a017)' }, // 1st -- gold
+  { height: 56, background: 'linear-gradient(180deg,#cbd5e1,#94a3b8)' }, // 2nd -- silver
+  { height: 50, background: 'linear-gradient(180deg,#fdba74,#c2703d)' }, // 3rd -- bronze
 ];
 
 function Podium({ top3 }: { top3: PodiumEntry[] }) {
@@ -40,7 +44,7 @@ function Podium({ top3 }: { top3: PodiumEntry[] }) {
       {order.map((entry) => {
         const rank = top3.indexOf(entry);
         const style = PODIUM_BLOCK_STYLE[rank];
-        const avatarSize = rank === 0 ? 56 : rank === 1 ? 44 : 40;
+        const avatarSize = rank === 0 ? 62 : rank === 1 ? 42 : 38;
         return (
           <div key={entry.key} className="flex flex-col items-center">
             {rank === 0 && <div className="text-2xl mb-0.5">👑</div>}
