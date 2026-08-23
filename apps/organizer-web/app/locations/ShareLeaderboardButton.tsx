@@ -9,6 +9,7 @@ export type ExportLeaderboardVenue = {
   rows: {
     rank: number;
     name: string;
+    leagueWins: number;
     matchesPlayed: number;
     matchWins: number;
     losses: number;
@@ -61,6 +62,7 @@ export default function ShareLeaderboardButton({ venues }: ShareLeaderboardButto
         const body = venue.rows.map((r) => [
           String(r.rank),
           r.name,
+          String(r.leagueWins),
           String(r.matchesPlayed),
           String(r.matchWins),
           String(r.losses),
@@ -69,7 +71,7 @@ export default function ShareLeaderboardButton({ venues }: ShareLeaderboardButto
 
         autoTable(doc, {
           startY: y + 4,
-          head: [['#', 'Player', 'Matches', 'Wins', 'Losses', 'Win %']],
+          head: [['#', 'Player', 'League Wins', 'Matches', 'Match Wins', 'Losses', 'Win %']],
           body,
         });
         // @ts-expect-error -- autoTable augments jsPDF's instance type with lastAutoTable at runtime

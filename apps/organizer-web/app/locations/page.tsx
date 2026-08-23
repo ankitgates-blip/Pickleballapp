@@ -156,6 +156,7 @@ export default async function LocationsPage() {
     rows: leaderboard.map((entry, i) => ({
       rank: i + 1,
       name: personNameById.get(entry.personId) ?? 'Unknown',
+      leagueWins: entry.tournamentWins,
       matchesPlayed: entry.matchesPlayed,
       matchWins: entry.matchWins,
       losses: entry.losses,
@@ -187,6 +188,11 @@ export default async function LocationsPage() {
                     <ThreatBadge
                       winPercentage={overallWinPercentageByPersonId.get(entry.personId) ?? null}
                     />
+                    {entry.tournamentWins > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5">
+                        🏆 {entry.tournamentWins} League Win{entry.tournamentWins === 1 ? '' : 's'}
+                      </span>
+                    )}
                   </div>
                   <p className="mt-1 font-bold text-slate-900">
                     {entry.matchesPlayed} match{entry.matchesPlayed === 1 ? '' : 'es'} ·{' '}
