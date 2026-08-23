@@ -5,6 +5,7 @@ import { cardClass, primaryButtonClass, accentButtonClass, pillClass } from '@/a
 import { formatLabel, isIndividualFormat } from '@/lib/tournament/formats';
 import { pairTeam, shuffleRemaining, removeTeam } from './actions';
 import ThreatBadge from '@/app/components/ThreatBadge';
+import SaveButton from '@/app/components/SaveButton';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { winPercentageFromRecords } from '@/lib/stats/winRate';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
@@ -170,9 +171,9 @@ export default async function TeamsPage({
                 pair manually below.
               </p>
               <form action={shuffleRemainingWithId}>
-                <button type="submit" className={accentButtonClass}>
+                <SaveButton className={accentButtonClass} pendingLabel="Shuffling…">
                   Shuffle Remaining Players
-                </button>
+                </SaveButton>
               </form>
             </div>
           )}
@@ -191,9 +192,9 @@ export default async function TeamsPage({
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
-              <button type="submit" className={primaryButtonClass}>
+              <SaveButton className={primaryButtonClass} pendingLabel="Pairing…">
                 Pair
-              </button>
+              </SaveButton>
             </form>
           </div>
         </>
@@ -222,12 +223,12 @@ export default async function TeamsPage({
                   </span>
                 </span>
                 <form action={removeTeamForTeam}>
-                  <button
-                    type="submit"
-                    className="text-xs font-semibold text-teal-700 hover:text-red-600 transition-colors"
+                  <SaveButton
+                    className="text-xs font-semibold text-teal-700 hover:text-red-600 transition-colors disabled:opacity-50"
+                    pendingLabel="Removing…"
                   >
                     Remove
-                  </button>
+                  </SaveButton>
                 </form>
               </li>
             );

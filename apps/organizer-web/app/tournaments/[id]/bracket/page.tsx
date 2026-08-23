@@ -388,9 +388,9 @@ export default async function BracketPage({
                         </option>
                       ))}
                     </select>
-                    <button type="submit" className={primaryButtonClass}>
+                    <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
                       Save Teams
-                    </button>
+                    </SaveButton>
                   </form>
                 </div>
               )}
@@ -416,9 +416,12 @@ export default async function BracketPage({
           action={tournament?.results_unlocked_at ? lockTournamentResultsWithId : unlockTournamentResultsWithId}
           className="mb-6"
         >
-          <button type="submit" className={outlineButtonClass}>
+          <SaveButton
+            className={outlineButtonClass}
+            pendingLabel={tournament?.results_unlocked_at ? 'Locking…' : 'Unlocking…'}
+          >
             {tournament?.results_unlocked_at ? '🔒 Lock Editing' : '🔓 Unlock Editing'}
-          </button>
+          </SaveButton>
         </form>
       )}
 
@@ -457,9 +460,9 @@ export default async function BracketPage({
           <p className="text-slate-600 mb-4">
             {playerCount} players ready. Generate the Popcorn schedule ({tournament?.popcorn_rounds ?? 5} rounds).
           </p>
-          <button type="submit" className={accentButtonClass}>
+          <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Popcorn Schedule
-          </button>
+          </SaveButton>
         </form>
       )}
 
@@ -475,9 +478,9 @@ export default async function BracketPage({
           <p className="text-slate-600 mb-4">
             {playerCount} players ready. Generate Round 1 of {gauntletRounds}.
           </p>
-          <button type="submit" className={accentButtonClass}>
+          <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Round 1
-          </button>
+          </SaveButton>
         </form>
       )}
 
@@ -487,9 +490,9 @@ export default async function BracketPage({
             Round {currentGauntletRound} complete. Generate Round {currentGauntletRound + 1} of{' '}
             {gauntletRounds}.
           </p>
-          <button type="submit" className={accentButtonClass}>
+          <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Round {currentGauntletRound + 1}
-          </button>
+          </SaveButton>
         </form>
       )}
 
@@ -500,9 +503,9 @@ export default async function BracketPage({
             {currentGauntletRound + 1} anyway — any unplayed matches in Round{' '}
             {currentGauntletRound} stay unscored and won't count toward anyone's record.
           </p>
-          <button type="submit" className={outlineButtonClass}>
+          <SaveButton className={outlineButtonClass} pendingLabel="Skipping…">
             Skip to Round {currentGauntletRound + 1}
-          </button>
+          </SaveButton>
         </form>
       )}
 
@@ -518,9 +521,9 @@ export default async function BracketPage({
           <p className="text-slate-600 mb-4">
             {playerCount} players ready. Generate Round 1 of {claimTheThroneRounds}.
           </p>
-          <button type="submit" className={accentButtonClass}>
+          <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Round 1
-          </button>
+          </SaveButton>
         </form>
       )}
 
@@ -533,9 +536,9 @@ export default async function BracketPage({
             Round {currentClaimTheThroneRound} complete. Generate Round{' '}
             {currentClaimTheThroneRound + 1} of {claimTheThroneRounds}.
           </p>
-          <button type="submit" className={accentButtonClass}>
+          <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Round {currentClaimTheThroneRound + 1}
-          </button>
+          </SaveButton>
         </form>
       )}
 
@@ -549,9 +552,9 @@ export default async function BracketPage({
             {currentClaimTheThroneRound + 1} anyway — any unplayed matches in Round{' '}
             {currentClaimTheThroneRound} stay unscored and won't count toward anyone's record.
           </p>
-          <button type="submit" className={outlineButtonClass}>
+          <SaveButton className={outlineButtonClass} pendingLabel="Skipping…">
             Skip to Round {currentClaimTheThroneRound + 1}
-          </button>
+          </SaveButton>
         </form>
       )}
 
@@ -570,9 +573,9 @@ export default async function BracketPage({
           <p className="text-slate-600 mb-4">
             {playerCount} players ready. Generate Round 1 of {upAndDownRiverRounds}.
           </p>
-          <button type="submit" className={accentButtonClass}>
+          <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Round 1
-          </button>
+          </SaveButton>
         </form>
       )}
 
@@ -585,9 +588,9 @@ export default async function BracketPage({
             Round {currentUpAndDownRiverRound} complete. Generate Round{' '}
             {currentUpAndDownRiverRound + 1} of {upAndDownRiverRounds}.
           </p>
-          <button type="submit" className={accentButtonClass}>
+          <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Round {currentUpAndDownRiverRound + 1}
-          </button>
+          </SaveButton>
         </form>
       )}
 
@@ -601,9 +604,9 @@ export default async function BracketPage({
             {currentUpAndDownRiverRound + 1} anyway — any unplayed matches in Round{' '}
             {currentUpAndDownRiverRound} stay unscored and won't count toward anyone's record.
           </p>
-          <button type="submit" className={outlineButtonClass}>
+          <SaveButton className={outlineButtonClass} pendingLabel="Skipping…">
             Skip to Round {currentUpAndDownRiverRound + 1}
-          </button>
+          </SaveButton>
         </form>
       )}
 
@@ -635,9 +638,9 @@ export default async function BracketPage({
           <p className="text-slate-600 mb-4">
             {teamCount} teams ready. Generate a round-robin league schedule.
           </p>
-          <button type="submit" className={accentButtonClass}>
+          <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate League Bracket
-          </button>
+          </SaveButton>
         </form>
       )}
 
@@ -673,9 +676,9 @@ export default async function BracketPage({
               round{leaguePlayoffsFullRounds === 1 ? '' : 's'}.
             </p>
           </div>
-          <button type="submit" className={accentButtonClass}>
+          <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Full Schedule
-          </button>
+          </SaveButton>
         </form>
       )}
 
@@ -747,9 +750,9 @@ export default async function BracketPage({
                   ))}
                 </select>
               </div>
-              <button type="submit" className={accentButtonClass}>
+              <SaveButton className={accentButtonClass} pendingLabel="Adding…">
                 Add Match
-              </button>
+              </SaveButton>
             </div>
           )}
         </form>
@@ -788,14 +791,14 @@ export default async function BracketPage({
           </p>
           <div className="flex items-center justify-center gap-3">
             <form action={generateSemifinalMatchesWithId}>
-              <button type="submit" className={accentButtonClass}>
+              <SaveButton className={accentButtonClass} pendingLabel="Generating…">
                 Generate Semifinals
-              </button>
+              </SaveButton>
             </form>
             <form action={skipToFinalMatchWithId}>
-              <button type="submit" className={outlineButtonClass}>
+              <SaveButton className={outlineButtonClass} pendingLabel="Skipping…">
                 Skip Semifinals — Go to Final
-              </button>
+              </SaveButton>
             </form>
           </div>
         </div>
@@ -813,9 +816,9 @@ export default async function BracketPage({
       {showGenerateFinal && (
         <form action={generateFinalMatchWithId} className={`${cardClass} text-center mb-6`}>
           <p className="text-slate-600 mb-4">Semifinals complete. Generate the final.</p>
-          <button type="submit" className={accentButtonClass}>
+          <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Final
-          </button>
+          </SaveButton>
         </form>
       )}
 

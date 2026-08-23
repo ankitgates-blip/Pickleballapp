@@ -13,6 +13,7 @@ import ThreatBadge from '@/app/components/ThreatBadge';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { winPercentageFromRecords } from '@/lib/stats/winRate';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
+import SaveButton from '@/app/components/SaveButton';
 import CopyLinkButton from '../standings/CopyLinkButton';
 import ShareRosterButton from './ShareRosterButton';
 import {
@@ -213,9 +214,9 @@ export default async function RosterPage({
           ) : (
             <form action={confirmAddPlayersWithId} className="flex items-center gap-4">
               <input type="hidden" name="names" value={pendingNames} />
-              <button type="submit" className={accentButtonClass}>
+              <SaveButton className={accentButtonClass} pendingLabel="Confirming…">
                 Confirm
-              </button>
+              </SaveButton>
               <Link href={`/tournaments/${id}/roster`} className={linkClass}>
                 Cancel
               </Link>
@@ -292,9 +293,9 @@ export default async function RosterPage({
               defaultValue={tournament?.max_players ?? ''}
               className="w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
             />
-            <button type="submit" className={primaryButtonClass}>
+            <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
               Save
-            </button>
+            </SaveButton>
           </form>
         </div>
       )}
@@ -317,9 +318,9 @@ export default async function RosterPage({
                 </label>
               ))}
             </div>
-            <button type="submit" className={primaryButtonClass}>
+            <SaveButton className={primaryButtonClass} pendingLabel="Adding…">
               Add Selected
-            </button>
+            </SaveButton>
           </form>
         </div>
       )}
@@ -335,9 +336,9 @@ export default async function RosterPage({
               required
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
             />
-            <button type="submit" className={primaryButtonClass}>
+            <SaveButton className={primaryButtonClass} pendingLabel="Adding…">
               Add Players
-            </button>
+            </SaveButton>
           </form>
         </div>
       )}
@@ -375,12 +376,12 @@ export default async function RosterPage({
                 </span>
                 {!isCompleted && (
                   <form action={removePlayerForPlayer}>
-                    <button
-                      type="submit"
-                      className="text-xs font-semibold text-teal-700 hover:text-red-600 transition-colors"
+                    <SaveButton
+                      className="text-xs font-semibold text-teal-700 hover:text-red-600 transition-colors disabled:opacity-50"
+                      pendingLabel="Removing…"
                     >
                       Remove
-                    </button>
+                    </SaveButton>
                   </form>
                 )}
               </li>

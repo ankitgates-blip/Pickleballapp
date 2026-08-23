@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { signOut } from '@/app/login/actions';
+import SaveButton from './SaveButton';
 
 function PersonIcon() {
   return (
@@ -74,12 +75,12 @@ export default function OrganizerShell({
               <span className="text-sm text-[#dbe4f5] hidden sm:inline">
                 Hi, {organizerName}
               </span>
-              <button
-                type="submit"
-                className="text-sm font-semibold bg-navy-mid/60 hover:bg-navy-mid transition-colors px-3 py-1.5 rounded-full backdrop-blur-sm"
+              <SaveButton
+                className="text-sm font-semibold bg-navy-mid/60 hover:bg-navy-mid transition-colors px-3 py-1.5 rounded-full backdrop-blur-sm disabled:opacity-50"
+                pendingLabel="Signing out…"
               >
                 Sign out
-              </button>
+              </SaveButton>
             </form>
           )}
         </header>

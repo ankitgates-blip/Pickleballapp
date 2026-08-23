@@ -4,6 +4,7 @@ import { cardClass, inputClass, accentButtonClass } from '@/app/components/ui';
 import { TIME_SLOTS } from '@/lib/tournament/timeslots';
 import { createTournament } from './actions';
 import FormatFields from './FormatFields';
+import SaveButton from '@/app/components/SaveButton';
 
 export default async function NewTournamentPage() {
   const { supabase, organizer } = await requireOrganizer();
@@ -76,9 +77,9 @@ export default async function NewTournamentPage() {
               <input name="winBy" type="number" defaultValue={2} required className={inputClass} />
             </div>
           </div>
-          <button type="submit" className={`${accentButtonClass} w-full`}>
+          <SaveButton className={`${accentButtonClass} w-full`} pendingLabel="Creating League…">
             Create League
-          </button>
+          </SaveButton>
         </form>
       </div>
     </OrganizerShell>
