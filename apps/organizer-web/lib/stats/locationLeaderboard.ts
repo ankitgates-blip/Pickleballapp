@@ -37,7 +37,6 @@ export function computeLocationLeaderboard(candidates: Candidate[]): LocationLea
       if (b.score !== a.score) return b.score - a.score;
       return b.matchesPlayed - a.matchesPlayed;
     })
-    .slice(0, 5)
     .map(({ personId, matchWins, tournamentWins, score, winPercentage, matchesPlayed }) => ({
       personId,
       matchWins,

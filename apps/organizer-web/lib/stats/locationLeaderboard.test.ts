@@ -15,18 +15,27 @@ describe('computeLocationLeaderboard', () => {
     expect(result[1].score).toBeCloseTo(0.7);
   });
 
-  it('returns only the top 5, dropping the lowest scores', () => {
-    const candidates = Array.from({ length: 6 }, (_, i) => ({
+  it('ranks every candidate, not just a fixed top N -- the full roster, no cap', () => {
+    const candidates = Array.from({ length: 8 }, (_, i) => ({
       personId: `p${i}`,
       tournamentWins: 0,
-      matchWins: 6 - i, // p0 has 6 wins (highest), p5 has 1 win (lowest)
+      matchWins: 8 - i, // p0 has 8 wins (highest), p7 has 1 win (lowest)
       matchesPlayed: 10,
     }));
 
     const result = computeLocationLeaderboard(candidates);
 
-    expect(result).toHaveLength(5);
-    expect(result.map((r) => r.personId)).toEqual(['p0', 'p1', 'p2', 'p3', 'p4']);
+    expect(result).toHaveLength(8);
+    expect(result.map((r) => r.personId)).toEqual([
+      'p0',
+      'p1',
+      'p2',
+      'p3',
+      'p4',
+      'p5',
+      'p6',
+      'p7',
+    ]);
   });
 
   it('breaks ties by matchesPlayed descending', () => {

@@ -9,6 +9,7 @@ import ThreatBadge from '@/app/components/ThreatBadge';
 import { computeStandings } from '@/lib/tournament/standings';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
 import type { MatchResult } from '@/lib/types';
+import ShareLeaderboardButton from './ShareLeaderboardButton';
 
 export default async function LocationsPage() {
   const { supabase, organizer } = await requireOrganizer();
@@ -150,9 +151,23 @@ export default async function LocationsPage() {
     };
   });
 
+  const exportVenues = leaderboardsByVenue.map(({ venueName, leaderboard }) => ({
+    venueName,
+    rows: leaderboard.map((entry, i) => ({
+      rank: i + 1,
+      name: personNameById.get(entry.personId) ?? 'Unknown',
+      matchesPlayed: entry.matchesPlayed,
+      matchWins: entry.matchWins,
+      losses: entry.losses,
+      winPercentage: entry.winPercentage,
+    })),
+  }));
+
   return (
     <OrganizerShell organizerName={organizer.name}>
       <h1 className="text-2xl font-bold text-slate-900 mb-6">Location Stats</h1>
+
+      <ShareLeaderboardButton venues={exportVenues} />
 
       {leaderboardsByVenue.map(({ venueId, venueName, leaderboard }) => (
         <div key={venueId} className={`${cardClass} mb-6`}>
