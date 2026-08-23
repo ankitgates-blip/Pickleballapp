@@ -5,6 +5,11 @@ import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computePersonStats } from '@/lib/stats/personStats';
 import { starRating, renderStars } from '@/lib/stats/starRating';
 import { renderTrend, trendColorClass } from '@/lib/stats/trend';
+import { winPercentageFromRecords } from '@/lib/stats/winRate';
+import { buildMatchImpacts } from '@/lib/stats/matchImpact';
+import { longestWinStreak } from '@/lib/stats/winStreak';
+import { winsVsHigherRated } from '@/lib/stats/winsVsHigherRated';
+import { computeAchievements } from '@/lib/stats/achievements';
 import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
 import type { RawMatch, RawTeam, TournamentWon } from '@/lib/stats/types';
 import { cardClass, pillClass } from '@/app/components/ui';
@@ -107,6 +112,16 @@ export default async function PublicPersonPage({
 
   const records = buildPersonMatchRecords(person.id, completeMatches, teams);
 
+  // Overall win rate for every person this organizer has ever seen -- needed for the
+  // match-impact badges below (upset win / tough loss vs a higher-rated opponent),
+  // same convention as winsVsHigherRated elsewhere.
+  const winPercentageByPersonId = new Map(
+    (allPeople ?? []).map((p) => [
+      p.id,
+      winPercentageFromRecords(buildPersonMatchRecords(p.id, completeMatches, teams)),
+    ])
+  );
+
   // Uses the same champion-detection rules as the tournaments list and locations
   // leaderboard (final-match winner when a final exists, individual/ladder standings
   // for individual-pairing formats, only once completed) — see
@@ -140,9 +155,17 @@ export default async function PublicPersonPage({
 
   const stats = computePersonStats(records, tournamentsWon);
   const nameFor = (personId: string) => personNameById.get(personId) ?? 'Unknown';
+  const matchImpacts = buildMatchImpacts(stats.matchHistory, stats.winPercentage ?? 0, winPercentageByPersonId);
+  const achievements = computeAchievements({
+    longestWinStreak: longestWinStreak(stats.matchHistory),
+    winsVsHigherRated: winsVsHigherRated(stats.matchHistory, stats.winPercentage ?? 0, winPercentageByPersonId),
+    totalMatches: stats.matchHistory.length,
+    careerLeaguesWon: tournamentsWon.length,
+  });
 
   const currentMonthKey = new Date().toISOString().slice(0, 7);
-  const thisMonth = stats.monthly.find((m) => m.period === currentMonthKey) ?? {
+  const thisMonthFull = stats.monthly.find((m) => m.period === currentMonthKey) ?? null;
+  const thisMonth = thisMonthFull ?? {
     gamesWon: 0,
     gamesLost: 0,
     tournamentsWon: 0,
@@ -187,21 +210,59 @@ export default async function PublicPersonPage({
       <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
         <div className={cardClass}>
           <h2 className="text-lg font-bold text-slate-900 mb-3">This Month</h2>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-extrabold text-navy-mid">{thisMonth.gamesWon}</div>
-              <div className="text-xs text-slate-500">Games won</div>
-            </div>
-            <div>
-              <div className="text-2xl font-extrabold text-slate-500">{thisMonth.gamesLost}</div>
-              <div className="text-xs text-slate-500">Games lost</div>
-            </div>
-            <div>
-              <div className="text-2xl font-extrabold text-amber-500">
-                {thisMonth.tournamentsWon}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2 rounded-2xl bg-gradient-to-br from-navy-deep to-navy-mid text-white p-4 flex flex-col justify-between">
+              <span className="text-xs font-semibold text-white/60 uppercase tracking-wide">
+                Win rate
+              </span>
+              <div>
+                <div className="text-4xl font-black">
+                  {thisMonthFull?.winPercentage != null ? `${thisMonthFull.winPercentage}%` : '—'}
+                </div>
+                <div className="text-xs text-white/70 mt-1">
+                  {thisMonth.gamesWon}W – {thisMonth.gamesLost}L
+                  {thisMonthFull?.trend && thisMonthFull.trendPointsChange !== null && (
+                    <span className={`ml-2 ${trendColorClass(thisMonthFull.trend)}`}>
+                      {renderTrend(thisMonthFull.trend, thisMonthFull.trendPointsChange)}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="text-xs text-slate-500">Leagues won</div>
             </div>
+            <div className="flex flex-col gap-3">
+              <div className="flex-1 rounded-2xl bg-slate-50 p-3 flex flex-col items-center justify-center text-center">
+                <div className="text-xl font-extrabold text-navy-mid">{thisMonth.gamesWon}</div>
+                <div className="text-[11px] text-slate-500">Games won</div>
+              </div>
+              <div className="flex-1 rounded-2xl bg-gradient-to-br from-[#fdf6e8] to-white border-2 border-gold/50 p-3 flex flex-col items-center justify-center text-center">
+                <div className="text-xl font-extrabold text-amber-600">
+                  {thisMonth.tournamentsWon}
+                </div>
+                <div className="text-[11px] text-slate-500">Leagues won</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className={cardClass}>
+          <h2 className="text-lg font-bold text-slate-900 mb-3">Achievements</h2>
+          <div className="grid grid-cols-4 gap-2 text-center">
+            {achievements.map((a) => (
+              <div
+                key={a.key}
+                className={
+                  a.earned
+                    ? 'rounded-xl bg-gradient-to-br from-[#fdf6e8] to-white border-2 border-gold/50 p-2'
+                    : 'rounded-xl bg-slate-50 border-2 border-slate-200 p-2 opacity-50'
+                }
+              >
+                <div className="text-xl mb-0.5">{a.emoji}</div>
+                <div className={`text-[10px] font-bold leading-tight ${a.earned ? 'text-navy-deep' : 'text-slate-500'}`}>
+                  {a.label}
+                </div>
+                <div className="text-[9px] text-slate-400 leading-tight">{a.description}</div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -325,28 +386,48 @@ export default async function PublicPersonPage({
             Match History ({stats.matchHistory.length})
           </h2>
           <ul className="space-y-2 text-sm">
-            {stats.matchHistory.map((m, i) => (
-              <li
-                key={i}
-                className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0"
-              >
-                <span>
-                  <span className="text-slate-400 mr-2">{m.tournamentDate}</span>
-                  with <span className="font-semibold">{nameFor(m.partnerId)}</span> vs{' '}
-                  <span className="font-semibold">
-                    {nameFor(m.opponentIds[0])} / {nameFor(m.opponentIds[1])}
+            {stats.matchHistory.map((m, i) => {
+              const impact = matchImpacts[i];
+              return (
+                <li
+                  key={i}
+                  className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0"
+                >
+                  <span>
+                    <span className="text-slate-400 mr-2">{m.tournamentDate}</span>
+                    with <span className="font-semibold">{nameFor(m.partnerId)}</span> vs{' '}
+                    <span className="font-semibold">
+                      {nameFor(m.opponentIds[0])} / {nameFor(m.opponentIds[1])}
+                    </span>
                   </span>
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className={`${pillClass} ${m.won ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    {m.won ? 'W' : 'L'}
+                  <span className="flex flex-col items-end gap-1">
+                    <span className="flex items-center gap-2">
+                      <span className={`${pillClass} ${m.won ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {m.won ? 'W' : 'L'}
+                      </span>
+                      <span className={m.won ? 'font-bold text-navy-mid' : 'font-bold text-slate-400'}>
+                        {m.scoreFor}-{m.scoreAgainst}
+                      </span>
+                    </span>
+                    {impact?.kind === 'streak' && (
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5 whitespace-nowrap">
+                        🔥 Streak → {impact.length}
+                      </span>
+                    )}
+                    {impact?.kind === 'upset' && (
+                      <span className="text-[11px] font-bold text-amber-700 bg-amber-50 rounded-full px-2 py-0.5 whitespace-nowrap">
+                        ⚔️ Upset win
+                      </span>
+                    )}
+                    {impact?.kind === 'tough-loss' && (
+                      <span className="text-[11px] font-bold text-slate-500 bg-slate-100 rounded-full px-2 py-0.5 whitespace-nowrap">
+                        Tough loss
+                      </span>
+                    )}
                   </span>
-                  <span className={m.won ? 'font-bold text-navy-mid' : 'font-bold text-slate-400'}>
-                    {m.scoreFor}-{m.scoreAgainst}
-                  </span>
-                </span>
-              </li>
-            ))}
+                </li>
+              );
+            })}
             {stats.matchHistory.length === 0 && (
               <li className="text-slate-400">No completed matches yet.</li>
             )}

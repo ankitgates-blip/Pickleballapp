@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import EmptyState from '@/app/components/EmptyState';
-import { cardClass, playerCardClass, playerCardAvatarClass } from '@/app/components/ui';
+import { cardClass, playerCardClass, playerCardAvatarClass, primaryButtonClass } from '@/app/components/ui';
 
 function PeopleIcon() {
   return (
@@ -34,9 +34,16 @@ export default async function PeopleListPage() {
 
       {(people ?? []).length === 0 && (
         <div className={cardClass}>
-          <EmptyState icon={<PeopleIcon />}>
+          <EmptyState
+            icon={<PeopleIcon />}
+            cta={
+              <Link href="/tournaments/new" className={primaryButtonClass}>
+                + Create League
+              </Link>
+            }
+          >
             No people yet — they're created automatically the first time you add them to a
-            tournament roster.
+            league roster.
           </EmptyState>
         </div>
       )}

@@ -20,12 +20,12 @@ describe('renderTrend', () => {
 });
 
 describe('trendColorClass', () => {
-  it('returns a teal class for up', () => {
-    expect(trendColorClass('up')).toBe('text-teal-700');
+  it('returns an emerald class for up', () => {
+    expect(trendColorClass('up')).toBe('text-emerald-600');
   });
 
   it('returns a red class for down', () => {
-    expect(trendColorClass('down')).toBe('text-red-600');
+    expect(trendColorClass('down')).toBe('text-red-500');
   });
 
   it('returns a slate class for flat', () => {

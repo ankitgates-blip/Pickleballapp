@@ -16,10 +16,10 @@ export function renderTrend(
 
 export function trendColorClass(trend: 'up' | 'down' | 'flat' | null): string {
   if (trend === 'up') {
-    return 'text-teal-700';
+    return 'text-emerald-600';
   }
   if (trend === 'down') {
-    return 'text-red-600';
+    return 'text-red-500';
   }
   return 'text-slate-400';
 }

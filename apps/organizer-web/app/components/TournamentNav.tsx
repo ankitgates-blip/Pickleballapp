@@ -16,7 +16,7 @@ export default function TournamentNav({
   current: (typeof steps)[number]['key'];
 }) {
   return (
-    <nav className="flex flex-wrap gap-2 mb-6">
+    <nav className="flex border-b border-slate-200 mb-6">
       {steps.map((step) => {
         const isActive = step.key === current;
         return (
@@ -25,8 +25,8 @@ export default function TournamentNav({
             href={`/tournaments/${tournamentId}/${step.key}`}
             className={
               isActive
-                ? 'rounded-full bg-navy-mid text-white text-sm font-semibold px-4 py-1.5'
-                : 'rounded-full bg-white border border-slate-300 text-slate-600 hover:border-navy-light hover:text-navy-mid text-sm font-semibold px-4 py-1.5 transition-colors'
+                ? 'flex-1 text-center pb-2.5 text-sm font-bold text-navy-deep border-b-2 border-brand-orange -mb-px'
+                : 'flex-1 text-center pb-2.5 text-sm font-semibold text-slate-400 hover:text-navy-mid border-b-2 border-transparent -mb-px transition-colors'
             }
           >
             {step.label}

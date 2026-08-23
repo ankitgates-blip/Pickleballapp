@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import EmptyState from '@/app/components/EmptyState';
-import { cardClass, vibrantCardClass } from '@/app/components/ui';
+import { cardClass, vibrantCardClass, primaryButtonClass } from '@/app/components/ui';
 
 function CalendarIcon() {
   return (
@@ -132,7 +132,16 @@ export default async function TournamentsPage() {
     <OrganizerShell organizerName={organizer.name}>
       {(tournaments ?? []).length === 0 && (
         <div className={cardClass}>
-          <EmptyState icon={<CalendarIcon />}>No leagues yet — create your first one.</EmptyState>
+          <EmptyState
+            icon={<CalendarIcon />}
+            cta={
+              <Link href="/tournaments/new" className={primaryButtonClass}>
+                + Create League
+              </Link>
+            }
+          >
+            No leagues yet — create your first one.
+          </EmptyState>
         </div>
       )}
 

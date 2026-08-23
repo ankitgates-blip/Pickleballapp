@@ -8,10 +8,70 @@ import { isIndividualFormat as isIndividualFormatCheck } from '@/lib/tournament/
 import type { ClaimTheThroneRoundResult, MatchResult, Team } from '@/lib/types';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
+import PersonAvatar from '@/app/components/PersonAvatar';
 import { cardClass } from '@/app/components/ui';
 import CopyLinkButton from './CopyLinkButton';
 
 type LadderRoundResult = ClaimTheThroneRoundResult;
+
+type PodiumEntry = {
+  key: string;
+  name: string;
+  avatars: (string | null)[];
+};
+
+// [2nd, 1st, 3rd] -- heights/colors are data-driven so plain inline styles are used
+// rather than Tailwind classes (which can't express a dynamic height cleanly).
+const PODIUM_BLOCK_STYLE = [
+  { height: 64, background: 'linear-gradient(180deg,#cbd5e1,#94a3b8)' }, // 2nd -- silver
+  { height: 92, background: 'linear-gradient(180deg,#fde68a,#d4a017)' }, // 1st -- gold
+  { height: 44, background: 'linear-gradient(180deg,#fdba74,#c2703d)' }, // 3rd -- bronze
+];
+
+function Podium({ top3 }: { top3: PodiumEntry[] }) {
+  if (top3.length < 2) return null; // not worth a podium for a field of 1
+
+  // Render order is [2nd, 1st, 3rd] so 1st ends up centered and tallest; ranks beyond
+  // what's available (a field of exactly 2) are simply skipped.
+  const order = [top3[1], top3[0], top3[2]].filter((e): e is PodiumEntry => Boolean(e));
+
+  return (
+    <div className="flex items-end justify-center gap-3 mb-2">
+      {order.map((entry) => {
+        const rank = top3.indexOf(entry);
+        const style = PODIUM_BLOCK_STYLE[rank];
+        const avatarSize = rank === 0 ? 56 : rank === 1 ? 44 : 40;
+        return (
+          <div key={entry.key} className="flex flex-col items-center">
+            {rank === 0 && <div className="text-2xl mb-0.5">👑</div>}
+            <div className="mb-1 flex -space-x-2">
+              {entry.avatars.map((photoUrl, i) => (
+                <PersonAvatar key={i} photoUrl={photoUrl} name={entry.name} size={avatarSize} />
+              ))}
+            </div>
+            <div
+              className={
+                rank === 0
+                  ? 'text-sm font-extrabold text-navy-deep mb-1 text-center max-w-[90px] truncate'
+                  : 'text-xs font-bold text-slate-700 mb-1 text-center max-w-[80px] truncate'
+              }
+            >
+              {entry.name}
+            </div>
+            <div
+              className="w-20 rounded-t-lg flex items-start justify-center pt-1"
+              style={{ height: style.height, background: style.background }}
+            >
+              <span className={rank === 0 ? 'text-white font-black text-2xl' : 'text-white font-black text-lg'}>
+                {rank + 1}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default async function StandingsPage({
   params,
@@ -39,13 +99,24 @@ export default async function StandingsPage({
 
   const { data: players } = await supabase
     .from('players')
-    .select('id, name')
+    .select('id, name, person_id')
     .eq('tournament_id', id);
 
   const { data: matches } = await supabase
     .from('matches')
     .select('team_a_id, team_b_id, score_a, score_b, status, court')
     .eq('tournament_id', id);
+
+  const { data: allPeople } = await supabase
+    .from('people')
+    .select('id, photo_url')
+    .eq('organizer_id', organizer.id);
+  const photoUrlByPersonId = new Map((allPeople ?? []).map((p) => [p.id, p.photo_url as string | null]));
+  const personIdByPlayerId = new Map((players ?? []).map((p) => [p.id, p.person_id as string | null]));
+  const photoUrlForPlayerId = (playerId: string): string | null => {
+    const personId = personIdByPlayerId.get(playerId);
+    return personId ? (photoUrlByPersonId.get(personId) ?? null) : null;
+  };
 
   const playerById = new Map((players ?? []).map((p) => [p.id, p.name]));
   const teamById = new Map(
@@ -106,6 +177,27 @@ export default async function StandingsPage({
     ? computeClaimTheThroneStandings(ladderMatches, numCourts)
     : [];
 
+  const podiumTop3: PodiumEntry[] = isLadderFormat
+    ? ladderStandings.slice(0, 3).map((s) => ({
+        key: s.playerId,
+        name: playerById.get(s.playerId) ?? 'Unknown',
+        avatars: [photoUrlForPlayerId(s.playerId)],
+      }))
+    : isIndividualFormat
+      ? individualStandings.slice(0, 3).map((s) => ({
+          key: s.playerId,
+          name: playerById.get(s.playerId) ?? 'Unknown',
+          avatars: [photoUrlForPlayerId(s.playerId)],
+        }))
+      : standings.slice(0, 3).map((s) => {
+          const team = teamById2.get(s.teamId);
+          return {
+            key: s.teamId,
+            name: teamById.get(s.teamId) ?? 'Unknown',
+            avatars: team ? [photoUrlForPlayerId(team.player_1_id), photoUrlForPlayerId(team.player_2_id)] : [],
+          };
+        });
+
   const winPillClass =
     'inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-full bg-navy-tint text-navy-deep font-extrabold';
   const lossPillClass =
@@ -124,6 +216,12 @@ export default async function StandingsPage({
         <h1 className="text-2xl font-bold text-slate-900">Standings</h1>
         <CopyLinkButton tournamentId={id} />
       </div>
+
+      {podiumTop3.length >= 2 && (
+        <div className={`${cardClass} mb-4`}>
+          <Podium top3={podiumTop3} />
+        </div>
+      )}
 
       <div className={`${cardClass} overflow-x-auto`}>
         <table className="w-full text-sm">

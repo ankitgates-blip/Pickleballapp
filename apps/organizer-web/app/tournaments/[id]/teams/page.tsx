@@ -5,6 +5,7 @@ import { cardClass, primaryButtonClass, accentButtonClass, pillClass } from '@/a
 import { formatLabel, isIndividualFormat } from '@/lib/tournament/formats';
 import { pairTeam, shuffleRemaining, removeTeam } from './actions';
 import ThreatBadge from '@/app/components/ThreatBadge';
+import PersonAvatar from '@/app/components/PersonAvatar';
 import SaveButton from '@/app/components/SaveButton';
 import { buildWinPercentageByPersonId } from '@/lib/stats/buildWinPercentageByPersonId';
 
@@ -44,6 +45,12 @@ export default async function TeamsPage({
     (players ?? []).map((p) => p.person_id)
   );
 
+  const { data: allPeople } = await supabase
+    .from('people')
+    .select('id, photo_url')
+    .eq('organizer_id', organizer.id);
+  const photoUrlByPersonId = new Map((allPeople ?? []).map((p) => [p.id, p.photo_url as string | null]));
+
   const { count: leagueMatchCount } = await supabase
     .from('matches')
     .select('id', { count: 'exact', head: true })
@@ -64,6 +71,10 @@ export default async function TeamsPage({
   const winPercentageForPlayerId = (playerId: string): number | null => {
     const personId = personIdByPlayerId.get(playerId);
     return personId ? (winPercentageByPersonId.get(personId) ?? null) : null;
+  };
+  const photoUrlForPlayerId = (playerId: string): string | null => {
+    const personId = personIdByPlayerId.get(playerId);
+    return personId ? (photoUrlByPersonId.get(personId) ?? null) : null;
   };
 
   const pairTeamWithId = pairTeam.bind(null, id);
@@ -148,8 +159,11 @@ export default async function TeamsPage({
                 key={t.id}
                 className="flex items-center justify-between gap-2 rounded-lg bg-navy-tint px-3 py-2 text-sm font-semibold text-navy-deep"
               >
-                <span className="flex items-center gap-2 flex-wrap">
-                  <span className="h-2 w-2 rounded-full bg-amber-400" />
+                <span className="flex items-center gap-2.5 flex-wrap">
+                  <span className="flex -space-x-2 flex-shrink-0">
+                    <PersonAvatar photoUrl={photoUrlForPlayerId(t.player_1_id)} name={playerById.get(t.player_1_id) ?? '?'} size={28} />
+                    <PersonAvatar photoUrl={photoUrlForPlayerId(t.player_2_id)} name={playerById.get(t.player_2_id) ?? '?'} size={28} />
+                  </span>
                   <span className="inline-flex items-center gap-1.5">
                     {playerById.get(t.player_1_id)}
                     <ThreatBadge winPercentage={winPercentageForPlayerId(t.player_1_id)} />
