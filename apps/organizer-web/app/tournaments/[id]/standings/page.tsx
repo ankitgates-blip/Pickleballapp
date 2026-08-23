@@ -106,6 +106,17 @@ export default async function StandingsPage({
     ? computeClaimTheThroneStandings(ladderMatches, numCourts)
     : [];
 
+  const winPillClass =
+    'inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-full bg-teal-100 text-teal-800 font-extrabold';
+  const lossPillClass =
+    'inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-full bg-slate-100 text-slate-500 font-extrabold';
+  const rowClass = (rank: number) =>
+    rank === 0
+      ? 'border-b border-slate-100 last:border-0 bg-gradient-to-r from-amber-50 via-amber-50/50 to-transparent'
+      : 'border-b border-slate-100 last:border-0';
+  const diffClass = (diff: number) =>
+    diff > 0 ? 'text-emerald-600' : diff < 0 ? 'text-red-500' : 'text-slate-400';
+
   return (
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="standings" />
@@ -136,15 +147,19 @@ export default async function StandingsPage({
                   const games = s.wins + s.losses;
                   const avgDiff = games > 0 ? (s.pointsFor - s.pointsAgainst) / games : 0;
                   return (
-                    <tr key={s.playerId} className="border-b border-slate-100 last:border-0">
+                    <tr key={s.playerId} className={rowClass(i)}>
                       <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
                         {medal && <span className="mr-1.5">{medal}</span>}
                         {playerById.get(s.playerId)}
                       </td>
                       <td className="py-2 text-center text-teal-700 font-extrabold">{s.ladderPoints}</td>
-                      <td className="py-2 text-center text-teal-700 font-extrabold">{s.wins}</td>
-                      <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
-                      <td className="py-2 text-center font-bold">
+                      <td className="py-2 text-center">
+                        <span className={winPillClass}>{s.wins}</span>
+                      </td>
+                      <td className="py-2 text-center">
+                        <span className={lossPillClass}>{s.losses}</span>
+                      </td>
+                      <td className={`py-2 text-center font-bold ${diffClass(avgDiff)}`}>
                         {avgDiff > 0 ? '+' : ''}
                         {avgDiff.toFixed(1)}
                       </td>
@@ -154,34 +169,44 @@ export default async function StandingsPage({
               : isIndividualFormat
                 ? individualStandings.map((s, i) => {
                     const medal = ['🥇', '🥈', '🥉'][i];
+                    const diff = s.pointsFor - s.pointsAgainst;
                     return (
-                      <tr key={s.playerId} className="border-b border-slate-100 last:border-0">
+                      <tr key={s.playerId} className={rowClass(i)}>
                         <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
                           {medal && <span className="mr-1.5">{medal}</span>}
                           {playerById.get(s.playerId)}
                         </td>
-                        <td className="py-2 text-center text-teal-700 font-extrabold">{s.wins}</td>
-                        <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
-                        <td className="py-2 text-center font-bold">
-                          {s.pointsFor - s.pointsAgainst > 0 ? '+' : ''}
-                          {s.pointsFor - s.pointsAgainst}
+                        <td className="py-2 text-center">
+                          <span className={winPillClass}>{s.wins}</span>
+                        </td>
+                        <td className="py-2 text-center">
+                          <span className={lossPillClass}>{s.losses}</span>
+                        </td>
+                        <td className={`py-2 text-center font-bold ${diffClass(diff)}`}>
+                          {diff > 0 ? '+' : ''}
+                          {diff}
                         </td>
                       </tr>
                     );
                   })
                 : standings.map((s, i) => {
                     const medal = ['🥇', '🥈', '🥉'][i];
+                    const diff = s.pointsFor - s.pointsAgainst;
                     return (
-                      <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
+                      <tr key={s.teamId} className={rowClass(i)}>
                         <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
                           {medal && <span className="mr-1.5">{medal}</span>}
                           {teamById.get(s.teamId)}
                         </td>
-                        <td className="py-2 text-center text-teal-700 font-extrabold">{s.wins}</td>
-                        <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
-                        <td className="py-2 text-center font-bold">
-                          {s.pointsFor - s.pointsAgainst > 0 ? '+' : ''}
-                          {s.pointsFor - s.pointsAgainst}
+                        <td className="py-2 text-center">
+                          <span className={winPillClass}>{s.wins}</span>
+                        </td>
+                        <td className="py-2 text-center">
+                          <span className={lossPillClass}>{s.losses}</span>
+                        </td>
+                        <td className={`py-2 text-center font-bold ${diffClass(diff)}`}>
+                          {diff > 0 ? '+' : ''}
+                          {diff}
                         </td>
                       </tr>
                     );
