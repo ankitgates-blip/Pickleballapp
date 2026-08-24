@@ -17,6 +17,7 @@ import CopyLinkButton from '../standings/CopyLinkButton';
 import ShareRosterButton from './ShareRosterButton';
 import ShareLeagueInviteButton from './ShareLeagueInviteButton';
 import ShareSignupUpdateButton from './ShareSignupUpdateButton';
+import MarkRosterSeen from './MarkRosterSeen';
 import {
   startAddPlayers,
   confirmAddPlayers,
@@ -176,6 +177,7 @@ export default async function RosterPage({
 
   return (
     <OrganizerShell organizerName={organizer.name}>
+      <MarkRosterSeen tournamentId={id} playerCount={(players ?? []).length} />
       <TournamentNav tournamentId={id} current="roster" />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Roster</h1>

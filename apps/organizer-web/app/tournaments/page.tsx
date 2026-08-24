@@ -19,6 +19,7 @@ import { formatLabel } from '@/lib/tournament/formats';
 import { computeTournamentChampionName } from '@/lib/tournament/champion';
 import { cancelTournament } from './actions';
 import CancelTournamentButton from './CancelTournamentButton';
+import PlayerCountBadge from './PlayerCountBadge';
 
 export default async function TournamentsPage() {
   const { supabase, organizer } = await requireOrganizer();
@@ -177,7 +178,7 @@ export default async function TournamentsPage() {
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-600">
                       <span>📍 {venueNameFor(t)}</span>
                       <span>🕐 {timeslotLabel(t.timeslot)}</span>
-                      <span>👥 {playerCount} player{playerCount === 1 ? '' : 's'}</span>
+                      <PlayerCountBadge tournamentId={t.id} playerCount={playerCount} />
                       <span>📅 {t.date}</span>
                       <span>🎯 {formatLabel(t.format)}</span>
                     </div>
