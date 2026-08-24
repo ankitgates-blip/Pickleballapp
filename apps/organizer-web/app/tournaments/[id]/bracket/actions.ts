@@ -8,6 +8,8 @@ import { generatePopcornSchedule } from '@/lib/tournament/popcorn';
 import { generateGauntletRound } from '@/lib/tournament/gauntlet';
 import { generateClaimTheThroneRound } from '@/lib/tournament/claimTheThrone';
 import { generateUpAndDownRiverRound } from '@/lib/tournament/upAndDownTheRiver';
+import { computeCustomAutoRound } from '@/lib/tournament/customAuto';
+import type { CustomAutoMatch } from '@/lib/types';
 import { generateSemifinals, pickFinalists, fillStandingsGaps } from '@/lib/tournament/playoffs';
 import { computeStandings } from '@/lib/tournament/standings';
 import { canEditScore, canEditTeams } from '@/lib/tournament/completion';
@@ -1017,6 +1019,83 @@ export async function addCustomMatch(tournamentId: string, formData: FormData) {
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}/bracket`);
+}
+
+export async function autoGenerateCustomRound(tournamentId: string) {
+  const { supabase } = await requireOrganizer();
+
+  const { data: tournament, error: tournamentError } = await supabase
+    .from('tournaments')
+    .select('format, custom_rounds, completed_at, results_unlocked_at')
+    .eq('id', tournamentId)
+    .single();
+
+  if (tournamentError) {
+    throw new Error(tournamentError.message);
+  }
+
+  if (tournament?.format !== 'custom') {
+    throw new Error('Auto-generate is only available for the Custom League format.');
+  }
+
+  if (!canEditScore(tournament?.completed_at ?? null, tournament?.results_unlocked_at ?? null)) {
+    throw new Error('Scores are locked — unlock editing first to auto-generate a round.');
+  }
+
+  const { data: teams, error: teamsError } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('tournament_id', tournamentId)
+    .order('created_at', { ascending: true });
+
+  if (teamsError) {
+    throw new Error(teamsError.message);
+  }
+
+  if (!teams || teams.length < 2) {
+    throw new Error('Need at least 2 teams to auto-generate a round.');
+  }
+
+  const { data: existingMatchesRaw, error: matchesError } = await supabase
+    .from('matches')
+    .select('round, team_a_id, team_b_id')
+    .eq('tournament_id', tournamentId)
+    .eq('stage', 'league');
+
+  if (matchesError) {
+    throw new Error(matchesError.message);
+  }
+
+  const existingMatches: CustomAutoMatch[] = (existingMatchesRaw ?? [])
+    .filter((m) => m.team_b_id !== null)
+    .map((m) => ({ round: m.round, teamAId: m.team_a_id!, teamBId: m.team_b_id! }));
+
+  const nextRound =
+    existingMatches.length > 0 ? Math.max(...existingMatches.map((m) => m.round)) + 1 : 1;
+
+  const targetRounds = tournament?.custom_rounds ?? 5;
+  if (nextRound > targetRounds) {
+    throw new Error(`All ${targetRounds} round${targetRounds === 1 ? '' : 's'} already have matches.`);
+  }
+
+  const pairings = computeCustomAutoRound(teams, existingMatches, nextRound);
+
+  const { error: insertError } = await supabase.from('matches').insert(
+    pairings.map((p) => ({
+      tournament_id: tournamentId,
+      round: nextRound,
+      stage: 'league' as const,
+      team_a_id: p.teamAId,
+      team_b_id: p.teamBId,
+      status: 'pending' as const,
+    }))
+  );
+
+  if (insertError) {
+    throw new Error(insertError.message);
   }
 
   revalidatePath(`/tournaments/${tournamentId}/bracket`);
