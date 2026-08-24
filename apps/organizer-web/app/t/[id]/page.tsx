@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/server';
 import { computeStandings } from '@/lib/tournament/standings';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
 import { isRosterFull, slotsRemaining } from '@/lib/tournament/capacity';
+import { isLadderFormat } from '@/lib/tournament/formats';
+import { courtLabel } from '@/lib/tournament/courts';
 import JoinLeagueForm from './JoinLeagueForm';
 import type { MatchResult } from '@/lib/types';
 import { cardClass } from '@/app/components/ui';
@@ -50,7 +52,7 @@ export default async function PublicTournamentPage({
 
   const { data: matches } = await supabase
     .from('matches')
-    .select('round, stage, team_a_id, team_b_id, score_a, score_b, status')
+    .select('round, stage, team_a_id, team_b_id, score_a, score_b, status, court')
     .eq('tournament_id', id)
     .order('round', { ascending: true })
     .order('created_at', { ascending: true });
@@ -67,6 +69,7 @@ export default async function PublicTournamentPage({
   const venueName = Array.isArray(venue) ? (venue[0]?.name ?? 'Pickleturf') : (venue?.name ?? 'Pickleturf');
 
   const isLeaguePlayoffs = tournament.format === 'league_playoffs';
+  const isLadder = isLadderFormat(tournament.format);
   const leagueMatches = (matches ?? []).filter((m) => m.stage === 'league');
 
   const matchResults: MatchResult[] = leagueMatches.map((m) => ({
@@ -192,6 +195,9 @@ export default async function PublicTournamentPage({
                     <span>
                       {stage === 'league' && (
                         <span className="text-slate-400 mr-2">R{m.round}</span>
+                      )}
+                      {!isLadder && m.court !== null && (
+                        <span className="text-slate-400 mr-2">{courtLabel(m.court)}</span>
                       )}
                       <span className="font-semibold">{teamById.get(m.team_a_id!)}</span>
                       <span className="text-slate-400 mx-1">vs</span>
