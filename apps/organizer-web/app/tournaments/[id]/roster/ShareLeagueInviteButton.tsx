@@ -28,7 +28,8 @@ export default function ShareLeagueInviteButton({
       const text = `🏓 ${tournamentName} — ${date} at ${venueName}, ${timeslotLabel}. Join here: ${url}`;
       const result = await shareOrCopyText(text, tournamentName);
       setStatus(result === 'copied' ? 'copied' : 'idle');
-    } catch {
+    } catch (err) {
+      console.error(err);
       setStatus('error');
     }
   };

@@ -5,9 +5,9 @@ import { createClient } from '@/lib/supabase/server';
 import { computeStandings } from '@/lib/tournament/standings';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
 import { isRosterFull, slotsRemaining } from '@/lib/tournament/capacity';
-import { joinLeague } from './actions';
+import JoinLeagueForm from './JoinLeagueForm';
 import type { MatchResult } from '@/lib/types';
-import { cardClass, inputClass, primaryButtonClass } from '@/app/components/ui';
+import { cardClass } from '@/app/components/ui';
 
 const STAGE_LABELS: Record<string, string> = {
   league: 'League',
@@ -82,7 +82,6 @@ export default async function PublicTournamentPage({
   const playerCount = (players ?? []).length;
   const rosterFull = isRosterFull(tournament.max_players, playerCount);
   const remaining = slotsRemaining(tournament.max_players, playerCount);
-  const joinLeagueWithId = joinLeague.bind(null, id);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -115,18 +114,7 @@ export default async function PublicTournamentPage({
                 This league is full ({playerCount}/{tournament.max_players}).
               </p>
             ) : (
-              <form action={joinLeagueWithId} className="flex flex-col sm:flex-row gap-3">
-                <input
-                  name="name"
-                  type="text"
-                  placeholder="Your name"
-                  required
-                  className={`${inputClass} flex-1`}
-                />
-                <button type="submit" className={primaryButtonClass}>
-                  I&apos;m in!
-                </button>
-              </form>
+              <JoinLeagueForm tournamentId={id} />
             )}
           </div>
         )}

@@ -34,7 +34,8 @@ export default function ShareSignupUpdateButton({
       const text = `🏓 ${tournamentName}: ${countLabel} — ${playerNames.join(', ')}.${remainingLabel} Join: ${url}`;
       const result = await shareOrCopyText(text, tournamentName);
       setStatus(result === 'copied' ? 'copied' : 'idle');
-    } catch {
+    } catch (err) {
+      console.error(err);
       setStatus('error');
     }
   };

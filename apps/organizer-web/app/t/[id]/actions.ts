@@ -5,17 +5,39 @@ import { createClient } from '@/lib/supabase/server';
 import { isRosterFull } from '@/lib/tournament/capacity';
 import { matchNamesToPeople } from '@/lib/people/matchNames';
 
-// Public, unauthenticated sign-up -- deliberately does NOT call requireOrganizer(). This
-// is the only mutation in the app callable by an anonymous visitor; see the two
-// `_public_signup` RLS policies (supabase/migrations/20260824180000) that make the
-// underlying inserts possible.
-export async function joinLeague(tournamentId: string, formData: FormData) {
-  const supabase = await createClient();
+export type JoinLeagueState = { error: string | null };
 
-  const name = (formData.get('name') as string | null)?.trim();
-  if (!name) {
-    throw new Error('Please enter your name.');
+// Public, unauthenticated sign-up -- deliberately does NOT call requireOrganizer(). This
+// is the only mutation in the app callable by an anonymous visitor; see the
+// `_public_signup` RLS policies (supabase/migrations/20260824180000,
+// 20260824190000) that make the underlying inserts possible, column-scoped to exactly
+// what this action sets.
+//
+// Returns { error } instead of throwing: Next.js masks Server Action error messages in
+// production builds, so a thrown "This league is full." would reach the visitor as a
+// full-screen generic crash page instead of an inline message. Returning state and
+// reading it via useActionState (see JoinLeagueForm.tsx) keeps every message readable.
+export async function joinLeague(
+  tournamentId: string,
+  _prevState: JoinLeagueState,
+  formData: FormData
+): Promise<JoinLeagueState> {
+  const rawName = (formData.get('name') as string | null)?.trim();
+  if (!rawName) {
+    return { error: 'Please enter your name.' };
   }
+  if (rawName.length > 50) {
+    return { error: 'Name is too long (max 50 characters).' };
+  }
+  // Strip control characters/newlines -- a newline in a name would corrupt the
+  // comma-joined WhatsApp share message and the PDF roster export.
+  // eslint-disable-next-line no-control-regex
+  const name = rawName.replace(/[\x00-\x1F\x7F]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!name) {
+    return { error: 'Please enter your name.' };
+  }
+
+  const supabase = await createClient();
 
   const { data: tournament, error: tournamentError } = await supabase
     .from('tournaments')
@@ -24,10 +46,10 @@ export async function joinLeague(tournamentId: string, formData: FormData) {
     .single();
 
   if (tournamentError || !tournament) {
-    throw new Error('League not found.');
+    return { error: 'League not found.' };
   }
   if (tournament.completed_at) {
-    throw new Error('This league has already finished.');
+    return { error: 'This league has already finished.' };
   }
 
   const { count, error: countError } = await supabase
@@ -36,11 +58,11 @@ export async function joinLeague(tournamentId: string, formData: FormData) {
     .eq('tournament_id', tournamentId);
 
   if (countError) {
-    throw new Error(countError.message);
+    return { error: countError.message };
   }
 
   if (isRosterFull(tournament.max_players, count ?? 0)) {
-    throw new Error('This league is full.');
+    return { error: 'This league is full.' };
   }
 
   const { data: existingPeople, error: peopleError } = await supabase
@@ -49,7 +71,7 @@ export async function joinLeague(tournamentId: string, formData: FormData) {
     .eq('organizer_id', tournament.organizer_id);
 
   if (peopleError) {
-    throw new Error(peopleError.message);
+    return { error: peopleError.message };
   }
 
   const { matched, newNames } = matchNamesToPeople([name], existingPeople ?? []);
@@ -65,7 +87,7 @@ export async function joinLeague(tournamentId: string, formData: FormData) {
       .single();
 
     if (insertPersonError || !newPerson) {
-      throw new Error(insertPersonError?.message ?? 'Could not sign you up.');
+      return { error: insertPersonError?.message ?? 'Could not sign you up.' };
     }
     personId = newPerson.id;
   }
@@ -75,8 +97,9 @@ export async function joinLeague(tournamentId: string, formData: FormData) {
     .insert({ tournament_id: tournamentId, name, person_id: personId });
 
   if (insertPlayerError) {
-    throw new Error(insertPlayerError.message);
+    return { error: insertPlayerError.message };
   }
 
   revalidatePath(`/t/${tournamentId}`);
+  return { error: null };
 }
