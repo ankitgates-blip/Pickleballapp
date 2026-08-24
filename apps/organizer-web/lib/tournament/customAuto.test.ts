@@ -111,6 +111,64 @@ describe('computeCustomAutoRound', () => {
     }
   });
 
+  it('reaches full round-robin coverage for 10 teams across 9 rounds (exact-matching regression)', () => {
+    // 10 teams is even (customFullCoverageRounds = 9, nobody ever sits out). This was the
+    // smallest case where greedy+2-opt got stuck in a local optimum, leaving 2 of the
+    // C(10,2) = 45 pairs unplayed while others rematched. Exact minimum-cost matching must
+    // reach full coverage: every pair meets exactly once across the 9 rounds.
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
+    const t = teams(ids);
+    let history: CustomAutoMatch[] = [];
+    for (let round = 1; round <= 9; round++) {
+      const pairing = computeCustomAutoRound(t, history, round);
+      history = [...history, ...pairing.map((p) => ({ round, ...p }))];
+    }
+    const metCount = new Map<string, number>();
+    for (const m of history) {
+      const key = [m.teamAId, m.teamBId].sort().join('::');
+      metCount.set(key, (metCount.get(key) ?? 0) + 1);
+    }
+    const expectedPairs: string[] = [];
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        expectedPairs.push([ids[i], ids[j]].sort().join('::'));
+      }
+    }
+    expect(expectedPairs).toHaveLength(45);
+    for (const pair of expectedPairs) {
+      expect(metCount.get(pair)).toBe(1);
+    }
+  });
+
+  it('reaches full round-robin coverage for 13 teams across 13 rounds (exact-matching regression)', () => {
+    // 13 teams is odd (customFullCoverageRounds = 13, one team sits out each round). This
+    // was the worst previously-failing case: greedy+2-opt left 5 of the C(13,2) = 78 pairs
+    // unplayed. Exact minimum-cost matching must reach full coverage: every pair meets
+    // exactly once across the 13 rounds.
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm'];
+    const t = teams(ids);
+    let history: CustomAutoMatch[] = [];
+    for (let round = 1; round <= 13; round++) {
+      const pairing = computeCustomAutoRound(t, history, round);
+      history = [...history, ...pairing.map((p) => ({ round, ...p }))];
+    }
+    const metCount = new Map<string, number>();
+    for (const m of history) {
+      const key = [m.teamAId, m.teamBId].sort().join('::');
+      metCount.set(key, (metCount.get(key) ?? 0) + 1);
+    }
+    const expectedPairs: string[] = [];
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        expectedPairs.push([ids[i], ids[j]].sort().join('::'));
+      }
+    }
+    expect(expectedPairs).toHaveLength(78);
+    for (const pair of expectedPairs) {
+      expect(metCount.get(pair)).toBe(1);
+    }
+  });
+
   it('is deterministic -- same inputs always produce the same output', () => {
     const t = teams(['a', 'b', 'c', 'd', 'e']);
     const history: CustomAutoMatch[] = [{ round: 1, teamAId: 'a', teamBId: 'b' }];
