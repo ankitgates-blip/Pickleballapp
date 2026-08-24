@@ -4,7 +4,8 @@ import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass, actionCardClass, accentButtonClass, linkClass, inputClass, primaryButtonClass, outlineButtonClass } from '@/app/components/ui';
-import { formatLabel } from '@/lib/tournament/formats';
+import { formatLabel, isLadderFormat as isLadderFormatCheck } from '@/lib/tournament/formats';
+import { courtLabel } from '@/lib/tournament/courts';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
 import { computeStandings } from '@/lib/tournament/standings';
 import { customFullCoverageRounds } from '@/lib/tournament/customAuto';
@@ -41,6 +42,7 @@ export default async function BracketPage({
   const isGauntlet = format === 'gauntlet';
   const isClaimTheThrone = format === 'claim_the_throne';
   const isUpAndDownRiver = format === 'up_and_down_the_river';
+  const isLadderFormat = isLadderFormatCheck(format);
   const isCustom = format === 'custom';
   const customTargetRounds = tournament?.custom_rounds ?? 5;
   const isSupported =
@@ -313,7 +315,9 @@ export default async function BracketPage({
               <summary className="cursor-pointer list-none flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2">
                   {m.court !== null && (
-                    <span className="text-xs font-bold text-slate-400">C{m.court}</span>
+                    <span className="text-xs font-bold text-slate-400">
+                      {isLadderFormat ? `C${m.court}` : courtLabel(m.court)}
+                    </span>
                   )}
                   {teamALabel}
                   <span className="text-slate-400">vs</span>
