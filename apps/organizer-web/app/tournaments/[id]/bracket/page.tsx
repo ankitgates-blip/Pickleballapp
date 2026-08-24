@@ -81,7 +81,8 @@ export default async function BracketPage({
     .from('matches')
     .select('id, round, stage, team_a_id, team_b_id, score_a, score_b, status, court')
     .eq('tournament_id', id)
-    .order('round', { ascending: true });
+    .order('round', { ascending: true })
+    .order('created_at', { ascending: true });
 
   const exportMatchGroups = buildMatchGroups(
     (matches ?? []).map((m) => ({
