@@ -12,6 +12,7 @@ import { computeCustomAutoRound } from '@/lib/tournament/customAuto';
 import type { CustomAutoMatch } from '@/lib/types';
 import { generateSemifinals, pickFinalists, fillStandingsGaps } from '@/lib/tournament/playoffs';
 import { computeStandings } from '@/lib/tournament/standings';
+import { assignCourts, courtForIndex } from '@/lib/tournament/courts';
 import { canEditScore, canEditTeams } from '@/lib/tournament/completion';
 import type {
   MatchResult,
@@ -58,14 +59,16 @@ export async function generateBracket(tournamentId: string) {
       : generateRoundRobin(teams.map((t) => t.id));
 
   const { error: matchesError } = await supabase.from('matches').insert(
-    pairings.map((p) => ({
-      tournament_id: tournamentId,
-      round: p.round,
-      stage: 'league' as const,
-      team_a_id: p.teamAId,
-      team_b_id: p.teamBId,
-      status: 'pending' as const,
-    }))
+    assignCourts(
+      pairings.map((p) => ({
+        tournament_id: tournamentId,
+        round: p.round,
+        stage: 'league' as const,
+        team_a_id: p.teamAId,
+        team_b_id: p.teamBId,
+        status: 'pending' as const,
+      }))
+    )
   );
 
   if (matchesError) {
@@ -116,14 +119,16 @@ export async function generateLeaguePlayoffsBracket(tournamentId: string, formDa
   );
 
   const { error: matchesError } = await supabase.from('matches').insert(
-    pairings.map((p) => ({
-      tournament_id: tournamentId,
-      round: p.round,
-      stage: 'league' as const,
-      team_a_id: p.teamAId,
-      team_b_id: p.teamBId,
-      status: 'pending' as const,
-    }))
+    assignCourts(
+      pairings.map((p) => ({
+        tournament_id: tournamentId,
+        round: p.round,
+        stage: 'league' as const,
+        team_a_id: p.teamAId,
+        team_b_id: p.teamBId,
+        status: 'pending' as const,
+      }))
+    )
   );
 
   if (matchesError) {
@@ -221,14 +226,16 @@ export async function regenerateLeaguePlayoffsBracket(tournamentId: string) {
   );
 
   const { error: matchesError } = await supabase.from('matches').insert(
-    pairings.map((p) => ({
-      tournament_id: tournamentId,
-      round: p.round,
-      stage: 'league' as const,
-      team_a_id: p.teamAId,
-      team_b_id: p.teamBId,
-      status: 'pending' as const,
-    }))
+    assignCourts(
+      pairings.map((p) => ({
+        tournament_id: tournamentId,
+        round: p.round,
+        stage: 'league' as const,
+        team_a_id: p.teamAId,
+        team_b_id: p.teamBId,
+        status: 'pending' as const,
+      }))
+    )
   );
 
   if (matchesError) {
@@ -751,14 +758,16 @@ export async function generateSemifinalMatches(tournamentId: string) {
   const pairings = generateSemifinals(completeStandings.slice(0, 4));
 
   const { error: insertError } = await supabase.from('matches').insert(
-    pairings.map((p) => ({
-      tournament_id: tournamentId,
-      round: 1,
-      stage: 'semifinal' as const,
-      team_a_id: p.teamAId,
-      team_b_id: p.teamBId,
-      status: 'pending' as const,
-    }))
+    assignCourts(
+      pairings.map((p) => ({
+        tournament_id: tournamentId,
+        round: 1,
+        stage: 'semifinal' as const,
+        team_a_id: p.teamAId,
+        team_b_id: p.teamBId,
+        status: 'pending' as const,
+      }))
+    )
   );
 
   if (insertError) {
@@ -827,6 +836,7 @@ export async function skipToFinalMatch(tournamentId: string) {
     team_a_id: teamAId,
     team_b_id: teamBId,
     status: 'pending' as const,
+    court: courtForIndex(0),
   });
 
   if (insertError) {
@@ -882,6 +892,7 @@ export async function generateFinalMatch(tournamentId: string) {
     team_a_id: winners[0],
     team_b_id: winners[1],
     status: 'pending' as const,
+    court: courtForIndex(0),
   });
 
   if (insertError) {
