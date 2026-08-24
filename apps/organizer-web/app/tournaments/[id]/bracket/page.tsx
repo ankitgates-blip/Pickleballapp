@@ -7,10 +7,11 @@ import { cardClass, actionCardClass, accentButtonClass, linkClass, inputClass, p
 import { formatLabel } from '@/lib/tournament/formats';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
 import { computeStandings } from '@/lib/tournament/standings';
+import { customFullCoverageRounds } from '@/lib/tournament/customAuto';
 import { canEditScore, canEditTeams } from '@/lib/tournament/completion';
 import { buildMatchGroups } from '@/lib/tournament/resultsExport';
 import type { MatchResult } from '@/lib/types';
-import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, generateLeaguePlayoffsBracket, regenerateLeaguePlayoffsBracket, generateSemifinalMatches, generateFinalMatch, skipToFinalMatch, updateMatchTeams, addCustomMatch, unlockTournamentResults, lockTournamentResults } from './actions';
+import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, generateLeaguePlayoffsBracket, regenerateLeaguePlayoffsBracket, generateSemifinalMatches, generateFinalMatch, skipToFinalMatch, updateMatchTeams, addCustomMatch, autoGenerateCustomRound, removeCustomMatch, unlockTournamentResults, lockTournamentResults } from './actions';
 import { enterScore, skipMatch } from '../matches/actions';
 import ShareScheduleButton from './ShareScheduleButton';
 import RegenerateLeagueRoundsButton from './RegenerateLeagueRoundsButton';
@@ -115,6 +116,7 @@ export default async function BracketPage({
     isCustom && leagueMatches.length > 0
       ? Math.max(...leagueMatches.map((m) => m.round))
       : 0;
+  const customFullCoverageRoundsValue = isCustom ? customFullCoverageRounds(teamCount) : 0;
 
   const generateBracketWithId = generateBracket.bind(null, id);
   const generatePopcornBracketWithId = generatePopcornBracket.bind(null, id);
@@ -127,6 +129,7 @@ export default async function BracketPage({
   const generateFinalMatchWithId = generateFinalMatch.bind(null, id);
   const skipToFinalMatchWithId = skipToFinalMatch.bind(null, id);
   const addCustomMatchWithId = addCustomMatch.bind(null, id);
+  const autoGenerateCustomRoundWithId = autoGenerateCustomRound.bind(null, id);
   const unlockTournamentResultsWithId = unlockTournamentResults.bind(null, id);
   const lockTournamentResultsWithId = lockTournamentResults.bind(null, id);
 
@@ -231,13 +234,12 @@ export default async function BracketPage({
 
   const leagueRoundsMap = roundsFor(leagueMatches);
 
-  // Popcorn and Gauntlet re-pair players fresh each round and, when the player count
-  // isn't a multiple of 4, some players sit out that round (rotating fairly — see
-  // generatePopcornSchedule/generateGauntletRound). Nothing persists who sat out, so
-  // derive it here: whoever isn't on either team of any match in that round sat out.
-  // Other formats never leave a registered player out of every match, so this is
-  // always empty for them.
-  const showSitOuts = isPopcorn || isGauntlet;
+  // Popcorn and Gauntlet re-pair players fresh each round, and Custom's auto-generate
+  // (or an organizer who manually pairs fewer than all teams) can leave one team
+  // unpaired for a round. Nothing persists who sat out, so derive it here: whoever
+  // isn't on either team of any match in that round sat out. Other formats never leave
+  // a registered player out of every match, so this is always empty for them.
+  const showSitOuts = isPopcorn || isGauntlet || isCustom;
   const sitOutNamesByRound = new Map<number, string[]>();
   if (showSitOuts) {
     for (const [round, roundMatches] of leagueRoundsMap) {
@@ -276,6 +278,7 @@ export default async function BracketPage({
         const teamBWon = isComplete && (m.score_b ?? 0) > (m.score_a ?? 0);
         const enterScoreForMatch = enterScore.bind(null, id, m.id);
         const skipMatchForMatch = skipMatch.bind(null, id, m.id);
+        const removeCustomMatchForMatch = removeCustomMatch.bind(null, id, m.id);
         const updateMatchTeamsForMatch = updateMatchTeams.bind(null, id, m.id);
 
         const teamALabel = (
@@ -354,6 +357,16 @@ export default async function BracketPage({
                         pendingLabel="Skipping…"
                       >
                         Skip this match (not played)
+                      </SaveButton>
+                    </form>
+                  )}
+                  {isCustom && !isComplete && (
+                    <form action={removeCustomMatchForMatch} className="mt-2 pl-1">
+                      <SaveButton
+                        className="text-xs font-semibold text-red-600 hover:text-red-800 underline"
+                        pendingLabel="Removing…"
+                      >
+                        Remove match
                       </SaveButton>
                     </form>
                   )}
@@ -696,13 +709,15 @@ export default async function BracketPage({
       )}
 
       {isCustom && canEditScoreValue && (
-        <form action={addCustomMatchWithId} className={`${actionCardClass} mb-6`}>
+        <div className={`${actionCardClass} mb-6`}>
           <h2 className="text-sm font-bold text-navy-mid uppercase tracking-wide mb-1">
             Add Match
           </h2>
           <p className="text-xs text-slate-400 mb-3">
             Target: {customTargetRounds} round{customTargetRounds === 1 ? '' : 's'} — highest
-            round added so far: {currentCustomMaxRound || 'none yet'}.
+            round added so far: {currentCustomMaxRound || 'none yet'}. Full round-robin
+            coverage for {teamCount} team{teamCount === 1 ? '' : 's'} needs{' '}
+            {customFullCoverageRoundsValue} round{customFullCoverageRoundsValue === 1 ? '' : 's'}.
           </p>
           {teamCount < 2 ? (
             <p className="text-sm text-red-700">
@@ -710,52 +725,61 @@ export default async function BracketPage({
               first.
             </p>
           ) : (
-            <div className="flex flex-wrap items-end gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Round</label>
-                <input
-                  name="round"
-                  type="number"
-                  defaultValue={1}
-                  min={1}
-                  max={customTargetRounds}
-                  required
-                  className={`${inputClass} w-20`}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Team A</label>
-                <select name="teamAId" defaultValue="" required className={inputClass}>
-                  <option value="" disabled>
-                    Select team
-                  </option>
-                  {(teams ?? []).map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {teamById.get(t.id)}
+            <>
+              {currentCustomMaxRound < customTargetRounds && (
+                <form action={autoGenerateCustomRoundWithId} className="mb-4">
+                  <SaveButton className={accentButtonClass} pendingLabel="Generating…">
+                    Auto-generate Round {currentCustomMaxRound + 1}
+                  </SaveButton>
+                </form>
+              )}
+              <form action={addCustomMatchWithId} className="flex flex-wrap items-end gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Round</label>
+                  <input
+                    name="round"
+                    type="number"
+                    defaultValue={1}
+                    min={1}
+                    max={customTargetRounds}
+                    required
+                    className={`${inputClass} w-20`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Team A</label>
+                  <select name="teamAId" defaultValue="" required className={inputClass}>
+                    <option value="" disabled>
+                      Select team
                     </option>
-                  ))}
-                </select>
-              </div>
-              <span className="text-slate-400 font-bold pb-2">vs</span>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Team B</label>
-                <select name="teamBId" defaultValue="" required className={inputClass}>
-                  <option value="" disabled>
-                    Select team
-                  </option>
-                  {(teams ?? []).map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {teamById.get(t.id)}
+                    {(teams ?? []).map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {teamById.get(t.id)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <span className="text-slate-400 font-bold pb-2">vs</span>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Team B</label>
+                  <select name="teamBId" defaultValue="" required className={inputClass}>
+                    <option value="" disabled>
+                      Select team
                     </option>
-                  ))}
-                </select>
-              </div>
-              <SaveButton className={accentButtonClass} pendingLabel="Adding…">
-                Add Match
-              </SaveButton>
-            </div>
+                    {(teams ?? []).map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {teamById.get(t.id)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <SaveButton className={accentButtonClass} pendingLabel="Adding…">
+                  Add Match
+                </SaveButton>
+              </form>
+            </>
           )}
-        </form>
+        </div>
       )}
 
       {hasLeagueMatches && (
