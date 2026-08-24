@@ -59,10 +59,14 @@ export function computeCustomAutoRound(
   const active = teams.filter((t) => !sittingOutIds.has(t.id));
 
   // 3. Meeting history: how many times each pair has met, and the highest round number
-  // they last met in (used for the least-recently-played rematch fallback).
+  // they last met in (used for the least-recently-played rematch fallback). Filtered to
+  // rounds strictly before targetRound, matching the sit-out-counting step above --
+  // callers only ever pass matches from rounds before the target anyway, but this keeps
+  // both steps consistent and avoids any future caller accidentally including the target
+  // round's own (still-being-computed) matches.
   const meetingCount = new Map<string, number>();
   const lastMetRound = new Map<string, number>();
-  for (const m of existingMatches) {
+  for (const m of existingMatches.filter((m) => m.round < targetRound)) {
     const key = pairKey(m.teamAId, m.teamBId);
     meetingCount.set(key, (meetingCount.get(key) ?? 0) + 1);
     lastMetRound.set(key, Math.max(lastMetRound.get(key) ?? 0, m.round));
@@ -92,6 +96,51 @@ export function computeCustomAutoRound(
     }
     const teamB = remaining.splice(bestIndex, 1)[0];
     pairings.push({ teamAId: teamA.id, teamBId: teamB.id });
+  }
+
+  // 5. 2-opt local-improvement pass: the greedy loop above commits to each team's partner
+  // one at a time with no lookahead, which can leave two teams to be paired last who have
+  // already met, even though a better global matching (reachable by swapping partners
+  // between two already-decided pairings) would have avoided every rematch. Repeatedly
+  // look for two pairings A-B / C-D that can be re-paired as A-C/B-D or A-D/B-C for a
+  // strictly lower combined cost, and swap when found, until no swap improves anything.
+  // Cost heavily penalizes rematches (multiplied by LARGE_NUMBER, far bigger than any
+  // plausible round count) so avoiding a rematch always dominates recency, and only among
+  // ties in meeting count does the least-recently-met pairing win -- the same priority
+  // order the greedy step above already used, just applied with full-round lookahead.
+  const LARGE_NUMBER = 1_000_000;
+  const pairCost = (aId: string, bId: string): number => {
+    const key = pairKey(aId, bId);
+    const meetings = meetingCount.get(key) ?? 0;
+    const lastMet = lastMetRound.get(key) ?? 0;
+    return meetings * LARGE_NUMBER + lastMet;
+  };
+
+  const maxIterations = teams.length * teams.length;
+  let iterations = 0;
+  let improved = true;
+  while (improved && iterations < maxIterations) {
+    improved = false;
+    for (let i = 0; i < pairings.length && !improved; i++) {
+      for (let j = i + 1; j < pairings.length && !improved; j++) {
+        const { teamAId: a, teamBId: b } = pairings[i];
+        const { teamAId: c, teamBId: d } = pairings[j];
+        const currentCost = pairCost(a, b) + pairCost(c, d);
+        const optionOneCost = pairCost(a, c) + pairCost(b, d); // A-C, B-D
+        const optionTwoCost = pairCost(a, d) + pairCost(b, c); // A-D, B-C
+
+        if (optionOneCost < currentCost && optionOneCost <= optionTwoCost) {
+          pairings[i] = { teamAId: a, teamBId: c };
+          pairings[j] = { teamAId: b, teamBId: d };
+          improved = true;
+        } else if (optionTwoCost < currentCost) {
+          pairings[i] = { teamAId: a, teamBId: d };
+          pairings[j] = { teamAId: b, teamBId: c };
+          improved = true;
+        }
+      }
+    }
+    iterations++;
   }
 
   return pairings;

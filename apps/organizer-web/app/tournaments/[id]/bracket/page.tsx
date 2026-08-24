@@ -715,9 +715,7 @@ export default async function BracketPage({
           </h2>
           <p className="text-xs text-slate-400 mb-3">
             Target: {customTargetRounds} round{customTargetRounds === 1 ? '' : 's'} — highest
-            round added so far: {currentCustomMaxRound || 'none yet'}. Full round-robin
-            coverage for {teamCount} team{teamCount === 1 ? '' : 's'} needs{' '}
-            {customFullCoverageRoundsValue} round{customFullCoverageRoundsValue === 1 ? '' : 's'}.
+            round added so far: {currentCustomMaxRound || 'none yet'}.
           </p>
           {teamCount < 2 ? (
             <p className="text-sm text-red-700">
@@ -726,6 +724,10 @@ export default async function BracketPage({
             </p>
           ) : (
             <>
+              <p className="text-xs text-slate-400 mb-3">
+                Full round-robin coverage for {teamCount} team{teamCount === 1 ? '' : 's'} needs{' '}
+                {customFullCoverageRoundsValue} round{customFullCoverageRoundsValue === 1 ? '' : 's'}.
+              </p>
               {currentCustomMaxRound < customTargetRounds && (
                 <form action={autoGenerateCustomRoundWithId} className="mb-4">
                   <SaveButton className={accentButtonClass} pendingLabel="Generating…">

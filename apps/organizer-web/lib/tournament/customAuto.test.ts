@@ -81,6 +81,36 @@ describe('computeCustomAutoRound', () => {
     expect(meetingRounds.get(key)).toBe(leastRecentRound);
   });
 
+  it('reaches full round-robin coverage for 5 teams across 5 rounds (2-opt regression)', () => {
+    // Greedy pairing alone (no lookahead) leaves several pairs unplayed for 5 teams over
+    // 5 rounds -- this is the smallest clear reproduction of that bug. The 2-opt
+    // local-improvement pass after the greedy step must close the gap so that, by round 5
+    // (the exact round count customFullCoverageRounds promises for 5 teams), every one of
+    // the C(5,2) = 10 distinct pairs has met exactly once.
+    const t = teams(['a', 'b', 'c', 'd', 'e']);
+    let history: CustomAutoMatch[] = [];
+    for (let round = 1; round <= 5; round++) {
+      const pairing = computeCustomAutoRound(t, history, round);
+      history = [...history, ...pairing.map((p) => ({ round, ...p }))];
+    }
+    const metCount = new Map<string, number>();
+    for (const m of history) {
+      const key = [m.teamAId, m.teamBId].sort().join('::');
+      metCount.set(key, (metCount.get(key) ?? 0) + 1);
+    }
+    const ids = ['a', 'b', 'c', 'd', 'e'];
+    const expectedPairs: string[] = [];
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        expectedPairs.push([ids[i], ids[j]].sort().join('::'));
+      }
+    }
+    expect(expectedPairs).toHaveLength(10);
+    for (const pair of expectedPairs) {
+      expect(metCount.get(pair)).toBe(1);
+    }
+  });
+
   it('is deterministic -- same inputs always produce the same output', () => {
     const t = teams(['a', 'b', 'c', 'd', 'e']);
     const history: CustomAutoMatch[] = [{ round: 1, teamAId: 'a', teamBId: 'b' }];
