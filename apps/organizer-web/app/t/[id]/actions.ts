@@ -26,15 +26,17 @@ export async function joinLeague(
   if (!rawName) {
     return { error: 'Please enter your name.' };
   }
-  if (rawName.length > 50) {
-    return { error: 'Name is too long (max 50 characters).' };
-  }
   // Strip control characters/newlines -- a newline in a name would corrupt the
-  // comma-joined WhatsApp share message and the PDF roster export.
+  // comma-joined WhatsApp share message and the PDF roster export. Length is checked
+  // on the cleaned result, not the raw input, so a run of control characters that
+  // collapses down to a normal-length name isn't rejected as "too long".
   // eslint-disable-next-line no-control-regex
   const name = rawName.replace(/[\x00-\x1F\x7F]/g, ' ').replace(/\s+/g, ' ').trim();
   if (!name) {
     return { error: 'Please enter your name.' };
+  }
+  if (name.length > 50) {
+    return { error: 'Name is too long (max 50 characters).' };
   }
 
   const supabase = await createClient();
@@ -58,7 +60,8 @@ export async function joinLeague(
     .eq('tournament_id', tournamentId);
 
   if (countError) {
-    return { error: countError.message };
+    console.error('joinLeague: players count query failed', countError);
+    return { error: 'Could not sign you up right now — please try again.' };
   }
 
   if (isRosterFull(tournament.max_players, count ?? 0)) {
@@ -71,7 +74,8 @@ export async function joinLeague(
     .eq('organizer_id', tournament.organizer_id);
 
   if (peopleError) {
-    return { error: peopleError.message };
+    console.error('joinLeague: people query failed', peopleError);
+    return { error: 'Could not sign you up right now — please try again.' };
   }
 
   const { matched, newNames } = matchNamesToPeople([name], existingPeople ?? []);
@@ -87,7 +91,8 @@ export async function joinLeague(
       .single();
 
     if (insertPersonError || !newPerson) {
-      return { error: insertPersonError?.message ?? 'Could not sign you up.' };
+      console.error('joinLeague: person insert failed', insertPersonError);
+      return { error: 'Could not sign you up right now — please try again.' };
     }
     personId = newPerson.id;
   }
@@ -97,7 +102,8 @@ export async function joinLeague(
     .insert({ tournament_id: tournamentId, name, person_id: personId });
 
   if (insertPlayerError) {
-    return { error: insertPlayerError.message };
+    console.error('joinLeague: player insert failed', insertPlayerError);
+    return { error: 'Could not sign you up right now — please try again.' };
   }
 
   revalidatePath(`/t/${tournamentId}`);
