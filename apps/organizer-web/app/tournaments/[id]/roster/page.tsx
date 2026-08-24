@@ -15,6 +15,8 @@ import { buildWinPercentageByPersonId } from '@/lib/stats/buildWinPercentageByPe
 import SaveButton from '@/app/components/SaveButton';
 import CopyLinkButton from '../standings/CopyLinkButton';
 import ShareRosterButton from './ShareRosterButton';
+import ShareLeagueInviteButton from './ShareLeagueInviteButton';
+import ShareSignupUpdateButton from './ShareSignupUpdateButton';
 import {
   startAddPlayers,
   confirmAddPlayers,
@@ -178,6 +180,24 @@ export default async function RosterPage({
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Roster</h1>
         <CopyLinkButton tournamentId={id} />
+      </div>
+
+      <div className="mb-6 flex flex-wrap gap-3">
+        <ShareLeagueInviteButton
+          tournamentId={id}
+          tournamentName={tournament?.name ?? ''}
+          date={tournament?.date ?? ''}
+          venueName={venueName}
+          timeslotLabel={timeslotLabel(tournament?.timeslot ?? '')}
+        />
+        {(players ?? []).length > 0 && (
+          <ShareSignupUpdateButton
+            tournamentId={id}
+            tournamentName={tournament?.name ?? ''}
+            maxPlayers={tournament?.max_players ?? null}
+            playerNames={(players ?? []).map((p) => p.name)}
+          />
+        )}
       </div>
 
       <div className="mb-6">

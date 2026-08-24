@@ -1,0 +1,52 @@
+'use client';
+
+import { useState } from 'react';
+import { outlineButtonClass } from '@/app/components/ui';
+import { shareOrCopyText } from '@/lib/share/shareText';
+
+type ShareLeagueInviteButtonProps = {
+  tournamentId: string;
+  tournamentName: string;
+  date: string;
+  venueName: string;
+  timeslotLabel: string;
+};
+
+export default function ShareLeagueInviteButton({
+  tournamentId,
+  tournamentName,
+  date,
+  venueName,
+  timeslotLabel,
+}: ShareLeagueInviteButtonProps) {
+  const [status, setStatus] = useState<'idle' | 'sharing' | 'copied' | 'error'>('idle');
+
+  const handleClick = async () => {
+    setStatus('sharing');
+    try {
+      const url = `${window.location.origin}/t/${tournamentId}`;
+      const text = `🏓 ${tournamentName} — ${date} at ${venueName}, ${timeslotLabel}. Join here: ${url}`;
+      const result = await shareOrCopyText(text, tournamentName);
+      setStatus(result === 'copied' ? 'copied' : 'idle');
+    } catch {
+      setStatus('error');
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={status === 'sharing'}
+      className={`${outlineButtonClass} disabled:opacity-50`}
+    >
+      {status === 'sharing'
+        ? 'Sharing…'
+        : status === 'copied'
+          ? '✓ Copied'
+          : status === 'error'
+            ? 'Try again'
+            : 'Share League Invite'}
+    </button>
+  );
+}
