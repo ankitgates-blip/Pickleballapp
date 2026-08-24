@@ -4,8 +4,10 @@ import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
 import { computeStandings } from '@/lib/tournament/standings';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
+import { isRosterFull, slotsRemaining } from '@/lib/tournament/capacity';
+import { joinLeague } from './actions';
 import type { MatchResult } from '@/lib/types';
-import { cardClass } from '@/app/components/ui';
+import { cardClass, inputClass, primaryButtonClass } from '@/app/components/ui';
 
 const STAGE_LABELS: Record<string, string> = {
   league: 'League',
@@ -23,7 +25,7 @@ export default async function PublicTournamentPage({
 
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('name, date, format, timeslot, venues(name)')
+    .select('name, date, format, timeslot, max_players, completed_at, venues(name)')
     .eq('id', id)
     .single();
 
@@ -77,6 +79,11 @@ export default async function PublicTournamentPage({
   const standings = computeStandings(matchResults);
   const stages: Array<'league' | 'semifinal' | 'final'> = ['league', 'semifinal', 'final'];
 
+  const playerCount = (players ?? []).length;
+  const rosterFull = isRosterFull(tournament.max_players, playerCount);
+  const remaining = slotsRemaining(tournament.max_players, playerCount);
+  const joinLeagueWithId = joinLeague.bind(null, id);
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="relative overflow-hidden bg-gradient-to-br from-emerald-800 via-teal-600 to-cyan-600 text-white">
@@ -95,6 +102,35 @@ export default async function PublicTournamentPage({
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+        {!tournament.completed_at && (
+          <div className={cardClass}>
+            <h2 className="text-lg font-bold text-slate-900 mb-2">Join This League</h2>
+            <p className="text-sm text-slate-500 mb-3">
+              {tournament.max_players != null
+                ? `${playerCount}/${tournament.max_players} signed up — ${remaining} spot${remaining === 1 ? '' : 's'} left`
+                : `${playerCount} signed up so far`}
+            </p>
+            {rosterFull ? (
+              <p className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 font-semibold">
+                This league is full ({playerCount}/{tournament.max_players}).
+              </p>
+            ) : (
+              <form action={joinLeagueWithId} className="flex flex-col sm:flex-row gap-3">
+                <input
+                  name="name"
+                  type="text"
+                  placeholder="Your name"
+                  required
+                  className={`${inputClass} flex-1`}
+                />
+                <button type="submit" className={primaryButtonClass}>
+                  I&apos;m in!
+                </button>
+              </form>
+            )}
+          </div>
+        )}
+
         <div className={cardClass}>
           <h2 className="text-lg font-bold text-slate-900 mb-3">
             Players ({(players ?? []).length})
