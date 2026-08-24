@@ -26,3 +26,9 @@ const INDIVIDUAL_FORMATS: readonly string[] = [
 export function isIndividualFormat(format: string): boolean {
   return INDIVIDUAL_FORMATS.includes(format);
 }
+
+const LADDER_FORMATS: readonly string[] = ['claim_the_throne', 'up_and_down_the_river'];
+
+export function isLadderFormat(format: string): boolean {
+  return LADDER_FORMATS.includes(format);
+}

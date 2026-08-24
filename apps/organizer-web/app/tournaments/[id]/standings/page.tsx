@@ -4,7 +4,7 @@ import {
   computeIndividualStandings,
   computeClaimTheThroneStandings,
 } from '@/lib/tournament/standings';
-import { isIndividualFormat as isIndividualFormatCheck } from '@/lib/tournament/formats';
+import { isIndividualFormat as isIndividualFormatCheck, isLadderFormat as isLadderFormatCheck } from '@/lib/tournament/formats';
 import type { ClaimTheThroneRoundResult, MatchResult, Team } from '@/lib/types';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
@@ -91,9 +91,7 @@ export default async function StandingsPage({
     .eq('id', id)
     .single();
 
-  const isClaimTheThrone = tournament?.format === 'claim_the_throne';
-  const isUpAndDownRiver = tournament?.format === 'up_and_down_the_river';
-  const isLadderFormat = isClaimTheThrone || isUpAndDownRiver;
+  const isLadderFormat = isLadderFormatCheck(tournament?.format ?? '');
   const isIndividualFormat = isIndividualFormatCheck(tournament?.format ?? '');
 
   const { data: teams } = await supabase

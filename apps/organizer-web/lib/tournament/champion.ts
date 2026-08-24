@@ -3,7 +3,7 @@ import {
   computeIndividualStandings,
   computeClaimTheThroneStandings,
 } from './standings';
-import { isIndividualFormat } from './formats';
+import { isIndividualFormat, isLadderFormat as isLadderFormatCheck } from './formats';
 import type { ClaimTheThroneRoundResult, MatchResult, Team } from '@/lib/types';
 
 type ChampionMatch = {
@@ -41,7 +41,7 @@ function computeChampionCore(params: {
     return {};
   }
 
-  const isLadderFormat = format === 'claim_the_throne' || format === 'up_and_down_the_river';
+  const isLadderFormat = isLadderFormatCheck(format);
   const isIndividual = isIndividualFormat(format);
 
   const leagueMatches = matches.filter((m) => m.stage === 'league');
