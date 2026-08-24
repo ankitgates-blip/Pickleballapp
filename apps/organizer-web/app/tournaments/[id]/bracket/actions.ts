@@ -325,14 +325,16 @@ export async function generatePopcornBracket(tournamentId: string) {
   }
 
   const { error: matchesError } = await supabase.from('matches').insert(
-    pairings.map((p) => ({
-      tournament_id: tournamentId,
-      round: p.round,
-      stage: 'league' as const,
-      team_a_id: teamIdByPairKey.get(pairKey(p.teamAPlayerIds[0], p.teamAPlayerIds[1]))!,
-      team_b_id: teamIdByPairKey.get(pairKey(p.teamBPlayerIds[0], p.teamBPlayerIds[1]))!,
-      status: 'pending' as const,
-    }))
+    assignCourts(
+      pairings.map((p) => ({
+        tournament_id: tournamentId,
+        round: p.round,
+        stage: 'league' as const,
+        team_a_id: teamIdByPairKey.get(pairKey(p.teamAPlayerIds[0], p.teamAPlayerIds[1]))!,
+        team_b_id: teamIdByPairKey.get(pairKey(p.teamBPlayerIds[0], p.teamBPlayerIds[1]))!,
+        status: 'pending' as const,
+      }))
+    )
   );
 
   if (matchesError) {
@@ -443,14 +445,16 @@ export async function advanceGauntletRound(tournamentId: string) {
   }
 
   const { error: matchesError } = await supabase.from('matches').insert(
-    pairings.map((p) => ({
-      tournament_id: tournamentId,
-      round: nextRound,
-      stage: 'league' as const,
-      team_a_id: teamIdByPairKey.get(pairKey(p.teamAPlayerIds[0], p.teamAPlayerIds[1]))!,
-      team_b_id: teamIdByPairKey.get(pairKey(p.teamBPlayerIds[0], p.teamBPlayerIds[1]))!,
-      status: 'pending' as const,
-    }))
+    assignCourts(
+      pairings.map((p) => ({
+        tournament_id: tournamentId,
+        round: nextRound,
+        stage: 'league' as const,
+        team_a_id: teamIdByPairKey.get(pairKey(p.teamAPlayerIds[0], p.teamAPlayerIds[1]))!,
+        team_b_id: teamIdByPairKey.get(pairKey(p.teamBPlayerIds[0], p.teamBPlayerIds[1]))!,
+        status: 'pending' as const,
+      }))
+    )
   );
 
   if (matchesError) {
@@ -1019,6 +1023,17 @@ export async function addCustomMatch(tournamentId: string, formData: FormData) {
     throw new Error('Selected teams must belong to this tournament');
   }
 
+  const { count: existingInRound, error: existingInRoundError } = await supabase
+    .from('matches')
+    .select('id', { count: 'exact', head: true })
+    .eq('tournament_id', tournamentId)
+    .eq('stage', 'league')
+    .eq('round', round);
+
+  if (existingInRoundError) {
+    throw new Error(existingInRoundError.message);
+  }
+
   const { error } = await supabase.from('matches').insert({
     tournament_id: tournamentId,
     round,
@@ -1026,6 +1041,7 @@ export async function addCustomMatch(tournamentId: string, formData: FormData) {
     team_a_id: teamAId,
     team_b_id: teamBId,
     status: 'pending' as const,
+    court: courtForIndex(existingInRound ?? 0),
   });
 
   if (error) {
@@ -1096,14 +1112,16 @@ export async function autoGenerateCustomRound(tournamentId: string) {
   const pairings = computeCustomAutoRound(teams, existingMatches, nextRound);
 
   const { error: insertError } = await supabase.from('matches').insert(
-    pairings.map((p) => ({
-      tournament_id: tournamentId,
-      round: nextRound,
-      stage: 'league' as const,
-      team_a_id: p.teamAId,
-      team_b_id: p.teamBId,
-      status: 'pending' as const,
-    }))
+    assignCourts(
+      pairings.map((p) => ({
+        tournament_id: tournamentId,
+        round: nextRound,
+        stage: 'league' as const,
+        team_a_id: p.teamAId,
+        team_b_id: p.teamBId,
+        status: 'pending' as const,
+      }))
+    )
   );
 
   if (insertError) {
