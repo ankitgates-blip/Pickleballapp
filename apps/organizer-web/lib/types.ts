@@ -98,3 +98,18 @@ export type UpAndDownRiverPairing = {
   teamAPlayerIds: [string, string];
   teamBPlayerIds: [string, string];
 };
+
+export type CustomAutoTeam = {
+  id: string;
+};
+
+export type CustomAutoMatch = {
+  round: number;
+  teamAId: string;
+  teamBId: string;
+};
+
+export type CustomAutoPairing = {
+  teamAId: string;
+  teamBId: string;
+};

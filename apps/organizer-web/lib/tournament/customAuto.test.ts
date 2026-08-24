@@ -1,0 +1,106 @@
+import { describe, it, expect } from 'vitest';
+import { computeCustomAutoRound, customFullCoverageRounds } from './customAuto';
+import type { CustomAutoTeam, CustomAutoMatch } from '@/lib/types';
+
+const teams = (ids: string[]): CustomAutoTeam[] => ids.map((id) => ({ id }));
+
+describe('computeCustomAutoRound', () => {
+  it('throws with fewer than 2 teams', () => {
+    expect(() => computeCustomAutoRound(teams(['a']), [], 1)).toThrow();
+  });
+
+  it('pairs an even number of teams with nobody sitting out', () => {
+    const pairings = computeCustomAutoRound(teams(['a', 'b', 'c', 'd']), [], 1);
+    expect(pairings).toHaveLength(2);
+    const allTeams = pairings.flatMap((p) => [p.teamAId, p.teamBId]);
+    expect(new Set(allTeams).size).toBe(4);
+  });
+
+  it('sits out exactly one team with an odd number of teams', () => {
+    const pairings = computeCustomAutoRound(teams(['a', 'b', 'c', 'd', 'e']), [], 1);
+    expect(pairings).toHaveLength(2); // 2 matches, 1 team unpaired
+    const playing = new Set(pairings.flatMap((p) => [p.teamAId, p.teamBId]));
+    expect(playing.size).toBe(4);
+  });
+
+  it('rotates who sits out fairly across sequential rounds, given a mix of manual and auto history', () => {
+    const t = teams(['a', 'b', 'c', 'd', 'e']);
+
+    // Round 1: organizer manually paired a-b and c-d, leaving e as standby (not
+    // recorded anywhere -- the point is the algorithm derives this from what's missing).
+    let history: CustomAutoMatch[] = [
+      { round: 1, teamAId: 'a', teamBId: 'b' },
+      { round: 1, teamAId: 'c', teamBId: 'd' },
+    ];
+
+    // Auto-generate round 2: e sat out round 1 (sitOutCounts: e=1, a=b=c=d=0), so e must
+    // play now -- the sit-out slot goes to whichever of a/b/c/d has the fewest sit-outs
+    // (tied at 0), never to e while a lower count exists.
+    const round2 = computeCustomAutoRound(t, history, 2);
+    const round2Playing = new Set(round2.flatMap((p) => [p.teamAId, p.teamBId]));
+    expect(round2Playing.has('e')).toBe(true);
+    history = [...history, ...round2.map((p) => ({ round: 2, ...p }))];
+
+    // Auto-generate round 3: sit-out counts are now e=1 (round 1), plus whichever team
+    // sat out round 2 also has 1 -- both of those teams already had their turn to sit
+    // out, so round 3's sit-out must come from whichever teams still have 0. Concretely:
+    // both e and 'a' (a was the team round 2 chose to sit out, being first among the
+    // 0-count ties) already have 1 sit-out each, so both must play round 3.
+    const round3 = computeCustomAutoRound(t, history, 3);
+    const round3Playing = new Set(round3.flatMap((p) => [p.teamAId, p.teamBId]));
+    expect(round3Playing.has('a')).toBe(true);
+    expect(round3Playing.has('e')).toBe(true);
+  });
+
+  it('prefers pairs that have not played each other yet', () => {
+    const history: CustomAutoMatch[] = [{ round: 1, teamAId: 'a', teamBId: 'b' }];
+    const round2 = computeCustomAutoRound(teams(['a', 'b', 'c', 'd']), history, 2);
+    const key = (p: { teamAId: string; teamBId: string }) => [p.teamAId, p.teamBId].sort().join('::');
+    expect(round2.map(key)).not.toContain('a::b');
+  });
+
+  it('falls back to the least-recently-played rematch once every fresh pairing is exhausted', () => {
+    // 3 teams can never all avoid rematches (round-robin coverage for 3 teams is 3
+    // rounds, but each round only fits 1 match with 1 sitting out -- by round 4 every
+    // pair has met at least once).
+    let history: CustomAutoMatch[] = [];
+    for (let round = 1; round <= 3; round++) {
+      const pairing = computeCustomAutoRound(teams(['a', 'b', 'c']), history, round);
+      history = [...history, ...pairing.map((p) => ({ round, ...p }))];
+    }
+    // Round 4: every pair has now met exactly once (a-b, a-c, b-c across rounds 1-3).
+    // The round-4 pairing should reuse the pair that met LEAST recently (lowest round number).
+    const round4 = computeCustomAutoRound(teams(['a', 'b', 'c']), history, 4);
+    expect(round4).toHaveLength(1);
+    const key = [round4[0].teamAId, round4[0].teamBId].sort().join('::');
+    const meetingRounds = new Map<string, number>();
+    for (const m of history) {
+      meetingRounds.set([m.teamAId, m.teamBId].sort().join('::'), m.round);
+    }
+    const leastRecentRound = Math.min(...meetingRounds.values());
+    expect(meetingRounds.get(key)).toBe(leastRecentRound);
+  });
+
+  it('is deterministic -- same inputs always produce the same output', () => {
+    const t = teams(['a', 'b', 'c', 'd', 'e']);
+    const history: CustomAutoMatch[] = [{ round: 1, teamAId: 'a', teamBId: 'b' }];
+    const first = computeCustomAutoRound(t, history, 2);
+    const second = computeCustomAutoRound(t, history, 2);
+    expect(first).toEqual(second);
+  });
+});
+
+describe('customFullCoverageRounds', () => {
+  it('returns teamCount rounds for an odd team count', () => {
+    expect(customFullCoverageRounds(5)).toBe(5);
+  });
+
+  it('returns teamCount - 1 rounds for an even team count', () => {
+    expect(customFullCoverageRounds(4)).toBe(3);
+  });
+
+  it('returns 0 for fewer than 2 teams', () => {
+    expect(customFullCoverageRounds(1)).toBe(0);
+    expect(customFullCoverageRounds(0)).toBe(0);
+  });
+});
