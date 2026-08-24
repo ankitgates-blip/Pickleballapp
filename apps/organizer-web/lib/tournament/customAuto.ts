@@ -122,10 +122,11 @@ function greedyPairing(
 // Top-down memoized recursion: always pairs off the lowest-indexed unmatched team next,
 // trying every possible partner and keeping the cheapest total. This explores far fewer
 // than 2^m states in practice (memoized on the "remaining to match" bitmask) -- measured
-// well under 10ms even at 22 active teams, so no approximation is needed for any
-// plausible league size. `pairCost` mirrors the same cost function used elsewhere in this
-// file: meeting count dominates (avoiding a rematch always beats improving recency), tied
-// on that by how long ago the pair last met.
+// well under 50ms at the 20-active-team ceiling below, so no approximation is needed for
+// any plausible league size (a 20-team Custom league is already a large club roster).
+// `pairCost` mirrors the same cost function used elsewhere in this file: meeting count
+// dominates (avoiding a rematch always beats improving recency), tied on that by how long
+// ago the pair last met.
 const EXACT_MATCHING_ACTIVE_TEAM_LIMIT = 20;
 
 function pairCost(

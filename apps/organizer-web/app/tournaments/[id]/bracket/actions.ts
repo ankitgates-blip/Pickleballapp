@@ -1049,7 +1049,8 @@ export async function autoGenerateCustomRound(tournamentId: string) {
     .from('teams')
     .select('id')
     .eq('tournament_id', tournamentId)
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true });
 
   if (teamsError) {
     throw new Error(teamsError.message);

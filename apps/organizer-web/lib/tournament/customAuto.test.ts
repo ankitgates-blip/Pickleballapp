@@ -81,12 +81,12 @@ describe('computeCustomAutoRound', () => {
     expect(meetingRounds.get(key)).toBe(leastRecentRound);
   });
 
-  it('reaches full round-robin coverage for 5 teams across 5 rounds (2-opt regression)', () => {
+  it('reaches full round-robin coverage for 5 teams across 5 rounds (exact-matching regression)', () => {
     // Greedy pairing alone (no lookahead) leaves several pairs unplayed for 5 teams over
-    // 5 rounds -- this is the smallest clear reproduction of that bug. The 2-opt
-    // local-improvement pass after the greedy step must close the gap so that, by round 5
-    // (the exact round count customFullCoverageRounds promises for 5 teams), every one of
-    // the C(5,2) = 10 distinct pairs has met exactly once.
+    // 5 rounds -- this is the smallest clear reproduction of that bug. The exact
+    // minimum-cost matching must close the gap so that, by round 5 (the exact round count
+    // customFullCoverageRounds promises for 5 teams), every one of the C(5,2) = 10
+    // distinct pairs has met exactly once.
     const t = teams(['a', 'b', 'c', 'd', 'e']);
     let history: CustomAutoMatch[] = [];
     for (let round = 1; round <= 5; round++) {
