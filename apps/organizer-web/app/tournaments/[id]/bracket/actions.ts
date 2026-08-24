@@ -1101,6 +1101,57 @@ export async function autoGenerateCustomRound(tournamentId: string) {
   revalidatePath(`/tournaments/${tournamentId}/bracket`);
 }
 
+export async function removeCustomMatch(tournamentId: string, matchId: string) {
+  const { supabase } = await requireOrganizer();
+
+  const { data: tournament, error: tournamentError } = await supabase
+    .from('tournaments')
+    .select('format, completed_at, results_unlocked_at')
+    .eq('id', tournamentId)
+    .single();
+
+  if (tournamentError) {
+    throw new Error(tournamentError.message);
+  }
+
+  if (tournament?.format !== 'custom') {
+    throw new Error('Removing a match is only available for the Custom League format.');
+  }
+
+  if (!canEditScore(tournament?.completed_at ?? null, tournament?.results_unlocked_at ?? null)) {
+    throw new Error('Scores are locked — unlock editing first to remove a match.');
+  }
+
+  const { data: match, error: matchError } = await supabase
+    .from('matches')
+    .select('status')
+    .eq('id', matchId)
+    .eq('tournament_id', tournamentId)
+    .single();
+
+  if (matchError) {
+    throw new Error(matchError.message);
+  }
+
+  if (match?.status === 'complete') {
+    throw new Error(
+      'Remove is only available before a score is entered — edit the score instead, or use Skip.'
+    );
+  }
+
+  const { error: deleteError } = await supabase
+    .from('matches')
+    .delete()
+    .eq('id', matchId)
+    .eq('tournament_id', tournamentId);
+
+  if (deleteError) {
+    throw new Error(deleteError.message);
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}/bracket`);
+}
+
 export async function unlockTournamentResults(tournamentId: string) {
   const { supabase } = await requireOrganizer();
 
