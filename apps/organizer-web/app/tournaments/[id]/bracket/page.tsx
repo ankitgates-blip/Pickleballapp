@@ -271,7 +271,12 @@ export default async function BracketPage({
     <ul className="space-y-2">
       {list.map((m) => {
         if (!m.team_b_id) {
-          return (
+          return isLeaguePlayoffs ? (
+            <li key={m.id} className="text-sm text-slate-500 flex items-center gap-2">
+              <span className="text-slate-400">Sitting out:</span>
+              <span className="font-semibold text-slate-700">{teamById.get(m.team_a_id!) ?? 'Unknown'}</span>
+            </li>
+          ) : (
             <li key={m.id} className="text-sm text-slate-800 flex items-center gap-2">
               <span className="font-semibold">{teamById.get(m.team_a_id!) ?? 'Bye'}</span>
               <span className="text-slate-400">vs</span>
