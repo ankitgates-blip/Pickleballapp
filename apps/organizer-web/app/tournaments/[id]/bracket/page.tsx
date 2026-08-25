@@ -60,8 +60,10 @@ export default async function BracketPage({
 
   const { data: teams } = await supabase
     .from('teams')
-    .select('id, player_1_id, player_2_id')
+    .select('id, player_1_id, player_2_id, is_ad_hoc')
     .eq('tournament_id', id);
+
+  const fixedTeams = (teams ?? []).filter((t) => !t.is_ad_hoc);
 
   const { data: players } = await supabase
     .from('players')
@@ -102,7 +104,9 @@ export default async function BracketPage({
 
   const teamCount = (teams ?? []).length;
   const playerCount = (players ?? []).length;
-  const isOddMode = playerCount % 2 === 1;
+  const customFixedTeamCount = fixedTeams.length;
+  const fixedPairedPlayerIds = new Set(fixedTeams.flatMap((t) => [t.player_1_id, t.player_2_id]));
+  const isDynamicMode = (players ?? []).some((p) => !fixedPairedPlayerIds.has(p.id));
 
   const leagueMatches = (matches ?? []).filter((m) => m.stage === 'league');
   const semifinalMatches = (matches ?? []).filter((m) => m.stage === 'semifinal');
@@ -120,7 +124,7 @@ export default async function BracketPage({
     isCustom && leagueMatches.length > 0
       ? Math.max(...leagueMatches.map((m) => m.round))
       : 0;
-  const customFullCoverageRoundsValue = isCustom ? customFullCoverageRounds(teamCount) : 0;
+  const customFullCoverageRoundsValue = isCustom ? customFullCoverageRounds(customFixedTeamCount) : 0;
 
   const generateBracketWithId = generateBracket.bind(null, id);
   const generatePopcornBracketWithId = generatePopcornBracket.bind(null, id);
@@ -723,23 +727,23 @@ export default async function BracketPage({
             Target: {customTargetRounds} round{customTargetRounds === 1 ? '' : 's'} — highest
             round added so far: {currentCustomMaxRound || 'none yet'}.
           </p>
-          {isOddMode && (
+          {isDynamicMode && (
             <p className="text-xs text-navy-mid bg-navy-tint rounded-lg px-3 py-2 mb-3">
-              Odd number of players — matches are paired by individual player instead of saved
-              teams until the count is even again.
+              A player is unpaired — matches are paired by individual player instead of saved
+              teams until everyone has a fixed partner again.
             </p>
           )}
-          {(isOddMode ? playerCount < 4 : teamCount < 2) ? (
+          {(isDynamicMode ? playerCount < 4 : customFixedTeamCount < 2) ? (
             <p className="text-sm text-red-700">
-              {isOddMode
+              {isDynamicMode
                 ? 'Need at least 4 players before you can add a match.'
                 : 'Need at least 2 teams before you can add a match — go back and pair more teams first.'}
             </p>
           ) : (
             <>
-              {!isOddMode && (
+              {!isDynamicMode && (
                 <p className="text-xs text-slate-400 mb-3">
-                  Full round-robin coverage for {teamCount} team{teamCount === 1 ? '' : 's'} needs{' '}
+                  Full round-robin coverage for {customFixedTeamCount} team{customFixedTeamCount === 1 ? '' : 's'} needs{' '}
                   {customFullCoverageRoundsValue} round{customFullCoverageRoundsValue === 1 ? '' : 's'}.
                 </p>
               )}
@@ -763,7 +767,7 @@ export default async function BracketPage({
                     className={`${inputClass} w-20`}
                   />
                 </div>
-                {isOddMode ? (
+                {isDynamicMode ? (
                   <>
                     <div className="flex items-end gap-2">
                       <div>
@@ -839,7 +843,7 @@ export default async function BracketPage({
                         <option value="" disabled>
                           Select team
                         </option>
-                        {(teams ?? []).map((t) => (
+                        {fixedTeams.map((t) => (
                           <option key={t.id} value={t.id}>
                             {teamById.get(t.id)}
                           </option>
@@ -853,7 +857,7 @@ export default async function BracketPage({
                         <option value="" disabled>
                           Select team
                         </option>
-                        {(teams ?? []).map((t) => (
+                        {fixedTeams.map((t) => (
                           <option key={t.id} value={t.id}>
                             {teamById.get(t.id)}
                           </option>
