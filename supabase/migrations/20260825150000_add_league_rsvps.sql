@@ -16,6 +16,15 @@ create table public.league_rsvps (
 
 create index league_rsvps_tournament_idx on public.league_rsvps(tournament_id);
 
+-- Backstops set_league_rsvp()'s own duplicate-prevention against a race: without this, two
+-- concurrent "in" calls for the same person (e.g. a double-click) could each see no existing
+-- players row and both insert one. Partial (person_id is not null) so ad-hoc players added
+-- via the free-text join flow for other formats -- which never set person_id -- are
+-- unaffected. If this fails to apply because duplicate (tournament_id, person_id) rows
+-- already exist in production, those must be deduplicated manually first.
+create unique index players_tournament_person_unique_idx on public.players (tournament_id, person_id)
+  where person_id is not null;
+
 alter table public.league_rsvps enable row level security;
 
 -- Organizers can read RSVPs for their own tournaments.
@@ -32,12 +41,13 @@ create policy "league_rsvps_select_own" on public.league_rsvps
 create policy "league_rsvps_select_public" on public.league_rsvps
   for select using (true);
 
--- Deliberately NO insert/update/delete grants to anon/authenticated on this table, and NO
--- grants at all on public.players from this migration. All writes this feature performs go
--- through set_league_rsvp() below (SECURITY DEFINER), which is the sole, fully-validated
--- write path -- centralizing every authorization check (person belongs to this organizer,
--- tournament is League Playoffs, not completed, cutoff not passed) in one reviewable place
--- instead of spreading it across RLS policies and app code.
+-- Belt-and-braces beyond RLS: Supabase's default privileges grant every new table
+-- INSERT/UPDATE/DELETE to anon/authenticated (set at project bootstrap, not visible anywhere
+-- in this repo's migrations -- see 20260824190000_tighten_public_signup_policies.sql, which
+-- had to revoke the identical default grant on public.people/public.players). Revoking here
+-- means set_league_rsvp() (SECURITY DEFINER, below) is provably the only way anon/
+-- authenticated can write to this table, not just the only way RLS happens to allow today.
+revoke insert, update, delete on public.league_rsvps from anon, authenticated;
 
 create or replace function public.set_league_rsvp(
   p_tournament_id uuid,
@@ -55,16 +65,21 @@ declare
   v_existing_player_id uuid;
   v_next_waiting record;
 begin
-  if p_status not in ('in', 'out', 'tentative') then
+  if p_status is null or p_status not in ('in', 'out', 'tentative') then
     raise exception 'Invalid status';
   end if;
 
+  -- Lock the tournament row for the duration of this transaction so concurrent RSVP calls
+  -- for the same tournament serialize instead of racing on the read-then-write below --
+  -- otherwise two concurrent "in" calls could both pass the cap check, or two concurrent
+  -- "out" calls could both select and promote the same waiting-list person.
   select id, organizer_id, format, date, max_players, completed_at
     into v_tournament
     from public.tournaments
-    where id = p_tournament_id;
+    where id = p_tournament_id
+    for update;
 
-  if v_tournament.id is null then
+  if not found then
     raise exception 'League not found';
   end if;
   if v_tournament.format <> 'league_playoffs' then
@@ -89,7 +104,12 @@ begin
   insert into public.league_rsvps (tournament_id, person_id, status, responded_at)
   values (p_tournament_id, p_person_id, p_status, now())
   on conflict (tournament_id, person_id)
-  do update set status = excluded.status, responded_at = excluded.responded_at;
+  do update set
+    status = excluded.status,
+    responded_at = case
+      when league_rsvps.status is distinct from excluded.status then excluded.responded_at
+      else league_rsvps.responded_at
+    end;
 
   select id into v_existing_player_id from public.players
     where tournament_id = p_tournament_id and person_id = p_person_id;
@@ -129,4 +149,5 @@ begin
 end;
 $$;
 
+revoke execute on function public.set_league_rsvp(uuid, uuid, text) from public;
 grant execute on function public.set_league_rsvp(uuid, uuid, text) to anon, authenticated;
