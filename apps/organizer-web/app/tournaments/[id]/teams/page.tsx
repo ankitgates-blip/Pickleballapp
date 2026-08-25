@@ -36,8 +36,10 @@ export default async function TeamsPage({
 
   const { data: teams } = await supabase
     .from('teams')
-    .select('id, player_1_id, player_2_id')
+    .select('id, player_1_id, player_2_id, is_ad_hoc')
     .eq('tournament_id', id);
+
+  const fixedTeams = (teams ?? []).filter((t) => !t.is_ad_hoc);
 
   const winPercentageByPersonId = await buildWinPercentageByPersonId(
     supabase,
@@ -63,7 +65,7 @@ export default async function TeamsPage({
   const atCap = isLeaguePlayoffs && teamCount >= LEAGUE_PLAYOFFS_TEAM_CAP;
 
   const pairedPlayerIds = new Set(
-    (teams ?? []).flatMap((t) => [t.player_1_id, t.player_2_id])
+    fixedTeams.flatMap((t) => [t.player_1_id, t.player_2_id])
   );
   const unpairedPlayers = (players ?? []).filter((p) => !pairedPlayerIds.has(p.id));
   const playerById = new Map((players ?? []).map((p) => [p.id, p.name]));
@@ -102,11 +104,11 @@ export default async function TeamsPage({
         </div>
       )}
 
-      {tournament?.format === 'custom' && (players ?? []).length % 2 === 1 && (
+      {tournament?.format === 'custom' && unpairedPlayers.length > 0 && (
         <div className="rounded-lg bg-navy-tint border border-navy-mid/25 text-navy-deep text-sm px-4 py-3 mb-6">
-          Odd number of players signed up — the extra player won&apos;t be stuck on the bench.
-          Matches generated while the count is odd pair players directly instead of using the
-          teams below, so everyone still gets games.
+          {unpairedPlayers.length} player{unpairedPlayers.length === 1 ? '' : 's'} unpaired —
+          nobody is stuck on the bench. Matches generated while anyone is unpaired pair players
+          directly instead of using the teams below, so everyone still gets games.
         </div>
       )}
 
@@ -158,9 +160,9 @@ export default async function TeamsPage({
       )}
 
       <div className={`${cardClass} mb-6`}>
-        <h2 className="text-lg font-bold text-slate-900 mb-3">Teams ({(teams ?? []).length})</h2>
+        <h2 className="text-lg font-bold text-slate-900 mb-3">Teams ({fixedTeams.length})</h2>
         <ul className="space-y-2">
-          {(teams ?? []).map((t) => {
+          {fixedTeams.map((t) => {
             const removeTeamForTeam = removeTeam.bind(null, id, t.id);
             return (
               <li
