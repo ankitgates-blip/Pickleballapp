@@ -6,7 +6,7 @@ import {
   computeIndividualStandings,
   computeClaimTheThroneStandings,
 } from '@/lib/tournament/standings';
-import { formatLabel, isIndividualFormat as isIndividualFormatCheck, isLadderFormat as isLadderFormatCheck } from '@/lib/tournament/formats';
+import { formatLabel, usesIndividualStandings, isLadderFormat as isLadderFormatCheck } from '@/lib/tournament/formats';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
 import { computeTournamentChampionName } from '@/lib/tournament/champion';
 import {
@@ -95,7 +95,7 @@ export default async function ResultsPage({
 
   const isLeaguePlayoffs = tournament.format === 'league_playoffs';
   const isLadderFormat = isLadderFormatCheck(tournament.format);
-  const isIndividualFormat = isIndividualFormatCheck(tournament.format);
+  const isIndividualFormat = usesIndividualStandings(tournament.format);
 
   const teamsForIndividual: Team[] = (teams ?? []).map((t) => ({
     id: t.id,

@@ -4,7 +4,7 @@ import {
   computeIndividualStandings,
   computeClaimTheThroneStandings,
 } from '@/lib/tournament/standings';
-import { isIndividualFormat as isIndividualFormatCheck, isLadderFormat as isLadderFormatCheck } from '@/lib/tournament/formats';
+import { usesIndividualStandings, isLadderFormat as isLadderFormatCheck } from '@/lib/tournament/formats';
 import type { ClaimTheThroneRoundResult, MatchResult, Team } from '@/lib/types';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
@@ -92,7 +92,7 @@ export default async function StandingsPage({
     .single();
 
   const isLadderFormat = isLadderFormatCheck(tournament?.format ?? '');
-  const isIndividualFormat = isIndividualFormatCheck(tournament?.format ?? '');
+  const isIndividualFormat = usesIndividualStandings(tournament?.format ?? '');
 
   const { data: teams } = await supabase
     .from('teams')

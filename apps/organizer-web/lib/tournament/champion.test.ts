@@ -112,6 +112,48 @@ describe('computeTournamentChampionName', () => {
     expect(result).toBe('Alice');
   });
 
+  it('resolves a per-player champion for Custom League from a mix of fixed and ad-hoc teams', () => {
+    const mixedTeams = [
+      { id: 't1', player_1_id: 'p1', player_2_id: 'p2' },
+      { id: 't2', player_1_id: 'p3', player_2_id: 'p4' },
+      { id: 't3', player_1_id: 'p1', player_2_id: 'p4' },
+      { id: 't4', player_1_id: 'p2', player_2_id: 'p3' },
+    ];
+    const result = computeTournamentChampionName({
+      format: 'custom',
+      completedAt: '2026-01-01T00:00:00Z',
+      matches: [
+        {
+          stage: 'league',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 11,
+          score_b: 5,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+        {
+          stage: 'league',
+          team_a_id: 't3',
+          team_b_id: 't4',
+          score_a: 11,
+          score_b: 5,
+          status: 'complete',
+          round: 2,
+          court: null,
+        },
+      ],
+      teams: mixedTeams,
+      players: playersFixture,
+    });
+    // Alice (p1) wins both matches -- once on fixed team t1, once on ad-hoc team t3 --
+    // for a 2-0 individual record. No single team has that record (t1 is 1-0, t3 is
+    // 1-0), so a correct result here proves the champion is resolved per-player, not
+    // per-team, for Custom League.
+    expect(result).toBe('Alice');
+  });
+
   it('returns the top ladder standings player name for a ladder format', () => {
     const result = computeTournamentChampionName({
       format: 'claim_the_throne',
