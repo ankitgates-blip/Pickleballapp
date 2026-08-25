@@ -20,6 +20,8 @@ import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass } from '@/app/components/ui';
 import ShareResultsButton from './ShareResultsButton';
+import EditableTournamentName from './EditableTournamentName';
+import { renameTournament } from './actions';
 
 type LadderRoundResult = ClaimTheThroneRoundResult;
 
@@ -229,7 +231,7 @@ export default async function ResultsPage({
   return (
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="results" />
-      <h1 className="text-2xl font-bold text-slate-900 mb-1">{tournament.name}</h1>
+      <EditableTournamentName tournamentId={id} initialName={tournament.name} renameAction={renameTournament} />
       <p className="text-sm text-slate-500 mb-6">
         {tournament.date} · 📍 {venueName} · 🕐 {timeslotLabel(tournament.timeslot)} · {formatLabel(tournament.format)}
         {tournament.completed_at && (
