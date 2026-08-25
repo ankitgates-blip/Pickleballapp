@@ -1002,30 +1002,164 @@ export async function addCustomMatch(tournamentId: string, formData: FormData) {
     throw new Error(`Round must be a whole number between 1 and ${targetRounds}`);
   }
 
-  const teamAId = formData.get('teamAId');
-  const teamBId = formData.get('teamBId');
-
-  if (typeof teamAId !== 'string' || typeof teamBId !== 'string' || !teamAId || !teamBId) {
-    throw new Error('Both teams must be selected');
-  }
-
-  if (teamAId === teamBId) {
-    throw new Error('Team A and Team B must be different teams');
-  }
-
-  const { data: validTeams, error: teamsError } = await supabase
-    .from('teams')
+  const { data: players, error: playersCountError } = await supabase
+    .from('players')
     .select('id')
-    .eq('tournament_id', tournamentId)
-    .in('id', [teamAId, teamBId]);
+    .eq('tournament_id', tournamentId);
 
-  if (teamsError) {
-    throw new Error(teamsError.message);
+  if (playersCountError) {
+    throw new Error(playersCountError.message);
   }
 
-  const validIds = new Set((validTeams ?? []).map((t) => t.id));
-  if (!validIds.has(teamAId) || !validIds.has(teamBId)) {
-    throw new Error('Selected teams must belong to this tournament');
+  const isOddMode = (players ?? []).length % 2 === 1;
+
+  let teamAId: string;
+  let teamBId: string;
+
+  if (isOddMode) {
+    const teamAPlayer1 = formData.get('teamAPlayer1Id');
+    const teamAPlayer2 = formData.get('teamAPlayer2Id');
+    const teamBPlayer1 = formData.get('teamBPlayer1Id');
+    const teamBPlayer2 = formData.get('teamBPlayer2Id');
+
+    if (
+      typeof teamAPlayer1 !== 'string' ||
+      !teamAPlayer1 ||
+      typeof teamAPlayer2 !== 'string' ||
+      !teamAPlayer2 ||
+      typeof teamBPlayer1 !== 'string' ||
+      !teamBPlayer1 ||
+      typeof teamBPlayer2 !== 'string' ||
+      !teamBPlayer2
+    ) {
+      throw new Error('All 4 players must be selected');
+    }
+
+    const selectedPlayerIds = [teamAPlayer1, teamAPlayer2, teamBPlayer1, teamBPlayer2];
+    if (new Set(selectedPlayerIds).size !== 4) {
+      throw new Error('All 4 selected players must be different');
+    }
+
+    const { data: validPlayers, error: validPlayersError } = await supabase
+      .from('players')
+      .select('id')
+      .eq('tournament_id', tournamentId)
+      .in('id', selectedPlayerIds);
+
+    if (validPlayersError) {
+      throw new Error(validPlayersError.message);
+    }
+
+    const validPlayerIds = new Set((validPlayers ?? []).map((p) => p.id));
+    if (selectedPlayerIds.some((pid) => !validPlayerIds.has(pid))) {
+      throw new Error('Selected players must belong to this tournament');
+    }
+
+    const { data: roundMatches, error: roundMatchesError } = await supabase
+      .from('matches')
+      .select('team_a_id, team_b_id')
+      .eq('tournament_id', tournamentId)
+      .eq('stage', 'league')
+      .eq('round', round);
+
+    if (roundMatchesError) {
+      throw new Error(roundMatchesError.message);
+    }
+
+    const busyTeamIds = new Set(
+      (roundMatches ?? []).flatMap((m) =>
+        [m.team_a_id, m.team_b_id].filter((tid): tid is string => tid !== null)
+      )
+    );
+
+    if (busyTeamIds.size > 0) {
+      const { data: busyTeams, error: busyTeamsError } = await supabase
+        .from('teams')
+        .select('player_1_id, player_2_id')
+        .in('id', [...busyTeamIds]);
+
+      if (busyTeamsError) {
+        throw new Error(busyTeamsError.message);
+      }
+
+      const busyPlayerIds = new Set((busyTeams ?? []).flatMap((t) => [t.player_1_id, t.player_2_id]));
+
+      if (selectedPlayerIds.some((pid) => busyPlayerIds.has(pid))) {
+        throw new Error('One of the selected players is already in a match this round');
+      }
+    }
+
+    const { data: existingTeams, error: existingTeamsError } = await supabase
+      .from('teams')
+      .select('id, player_1_id, player_2_id')
+      .eq('tournament_id', tournamentId);
+
+    if (existingTeamsError) {
+      throw new Error(existingTeamsError.message);
+    }
+
+    const teamIdByPairKey = new Map<string, string>();
+    for (const t of existingTeams ?? []) {
+      teamIdByPairKey.set(pairKey(t.player_1_id, t.player_2_id), t.id);
+    }
+
+    const neededPairs: [string, string][] = [
+      [teamAPlayer1, teamAPlayer2],
+      [teamBPlayer1, teamBPlayer2],
+    ];
+    const newPairKeys = neededPairs.map(([a, b]) => pairKey(a, b)).filter((key) => !teamIdByPairKey.has(key));
+
+    if (newPairKeys.length > 0) {
+      const { data: insertedTeams, error: insertTeamsError } = await supabase
+        .from('teams')
+        .insert(
+          newPairKeys.map((key) => {
+            const [player1Id, player2Id] = key.split('|');
+            return { tournament_id: tournamentId, player_1_id: player1Id, player_2_id: player2Id };
+          })
+        )
+        .select('id, player_1_id, player_2_id');
+
+      if (insertTeamsError) {
+        throw new Error(insertTeamsError.message);
+      }
+
+      for (const t of insertedTeams ?? []) {
+        teamIdByPairKey.set(pairKey(t.player_1_id, t.player_2_id), t.id);
+      }
+    }
+
+    teamAId = teamIdByPairKey.get(pairKey(teamAPlayer1, teamAPlayer2))!;
+    teamBId = teamIdByPairKey.get(pairKey(teamBPlayer1, teamBPlayer2))!;
+  } else {
+    const teamAIdRaw = formData.get('teamAId');
+    const teamBIdRaw = formData.get('teamBId');
+
+    if (typeof teamAIdRaw !== 'string' || typeof teamBIdRaw !== 'string' || !teamAIdRaw || !teamBIdRaw) {
+      throw new Error('Both teams must be selected');
+    }
+
+    if (teamAIdRaw === teamBIdRaw) {
+      throw new Error('Team A and Team B must be different teams');
+    }
+
+    const { data: validTeams, error: teamsError } = await supabase
+      .from('teams')
+      .select('id')
+      .eq('tournament_id', tournamentId)
+      .in('id', [teamAIdRaw, teamBIdRaw]);
+
+    if (teamsError) {
+      throw new Error(teamsError.message);
+    }
+
+    const validIds = new Set((validTeams ?? []).map((t) => t.id));
+    if (!validIds.has(teamAIdRaw) || !validIds.has(teamBIdRaw)) {
+      throw new Error('Selected teams must belong to this tournament');
+    }
+
+    teamAId = teamAIdRaw;
+    teamBId = teamBIdRaw;
   }
 
   const { count: existingInRound, error: existingInRoundError } = await supabase
