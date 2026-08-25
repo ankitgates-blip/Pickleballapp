@@ -9,6 +9,8 @@ import { generateGauntletRound } from '@/lib/tournament/gauntlet';
 import { generateClaimTheThroneRound } from '@/lib/tournament/claimTheThrone';
 import { generateUpAndDownRiverRound } from '@/lib/tournament/upAndDownTheRiver';
 import { computeCustomAutoRound } from '@/lib/tournament/customAuto';
+import { derivePlayerHistory } from '@/lib/tournament/customPlayerHistory';
+import { computeCustomDynamicRound } from '@/lib/tournament/customDynamic';
 import type { CustomAutoMatch } from '@/lib/types';
 import { generateSemifinals, pickFinalists, fillStandingsGaps } from '@/lib/tournament/playoffs';
 import { computeStandings } from '@/lib/tournament/standings';
@@ -1075,9 +1077,23 @@ export async function autoGenerateCustomRound(tournamentId: string) {
     throw new Error('Scores are locked — unlock editing first to auto-generate a round.');
   }
 
+  const { data: players, error: playersError } = await supabase
+    .from('players')
+    .select('id')
+    .eq('tournament_id', tournamentId)
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true });
+
+  if (playersError) {
+    throw new Error(playersError.message);
+  }
+
+  const playerIds = (players ?? []).map((p) => p.id);
+  const isOddMode = playerIds.length % 2 === 1;
+
   const { data: teams, error: teamsError } = await supabase
     .from('teams')
-    .select('id')
+    .select('id, player_1_id, player_2_id')
     .eq('tournament_id', tournamentId)
     .order('created_at', { ascending: true })
     .order('id', { ascending: true });
@@ -1086,8 +1102,11 @@ export async function autoGenerateCustomRound(tournamentId: string) {
     throw new Error(teamsError.message);
   }
 
-  if (!teams || teams.length < 2) {
+  if (!isOddMode && (!teams || teams.length < 2)) {
     throw new Error('Need at least 2 teams to auto-generate a round.');
+  }
+  if (isOddMode && playerIds.length < 4) {
+    throw new Error('Need at least 4 players to auto-generate a round.');
   }
 
   const { data: existingMatchesRaw, error: matchesError } = await supabase
@@ -1112,20 +1131,78 @@ export async function autoGenerateCustomRound(tournamentId: string) {
     throw new Error(`All ${targetRounds} round${targetRounds === 1 ? '' : 's'} already have matches.`);
   }
 
-  const pairings = computeCustomAutoRound(teams, existingMatches, nextRound);
+  type MatchRow = {
+    tournament_id: string;
+    round: number;
+    stage: 'league';
+    team_a_id: string;
+    team_b_id: string;
+    status: 'pending';
+  };
+  let matchRows: MatchRow[];
 
-  const { error: insertError } = await supabase.from('matches').insert(
-    assignCourts(
-      pairings.map((p) => ({
-        tournament_id: tournamentId,
-        round: nextRound,
-        stage: 'league' as const,
-        team_a_id: p.teamAId,
-        team_b_id: p.teamBId,
-        status: 'pending' as const,
-      }))
-    )
-  );
+  if (isOddMode) {
+    const teamIdByPairKey = new Map<string, string>();
+    for (const t of teams ?? []) {
+      teamIdByPairKey.set(pairKey(t.player_1_id, t.player_2_id), t.id);
+    }
+
+    const history = derivePlayerHistory(
+      playerIds,
+      existingMatches,
+      (teams ?? []).map((t) => ({ id: t.id, player1Id: t.player_1_id, player2Id: t.player_2_id })),
+      nextRound
+    );
+    const pairings = computeCustomDynamicRound(playerIds, history);
+
+    const pairKeysNeeded = new Set<string>();
+    for (const p of pairings) {
+      pairKeysNeeded.add(pairKey(p.teamAPlayerIds[0], p.teamAPlayerIds[1]));
+      pairKeysNeeded.add(pairKey(p.teamBPlayerIds[0], p.teamBPlayerIds[1]));
+    }
+    const newPairKeys = [...pairKeysNeeded].filter((key) => !teamIdByPairKey.has(key));
+
+    if (newPairKeys.length > 0) {
+      const { data: insertedTeams, error: insertTeamsError } = await supabase
+        .from('teams')
+        .insert(
+          newPairKeys.map((key) => {
+            const [player1Id, player2Id] = key.split('|');
+            return { tournament_id: tournamentId, player_1_id: player1Id, player_2_id: player2Id };
+          })
+        )
+        .select('id, player_1_id, player_2_id');
+
+      if (insertTeamsError) {
+        throw new Error(insertTeamsError.message);
+      }
+
+      for (const t of insertedTeams ?? []) {
+        teamIdByPairKey.set(pairKey(t.player_1_id, t.player_2_id), t.id);
+      }
+    }
+
+    matchRows = pairings.map((p) => ({
+      tournament_id: tournamentId,
+      round: nextRound,
+      stage: 'league' as const,
+      team_a_id: teamIdByPairKey.get(pairKey(p.teamAPlayerIds[0], p.teamAPlayerIds[1]))!,
+      team_b_id: teamIdByPairKey.get(pairKey(p.teamBPlayerIds[0], p.teamBPlayerIds[1]))!,
+      status: 'pending' as const,
+    }));
+  } else {
+    const pairings = computeCustomAutoRound(teams ?? [], existingMatches, nextRound);
+    matchRows = pairings.map((p) => ({
+      tournament_id: tournamentId,
+      round: nextRound,
+      stage: 'league' as const,
+      team_a_id: p.teamAId,
+      team_b_id: p.teamBId,
+      status: 'pending' as const,
+    }));
+  }
+
+  const { error: insertError } = await supabase.from('matches').insert(assignCourts(matchRows));
 
   if (insertError) {
     throw new Error(insertError.message);
