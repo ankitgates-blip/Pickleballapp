@@ -102,6 +102,7 @@ export default async function BracketPage({
 
   const teamCount = (teams ?? []).length;
   const playerCount = (players ?? []).length;
+  const isOddMode = playerCount % 2 === 1;
 
   const leagueMatches = (matches ?? []).filter((m) => m.stage === 'league');
   const semifinalMatches = (matches ?? []).filter((m) => m.stage === 'semifinal');
@@ -722,17 +723,26 @@ export default async function BracketPage({
             Target: {customTargetRounds} round{customTargetRounds === 1 ? '' : 's'} — highest
             round added so far: {currentCustomMaxRound || 'none yet'}.
           </p>
-          {teamCount < 2 ? (
+          {isOddMode && (
+            <p className="text-xs text-navy-mid bg-navy-tint rounded-lg px-3 py-2 mb-3">
+              Odd number of players — matches are paired by individual player instead of saved
+              teams until the count is even again.
+            </p>
+          )}
+          {(isOddMode ? playerCount < 4 : teamCount < 2) ? (
             <p className="text-sm text-red-700">
-              Need at least 2 teams before you can add a match — go back and pair more teams
-              first.
+              {isOddMode
+                ? 'Need at least 4 players before you can add a match.'
+                : 'Need at least 2 teams before you can add a match — go back and pair more teams first.'}
             </p>
           ) : (
             <>
-              <p className="text-xs text-slate-400 mb-3">
-                Full round-robin coverage for {teamCount} team{teamCount === 1 ? '' : 's'} needs{' '}
-                {customFullCoverageRoundsValue} round{customFullCoverageRoundsValue === 1 ? '' : 's'}.
-              </p>
+              {!isOddMode && (
+                <p className="text-xs text-slate-400 mb-3">
+                  Full round-robin coverage for {teamCount} team{teamCount === 1 ? '' : 's'} needs{' '}
+                  {customFullCoverageRoundsValue} round{customFullCoverageRoundsValue === 1 ? '' : 's'}.
+                </p>
+              )}
               {currentCustomMaxRound < customTargetRounds && (
                 <form action={autoGenerateCustomRoundWithId} className="mb-4">
                   <SaveButton className={accentButtonClass} pendingLabel="Generating…">
@@ -753,33 +763,105 @@ export default async function BracketPage({
                     className={`${inputClass} w-20`}
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Team A</label>
-                  <select name="teamAId" defaultValue="" required className={inputClass}>
-                    <option value="" disabled>
-                      Select team
-                    </option>
-                    {(teams ?? []).map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {teamById.get(t.id)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <span className="text-slate-400 font-bold pb-2">vs</span>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Team B</label>
-                  <select name="teamBId" defaultValue="" required className={inputClass}>
-                    <option value="" disabled>
-                      Select team
-                    </option>
-                    {(teams ?? []).map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {teamById.get(t.id)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {isOddMode ? (
+                  <>
+                    <div className="flex items-end gap-2">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">
+                          Team A — Player 1
+                        </label>
+                        <select name="teamAPlayer1Id" defaultValue="" required className={inputClass}>
+                          <option value="" disabled>
+                            Select player
+                          </option>
+                          {(players ?? []).map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">
+                          Team A — Player 2
+                        </label>
+                        <select name="teamAPlayer2Id" defaultValue="" required className={inputClass}>
+                          <option value="" disabled>
+                            Select player
+                          </option>
+                          {(players ?? []).map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <span className="text-slate-400 font-bold pb-2">vs</span>
+                    <div className="flex items-end gap-2">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">
+                          Team B — Player 1
+                        </label>
+                        <select name="teamBPlayer1Id" defaultValue="" required className={inputClass}>
+                          <option value="" disabled>
+                            Select player
+                          </option>
+                          {(players ?? []).map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">
+                          Team B — Player 2
+                        </label>
+                        <select name="teamBPlayer2Id" defaultValue="" required className={inputClass}>
+                          <option value="" disabled>
+                            Select player
+                          </option>
+                          {(players ?? []).map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Team A</label>
+                      <select name="teamAId" defaultValue="" required className={inputClass}>
+                        <option value="" disabled>
+                          Select team
+                        </option>
+                        {(teams ?? []).map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {teamById.get(t.id)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <span className="text-slate-400 font-bold pb-2">vs</span>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Team B</label>
+                      <select name="teamBId" defaultValue="" required className={inputClass}>
+                        <option value="" disabled>
+                          Select team
+                        </option>
+                        {(teams ?? []).map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {teamById.get(t.id)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
                 <SaveButton className={accentButtonClass} pendingLabel="Adding…">
                   Add Match
                 </SaveButton>
