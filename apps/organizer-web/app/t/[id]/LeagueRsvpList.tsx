@@ -33,6 +33,14 @@ export default async function LeagueRsvpList({
     .map((r) => r.person_id);
   const waitingPositionByPersonId = new Map(waitingIds.map((id, i) => [id, i + 1]));
 
+  if ((people ?? []).length === 0) {
+    return (
+      <p className="text-sm text-slate-500 italic">
+        Nobody&apos;s on the invite list yet. Ask the organizer to add you.
+      </p>
+    );
+  }
+
   return (
     <ul className="space-y-2">
       {(people ?? []).map((person) => {

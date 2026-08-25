@@ -138,7 +138,11 @@ export async function setLeagueRsvp(
   });
 
   if (error) {
-    return { error: error.message };
+    if (error.code === 'P0001') {
+      return { error: error.message };
+    }
+    console.error('setLeagueRsvp: rpc failed', error);
+    return { error: 'Could not save your response right now — please try again.' };
   }
 
   revalidatePath(`/t/${tournamentId}`);

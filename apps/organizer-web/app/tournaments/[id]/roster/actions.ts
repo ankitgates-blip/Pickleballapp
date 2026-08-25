@@ -159,10 +159,39 @@ export async function confirmAddPlayers(tournamentId: string, formData: FormData
 export async function removePlayer(tournamentId: string, playerId: string) {
   const { supabase } = await requireOrganizer();
 
+  const { data: player, error: fetchError } = await supabase
+    .from('players')
+    .select('person_id')
+    .eq('id', playerId)
+    .single();
+
+  if (fetchError) {
+    throw new Error(fetchError.message);
+  }
+
   const { error } = await supabase.from('players').delete().eq('id', playerId);
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  // A league_playoffs RSVP left at 'in' after the players row is gone would put this
+  // person at the FRONT of the derived waiting list (their responded_at predates
+  // everyone who joined normally) and silently re-add them the next time someone
+  // confirmed drops to "out". No-op for every other tournament format (no league_rsvps
+  // rows exist for them) and for players with no person_id. Logged rather than thrown --
+  // the player removal itself already succeeded and should not be rolled back over this
+  // secondary cleanup failing.
+  if (player?.person_id) {
+    const { error: rsvpError } = await supabase
+      .from('league_rsvps')
+      .delete()
+      .eq('tournament_id', tournamentId)
+      .eq('person_id', player.person_id);
+
+    if (rsvpError) {
+      console.error('removePlayer: failed to clear league_rsvps row', rsvpError);
+    }
   }
 
   revalidatePath(`/tournaments/${tournamentId}/roster`);
