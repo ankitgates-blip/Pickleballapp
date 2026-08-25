@@ -109,3 +109,38 @@ export async function joinLeague(
   revalidatePath(`/t/${tournamentId}`);
   return { error: null };
 }
+
+export type SetRsvpState = { error: string | null };
+
+// Public, unauthenticated RSVP -- same trust model as joinLeague above: deliberately does
+// NOT call requireOrganizer(). The set_league_rsvp() Postgres function (SECURITY DEFINER,
+// supabase/migrations/20260825150000_add_league_rsvps.sql) is the sole write path and does
+// its own authorization (person belongs to this organizer, tournament is League Playoffs,
+// not completed, cutoff not passed) -- its raise exception messages are short and
+// organizer-authored, so returning error.message directly here is safe, unlike a raw
+// PostgREST error would be.
+export async function setLeagueRsvp(
+  tournamentId: string,
+  personId: string,
+  _prevState: SetRsvpState,
+  formData: FormData
+): Promise<SetRsvpState> {
+  const status = formData.get('status');
+  if (status !== 'in' && status !== 'out' && status !== 'tentative') {
+    return { error: 'Invalid response.' };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('set_league_rsvp', {
+    p_tournament_id: tournamentId,
+    p_person_id: personId,
+    p_status: status,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath(`/t/${tournamentId}`);
+  return { error: null };
+}

@@ -8,6 +8,7 @@ import { isRosterFull, slotsRemaining } from '@/lib/tournament/capacity';
 import { isLadderFormat } from '@/lib/tournament/formats';
 import { courtLabel } from '@/lib/tournament/courts';
 import JoinLeagueForm from './JoinLeagueForm';
+import LeagueRsvpList from './LeagueRsvpList';
 import type { MatchResult } from '@/lib/types';
 import { cardClass } from '@/app/components/ui';
 
@@ -27,7 +28,7 @@ export default async function PublicTournamentPage({
 
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('name, date, format, timeslot, max_players, completed_at, venues(name)')
+    .select('name, date, format, timeslot, max_players, completed_at, organizer_id, venues(name)')
     .eq('id', id)
     .single();
 
@@ -87,6 +88,13 @@ export default async function PublicTournamentPage({
   const rosterFull = isRosterFull(tournament.max_players, playerCount);
   const remaining = slotsRemaining(tournament.max_players, playerCount);
 
+  const confirmedPersonIds = new Set(
+    (players ?? [])
+      .filter((p): p is typeof p & { person_id: string } => p.person_id !== null)
+      .map((p) => p.person_id)
+  );
+  const isRsvpLocked = isLeaguePlayoffs && new Date(`${tournament.date}T17:00:00+04:00`) <= new Date();
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="relative overflow-hidden bg-gradient-to-br from-emerald-800 via-teal-600 to-cyan-600 text-white">
@@ -107,18 +115,38 @@ export default async function PublicTournamentPage({
       <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
         {!tournament.completed_at && (
           <div className={cardClass}>
-            <h2 className="text-lg font-bold text-slate-900 mb-2">Join This League</h2>
-            <p className="text-sm text-slate-500 mb-3">
-              {tournament.max_players != null
-                ? `${playerCount}/${tournament.max_players} signed up — ${remaining} spot${remaining === 1 ? '' : 's'} left`
-                : `${playerCount} signed up so far`}
-            </p>
-            {rosterFull ? (
-              <p className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 font-semibold">
-                This league is full ({playerCount}/{tournament.max_players}).
-              </p>
+            {isLeaguePlayoffs ? (
+              <>
+                <h2 className="text-lg font-bold text-slate-900 mb-2">Who&apos;s Playing</h2>
+                <p className="text-sm text-slate-500 mb-3">
+                  {tournament.max_players != null
+                    ? `${playerCount}/${tournament.max_players} confirmed`
+                    : `${playerCount} confirmed`}
+                  {isRsvpLocked && ' · RSVP closed'}
+                </p>
+                <LeagueRsvpList
+                  tournamentId={id}
+                  organizerId={tournament.organizer_id}
+                  isLocked={isRsvpLocked}
+                  confirmedPersonIds={confirmedPersonIds}
+                />
+              </>
             ) : (
-              <JoinLeagueForm tournamentId={id} />
+              <>
+                <h2 className="text-lg font-bold text-slate-900 mb-2">Join This League</h2>
+                <p className="text-sm text-slate-500 mb-3">
+                  {tournament.max_players != null
+                    ? `${playerCount}/${tournament.max_players} signed up — ${remaining} spot${remaining === 1 ? '' : 's'} left`
+                    : `${playerCount} signed up so far`}
+                </p>
+                {rosterFull ? (
+                  <p className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 font-semibold">
+                    This league is full ({playerCount}/{tournament.max_players}).
+                  </p>
+                ) : (
+                  <JoinLeagueForm tournamentId={id} />
+                )}
+              </>
             )}
           </div>
         )}
