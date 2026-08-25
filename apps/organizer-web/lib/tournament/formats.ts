@@ -32,3 +32,13 @@ const LADDER_FORMATS: readonly string[] = ['claim_the_throne', 'up_and_down_the_
 export function isLadderFormat(format: string): boolean {
   return LADDER_FORMATS.includes(format);
 }
+
+// Custom League switches to player-level standings once dynamic (ad-hoc) pairing has
+// ever occurred, since team identity there isn't stable across the tournament -- an
+// ad-hoc team might play exactly one match. This is intentionally NOT the same as
+// isIndividualFormat: that flag also drives the Teams page's auto-paired banner, which
+// must stay off for Custom (fixed-team manual pairing still exists there). See
+// docs/superpowers/specs/2026-08-25-custom-league-ad-hoc-teams-fix-design.md.
+export function usesIndividualStandings(format: string): boolean {
+  return isIndividualFormat(format) || format === 'custom';
+}
