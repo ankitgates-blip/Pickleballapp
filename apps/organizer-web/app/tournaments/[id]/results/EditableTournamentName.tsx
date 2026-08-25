@@ -14,13 +14,20 @@ export default function EditableTournamentName({
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(initialName);
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (formData: FormData) => {
     setIsSaving(true);
-    const result = await renameAction(tournamentId, formData);
-    setName(result.name);
-    setIsEditing(false);
-    setIsSaving(false);
+    setError(null);
+    try {
+      const result = await renameAction(tournamentId, formData);
+      setName(result.name);
+      setIsEditing(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to rename league.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!isEditing) {
@@ -28,7 +35,10 @@ export default function EditableTournamentName({
       <h1 className="mb-1">
         <button
           type="button"
-          onClick={() => setIsEditing(true)}
+          onClick={() => {
+            setIsEditing(true);
+            setError(null);
+          }}
           className="text-2xl font-bold text-slate-900 text-left hover:text-navy-mid transition-colors"
         >
           {name}
@@ -49,11 +59,15 @@ export default function EditableTournamentName({
           disabled={isSaving}
           onBlur={(e) => e.currentTarget.form?.requestSubmit()}
           onKeyDown={(e) => {
-            if (e.key === 'Escape') setIsEditing(false);
+            if (e.key === 'Escape') {
+              setIsEditing(false);
+              setError(null);
+            }
           }}
           className="text-2xl font-bold text-slate-900 border-b-2 border-navy-mid focus:outline-none bg-transparent w-full"
         />
       </form>
+      {error && <p className="text-xs font-semibold text-red-600 mt-1">{error}</p>}
     </h1>
   );
 }
