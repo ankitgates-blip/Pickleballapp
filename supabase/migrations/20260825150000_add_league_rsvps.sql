@@ -16,15 +16,6 @@ create table public.league_rsvps (
 
 create index league_rsvps_tournament_idx on public.league_rsvps(tournament_id);
 
--- Backstops set_league_rsvp()'s own duplicate-prevention against a race: without this, two
--- concurrent "in" calls for the same person (e.g. a double-click) could each see no existing
--- players row and both insert one. Partial (person_id is not null) so ad-hoc players added
--- via the free-text join flow for other formats -- which never set person_id -- are
--- unaffected. If this fails to apply because duplicate (tournament_id, person_id) rows
--- already exist in production, those must be deduplicated manually first.
-create unique index players_tournament_person_unique_idx on public.players (tournament_id, person_id)
-  where person_id is not null;
-
 alter table public.league_rsvps enable row level security;
 
 -- Organizers can read RSVPs for their own tournaments.
@@ -44,9 +35,12 @@ create policy "league_rsvps_select_public" on public.league_rsvps
 -- Belt-and-braces beyond RLS: Supabase's default privileges grant every new table
 -- INSERT/UPDATE/DELETE to anon/authenticated (set at project bootstrap, not visible anywhere
 -- in this repo's migrations -- see 20260824190000_tighten_public_signup_policies.sql, which
--- had to revoke the identical default grant on public.people/public.players). Revoking here
--- means set_league_rsvp() (SECURITY DEFINER, below) is provably the only way anon/
--- authenticated can write to this table, not just the only way RLS happens to allow today.
+-- had to revoke the same class of default grant -- INSERT specifically -- on
+-- public.people/public.players). Revoking here means set_league_rsvp() (SECURITY DEFINER,
+-- below) is the only way anon/authenticated can write rows to this table through PostgREST's
+-- HTTP surface, not just the only way RLS happens to allow today. (Postgres's TRUNCATE
+-- privilege bypasses RLS entirely and isn't covered by this revoke, but it also isn't
+-- reachable through PostgREST, so it's not a practical exposure here.)
 revoke insert, update, delete on public.league_rsvps from anon, authenticated;
 
 create or replace function public.set_league_rsvp(
@@ -71,8 +65,12 @@ begin
 
   -- Lock the tournament row for the duration of this transaction so concurrent RSVP calls
   -- for the same tournament serialize instead of racing on the read-then-write below --
-  -- otherwise two concurrent "in" calls could both pass the cap check, or two concurrent
-  -- "out" calls could both select and promote the same waiting-list person.
+  -- otherwise two concurrent "in" calls could each see no existing players row and both
+  -- insert one, two concurrent "in" calls could both pass the cap check and overshoot it,
+  -- or two concurrent "out" calls could both select and promote the same waiting-list
+  -- person. This is the only concurrency protection this feature needs -- everything above
+  -- runs serialized per tournament once this lock is held, so no separate uniqueness
+  -- constraint is required for set_league_rsvp()'s own writes.
   select id, organizer_id, format, date, max_players, completed_at
     into v_tournament
     from public.tournaments
