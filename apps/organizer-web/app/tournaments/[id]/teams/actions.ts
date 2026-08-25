@@ -70,7 +70,8 @@ export async function shuffleRemaining(tournamentId: string) {
   const { data: teams, error: teamsError } = await supabase
     .from('teams')
     .select('player_1_id, player_2_id')
-    .eq('tournament_id', tournamentId);
+    .eq('tournament_id', tournamentId)
+    .eq('is_ad_hoc', false);
 
   if (teamsError) {
     throw new Error(teamsError.message);
