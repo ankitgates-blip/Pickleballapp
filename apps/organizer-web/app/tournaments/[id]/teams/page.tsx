@@ -102,6 +102,14 @@ export default async function TeamsPage({
         </div>
       )}
 
+      {tournament?.format === 'custom' && (players ?? []).length % 2 === 1 && (
+        <div className="rounded-lg bg-navy-tint border border-navy-mid/25 text-navy-deep text-sm px-4 py-3 mb-6">
+          Odd number of players signed up — the extra player won&apos;t be stuck on the bench.
+          Matches generated while the count is odd pair players directly instead of using the
+          teams below, so everyone still gets games.
+        </div>
+      )}
+
       {isAutoPaired ? (
         <div className="rounded-lg bg-navy-tint border border-navy-mid/25 text-navy-deep text-sm px-4 py-3 mb-6">
           {formatLabel(tournament?.format ?? '')} auto-generates partners each round — head to
