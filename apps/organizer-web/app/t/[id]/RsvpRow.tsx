@@ -25,6 +25,15 @@ export default function RsvpRow({
     initialState
   );
 
+  const confirmDemote = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (
+      statusLabel === 'Confirmed' &&
+      !window.confirm(`${personName} currently has a confirmed spot. Remove it?`)
+    ) {
+      event.preventDefault();
+    }
+  };
+
   return (
     <li className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2">
       <div>
@@ -54,6 +63,7 @@ export default function RsvpRow({
             name="status"
             value="tentative"
             disabled={isPending}
+            onClick={confirmDemote}
             className={`text-xs font-semibold rounded-full px-2.5 py-1 disabled:opacity-50 ${
               currentStatus === 'tentative'
                 ? 'bg-amber-500 text-white'
@@ -67,6 +77,7 @@ export default function RsvpRow({
             name="status"
             value="out"
             disabled={isPending}
+            onClick={confirmDemote}
             className={`text-xs font-semibold rounded-full px-2.5 py-1 disabled:opacity-50 ${
               currentStatus === 'out'
                 ? 'bg-slate-500 text-white'
