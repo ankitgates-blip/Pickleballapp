@@ -190,28 +190,43 @@ export default async function PublicTournamentPage({
                 {isLeaguePlayoffs ? STAGE_LABELS[stage] : 'Schedule'}
               </h2>
               <ul className="space-y-2 text-sm">
-                {stageMatches.map((m, i) => (
-                  <li key={i} className="flex items-center justify-between">
-                    <span>
-                      {stage === 'league' && (
-                        <span className="text-slate-400 mr-2">R{m.round}</span>
-                      )}
-                      {!isLadder && m.court !== null && (
-                        <span className="text-slate-400 mr-2">{courtLabel(m.court)}</span>
-                      )}
-                      <span className="font-semibold">{teamById.get(m.team_a_id!)}</span>
-                      <span className="text-slate-400 mx-1">vs</span>
-                      <span className="font-semibold">
-                        {m.team_b_id ? teamById.get(m.team_b_id) : 'BYE'}
+                {stageMatches.map((m, i) => {
+                  if (!m.team_b_id && isLeaguePlayoffs) {
+                    return (
+                      <li key={i} className="flex items-center justify-between">
+                        <span>
+                          {stage === 'league' && (
+                            <span className="text-slate-400 mr-2">R{m.round}</span>
+                          )}
+                          <span className="text-slate-400">Sitting out:</span>{' '}
+                          <span className="font-semibold">{teamById.get(m.team_a_id!)}</span>
+                        </span>
+                      </li>
+                    );
+                  }
+                  return (
+                    <li key={i} className="flex items-center justify-between">
+                      <span>
+                        {stage === 'league' && (
+                          <span className="text-slate-400 mr-2">R{m.round}</span>
+                        )}
+                        {!isLadder && m.court !== null && (
+                          <span className="text-slate-400 mr-2">{courtLabel(m.court)}</span>
+                        )}
+                        <span className="font-semibold">{teamById.get(m.team_a_id!)}</span>
+                        <span className="text-slate-400 mx-1">vs</span>
+                        <span className="font-semibold">
+                          {m.team_b_id ? teamById.get(m.team_b_id) : 'BYE'}
+                        </span>
                       </span>
-                    </span>
-                    {m.status === 'complete' && (
-                      <span className="font-bold text-navy-mid">
-                        {m.score_a}-{m.score_b}
-                      </span>
-                    )}
-                  </li>
-                ))}
+                      {m.status === 'complete' && (
+                        <span className="font-bold text-navy-mid">
+                          {m.score_a}-{m.score_b}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           );
