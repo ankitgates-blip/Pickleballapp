@@ -1223,11 +1223,10 @@ export async function autoGenerateCustomRound(tournamentId: string) {
   }
 
   const playerIds = (players ?? []).map((p) => p.id);
-  const isOddMode = playerIds.length % 2 === 1;
 
   const { data: teams, error: teamsError } = await supabase
     .from('teams')
-    .select('id, player_1_id, player_2_id')
+    .select('id, player_1_id, player_2_id, is_ad_hoc')
     .eq('tournament_id', tournamentId)
     .order('created_at', { ascending: true })
     .order('id', { ascending: true });
@@ -1236,10 +1235,14 @@ export async function autoGenerateCustomRound(tournamentId: string) {
     throw new Error(teamsError.message);
   }
 
-  if (!isOddMode && (!teams || teams.length < 2)) {
+  const fixedTeams = (teams ?? []).filter((t) => !t.is_ad_hoc);
+  const fixedPairedPlayerIds = new Set(fixedTeams.flatMap((t) => [t.player_1_id, t.player_2_id]));
+  const isDynamicMode = playerIds.some((id) => !fixedPairedPlayerIds.has(id));
+
+  if (!isDynamicMode && fixedTeams.length < 2) {
     throw new Error('Need at least 2 teams to auto-generate a round.');
   }
-  if (isOddMode && playerIds.length < 4) {
+  if (isDynamicMode && playerIds.length < 4) {
     throw new Error('Need at least 4 players to auto-generate a round.');
   }
 
@@ -1275,7 +1278,7 @@ export async function autoGenerateCustomRound(tournamentId: string) {
   };
   let matchRows: MatchRow[];
 
-  if (isOddMode) {
+  if (isDynamicMode) {
     const teamIdByPairKey = new Map<string, string>();
     for (const t of teams ?? []) {
       teamIdByPairKey.set(pairKey(t.player_1_id, t.player_2_id), t.id);
@@ -1302,7 +1305,12 @@ export async function autoGenerateCustomRound(tournamentId: string) {
         .insert(
           newPairKeys.map((key) => {
             const [player1Id, player2Id] = key.split('|');
-            return { tournament_id: tournamentId, player_1_id: player1Id, player_2_id: player2Id };
+            return {
+              tournament_id: tournamentId,
+              player_1_id: player1Id,
+              player_2_id: player2Id,
+              is_ad_hoc: true,
+            };
           })
         )
         .select('id, player_1_id, player_2_id');
@@ -1325,7 +1333,7 @@ export async function autoGenerateCustomRound(tournamentId: string) {
       status: 'pending' as const,
     }));
   } else {
-    const pairings = computeCustomAutoRound(teams ?? [], existingMatches, nextRound);
+    const pairings = computeCustomAutoRound(fixedTeams, existingMatches, nextRound);
     matchRows = pairings.map((p) => ({
       tournament_id: tournamentId,
       round: nextRound,
