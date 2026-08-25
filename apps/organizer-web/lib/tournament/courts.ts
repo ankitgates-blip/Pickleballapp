@@ -20,3 +20,26 @@ export function courtLabel(court: number): string {
 export function assignCourts<T>(rows: T[]): (T & { court: number })[] {
   return rows.map((row, i) => ({ ...row, court: courtForIndex(i) }));
 }
+
+// Assigns courts within each round independently -- the index resets to 0 at the start of
+// every round, instead of continuing across the whole array. Needed for generators that
+// return one flat array spanning multiple rounds (round_robin, popcorn): without this,
+// only the first round would start at Court 1, and later rounds would inherit whatever
+// index the previous round left off at.
+//
+// Bye rows (wherever `isBye` returns true) are skipped entirely -- they don't consume a
+// court slot, and get `court: null` since no match is actually played on them.
+export function assignCourtsByRound<T extends { round: number }>(
+  rows: T[],
+  isBye: (row: T) => boolean = () => false
+): (T & { court: number | null })[] {
+  const countByRound = new Map<number, number>();
+  return rows.map((row) => {
+    if (isBye(row)) {
+      return { ...row, court: null };
+    }
+    const index = countByRound.get(row.round) ?? 0;
+    countByRound.set(row.round, index + 1);
+    return { ...row, court: courtForIndex(index) };
+  });
+}

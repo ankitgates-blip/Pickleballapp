@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { NUM_COURTS, courtForIndex, courtLabel, assignCourts } from './courts';
+import { NUM_COURTS, courtForIndex, courtLabel, assignCourts, assignCourtsByRound } from './courts';
 
 describe('courtForIndex', () => {
   it('maps indices 0-3 to courts 1-4', () => {
@@ -54,5 +54,41 @@ describe('assignCourts', () => {
     const rows = Array.from({ length: 6 }, (_, i) => ({ id: i }));
     const result = assignCourts(rows);
     expect(result.map((r) => r.court)).toEqual([1, 2, 3, 4, 1, 2]);
+  });
+});
+
+describe('assignCourtsByRound', () => {
+  it('resets the court index at the start of every round', () => {
+    const rows = [
+      { round: 1, id: 'a' },
+      { round: 1, id: 'b' },
+      { round: 1, id: 'c' },
+      { round: 2, id: 'd' },
+      { round: 2, id: 'e' },
+    ];
+    const result = assignCourtsByRound(rows);
+    expect(result.map((r) => r.court)).toEqual([1, 2, 3, 1, 2]);
+  });
+
+  it('wraps within a round past 4 matches', () => {
+    const rows = Array.from({ length: 5 }, (_, i) => ({ round: 1, id: i }));
+    const result = assignCourtsByRound(rows);
+    expect(result.map((r) => r.court)).toEqual([1, 2, 3, 4, 1]);
+  });
+
+  it('assigns court: null to bye rows and does not consume a court slot for them', () => {
+    const rows = [
+      { round: 1, id: 'a', teamBId: 'x' },
+      { round: 1, id: 'b', teamBId: null },
+      { round: 1, id: 'c', teamBId: 'y' },
+    ];
+    const result = assignCourtsByRound(rows, (row) => row.teamBId === null);
+    expect(result.map((r) => r.court)).toEqual([1, null, 2]);
+  });
+
+  it("preserves each row's original fields", () => {
+    const rows = [{ round: 1, teamAId: 'a', teamBId: 'b' }];
+    const result = assignCourtsByRound(rows);
+    expect(result[0]).toMatchObject({ round: 1, teamAId: 'a', teamBId: 'b' });
   });
 });

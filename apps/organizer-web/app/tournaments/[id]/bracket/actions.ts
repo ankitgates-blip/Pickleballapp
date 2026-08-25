@@ -12,7 +12,7 @@ import { computeCustomAutoRound } from '@/lib/tournament/customAuto';
 import type { CustomAutoMatch } from '@/lib/types';
 import { generateSemifinals, pickFinalists, fillStandingsGaps } from '@/lib/tournament/playoffs';
 import { computeStandings } from '@/lib/tournament/standings';
-import { assignCourts, courtForIndex } from '@/lib/tournament/courts';
+import { assignCourts, assignCourtsByRound, courtForIndex } from '@/lib/tournament/courts';
 import { canEditScore, canEditTeams } from '@/lib/tournament/completion';
 import type {
   MatchResult,
@@ -59,7 +59,7 @@ export async function generateBracket(tournamentId: string) {
       : generateRoundRobin(teams.map((t) => t.id));
 
   const { error: matchesError } = await supabase.from('matches').insert(
-    assignCourts(
+    assignCourtsByRound(
       pairings.map((p) => ({
         tournament_id: tournamentId,
         round: p.round,
@@ -67,7 +67,8 @@ export async function generateBracket(tournamentId: string) {
         team_a_id: p.teamAId,
         team_b_id: p.teamBId,
         status: 'pending' as const,
-      }))
+      })),
+      (row) => row.team_b_id === null
     )
   );
 
@@ -119,7 +120,7 @@ export async function generateLeaguePlayoffsBracket(tournamentId: string, formDa
   );
 
   const { error: matchesError } = await supabase.from('matches').insert(
-    assignCourts(
+    assignCourtsByRound(
       pairings.map((p) => ({
         tournament_id: tournamentId,
         round: p.round,
@@ -127,7 +128,8 @@ export async function generateLeaguePlayoffsBracket(tournamentId: string, formDa
         team_a_id: p.teamAId,
         team_b_id: p.teamBId,
         status: 'pending' as const,
-      }))
+      })),
+      (row) => row.team_b_id === null
     )
   );
 
@@ -226,7 +228,7 @@ export async function regenerateLeaguePlayoffsBracket(tournamentId: string) {
   );
 
   const { error: matchesError } = await supabase.from('matches').insert(
-    assignCourts(
+    assignCourtsByRound(
       pairings.map((p) => ({
         tournament_id: tournamentId,
         round: p.round,
@@ -234,7 +236,8 @@ export async function regenerateLeaguePlayoffsBracket(tournamentId: string) {
         team_a_id: p.teamAId,
         team_b_id: p.teamBId,
         status: 'pending' as const,
-      }))
+      })),
+      (row) => row.team_b_id === null
     )
   );
 
@@ -325,7 +328,7 @@ export async function generatePopcornBracket(tournamentId: string) {
   }
 
   const { error: matchesError } = await supabase.from('matches').insert(
-    assignCourts(
+    assignCourtsByRound(
       pairings.map((p) => ({
         tournament_id: tournamentId,
         round: p.round,
