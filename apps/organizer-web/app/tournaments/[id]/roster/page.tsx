@@ -39,14 +39,18 @@ export default async function RosterPage({
 
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('name, date, format, completed_at, venue_id, timeslot, max_players, venues(name)')
+    .select('name, date, format, completed_at, venue_id, timeslot, max_players, venues(name, contact_info)')
     .eq('id', id)
     .single();
 
   const isCompleted = Boolean(tournament?.completed_at);
 
-  const venue = tournament?.venues as { name: string } | { name: string }[] | null;
+  const venue = tournament?.venues as
+    | { name: string; contact_info: string | null }
+    | { name: string; contact_info: string | null }[]
+    | null;
   const venueName = Array.isArray(venue) ? (venue[0]?.name ?? 'Pickleturf') : (venue?.name ?? 'Pickleturf');
+  const venueContactInfo = Array.isArray(venue) ? (venue[0]?.contact_info ?? null) : (venue?.contact_info ?? null);
 
   const isIndividual = isIndividualFormat(tournament?.format ?? '');
 
@@ -191,6 +195,8 @@ export default async function RosterPage({
           date={tournament?.date ?? ''}
           venueName={venueName}
           timeslotLabel={timeslotLabel(tournament?.timeslot ?? '')}
+          format={tournament?.format ?? ''}
+          venueContactInfo={venueContactInfo}
         />
         {(players ?? []).length > 0 && (
           <ShareSignupUpdateButton

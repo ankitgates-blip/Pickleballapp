@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { outlineButtonClass } from '@/app/components/ui';
 import { shareOrCopyText } from '@/lib/share/shareText';
+import { buildLeagueInviteMessage } from '@/lib/tournament/inviteMessage';
 
 type ShareLeagueInviteButtonProps = {
   tournamentId: string;
@@ -10,6 +11,8 @@ type ShareLeagueInviteButtonProps = {
   date: string;
   venueName: string;
   timeslotLabel: string;
+  format: string;
+  venueContactInfo: string | null;
 };
 
 export default function ShareLeagueInviteButton({
@@ -18,6 +21,8 @@ export default function ShareLeagueInviteButton({
   date,
   venueName,
   timeslotLabel,
+  format,
+  venueContactInfo,
 }: ShareLeagueInviteButtonProps) {
   const [status, setStatus] = useState<'idle' | 'sharing' | 'copied' | 'error'>('idle');
 
@@ -25,7 +30,16 @@ export default function ShareLeagueInviteButton({
     setStatus('sharing');
     try {
       const url = `${window.location.origin}/t/${tournamentId}`;
-      const text = `🏓 ${tournamentName} — ${date} at ${venueName}, ${timeslotLabel}. Join here: ${url}`;
+      const text =
+        format === 'league_playoffs'
+          ? buildLeagueInviteMessage({
+              venueName,
+              date,
+              timeslotLabel,
+              contactInfo: venueContactInfo,
+              link: url,
+            })
+          : `🏓 ${tournamentName} — ${date} at ${venueName}, ${timeslotLabel}. Join here: ${url}`;
       const result = await shareOrCopyText(text, tournamentName);
       setStatus(result === 'copied' ? 'copied' : 'idle');
     } catch (err) {
