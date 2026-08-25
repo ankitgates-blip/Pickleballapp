@@ -57,7 +57,9 @@ export default function EditableTournamentName({
           autoFocus
           required
           disabled={isSaving}
-          onBlur={(e) => e.currentTarget.form?.requestSubmit()}
+          onBlur={(e) => {
+            if (!isSaving) e.currentTarget.form?.requestSubmit();
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
               setIsEditing(false);
