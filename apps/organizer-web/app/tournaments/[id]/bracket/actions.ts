@@ -1002,21 +1002,34 @@ export async function addCustomMatch(tournamentId: string, formData: FormData) {
     throw new Error(`Round must be a whole number between 1 and ${targetRounds}`);
   }
 
-  const { data: players, error: playersCountError } = await supabase
+  const { data: players, error: playersError } = await supabase
     .from('players')
     .select('id')
     .eq('tournament_id', tournamentId);
 
-  if (playersCountError) {
-    throw new Error(playersCountError.message);
+  if (playersError) {
+    throw new Error(playersError.message);
   }
 
-  const isOddMode = (players ?? []).length % 2 === 1;
+  const { data: fixedTeams, error: fixedTeamsError } = await supabase
+    .from('teams')
+    .select('player_1_id, player_2_id')
+    .eq('tournament_id', tournamentId)
+    .eq('is_ad_hoc', false);
+
+  if (fixedTeamsError) {
+    throw new Error(fixedTeamsError.message);
+  }
+
+  const fixedPairedPlayerIds = new Set(
+    (fixedTeams ?? []).flatMap((t) => [t.player_1_id, t.player_2_id])
+  );
+  const isDynamicMode = (players ?? []).some((p) => !fixedPairedPlayerIds.has(p.id));
 
   let teamAId: string;
   let teamBId: string;
 
-  if (isOddMode) {
+  if (isDynamicMode) {
     const teamAPlayer1 = formData.get('teamAPlayer1Id');
     const teamAPlayer2 = formData.get('teamAPlayer2Id');
     const teamBPlayer1 = formData.get('teamBPlayer1Id');
@@ -1115,7 +1128,12 @@ export async function addCustomMatch(tournamentId: string, formData: FormData) {
         .insert(
           newPairKeys.map((key) => {
             const [player1Id, player2Id] = key.split('|');
-            return { tournament_id: tournamentId, player_1_id: player1Id, player_2_id: player2Id };
+            return {
+              tournament_id: tournamentId,
+              player_1_id: player1Id,
+              player_2_id: player2Id,
+              is_ad_hoc: true,
+            };
           })
         )
         .select('id, player_1_id, player_2_id');
@@ -1147,6 +1165,7 @@ export async function addCustomMatch(tournamentId: string, formData: FormData) {
       .from('teams')
       .select('id')
       .eq('tournament_id', tournamentId)
+      .eq('is_ad_hoc', false)
       .in('id', [teamAIdRaw, teamBIdRaw]);
 
     if (teamsError) {
