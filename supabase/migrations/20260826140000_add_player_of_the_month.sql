@@ -19,9 +19,11 @@ create table public.player_of_the_month (
   locked_at timestamptz not null default now(),
   unique (venue_id, year, month),
   check (
-    person_id is null
-    or (score is not null and match_wins is not null and league_wins is not null
-        and win_percentage is not null and matches_played is not null)
+    (person_id is null) = (score is null)
+    and (person_id is null) = (match_wins is null)
+    and (person_id is null) = (league_wins is null)
+    and (person_id is null) = (win_percentage is null)
+    and (person_id is null) = (matches_played is null)
   )
 );
 
