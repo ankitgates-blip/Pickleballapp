@@ -162,10 +162,12 @@ export default async function PlayerOfTheMonthPage() {
       let winnerMatches: ReturnType<typeof buildPersonMatchRecords> = [];
       if (winnerPerson) {
         const { matches, teams } = await fetchMonthData(venue.id, venue.name, lastMonthYear, lastMonth);
-        winnerMatches = buildPersonMatchRecords(winnerPerson.id, matches, teams);
+        winnerMatches = buildPersonMatchRecords(winnerPerson.id, matches, teams).sort((a, b) =>
+          a.tournamentDate < b.tournamentDate ? 1 : -1
+        );
       }
-      const winnerWins = winnerMatches.filter((m) => m.won).length;
-      const winnerLosses = winnerMatches.length - winnerWins;
+      const winnerWins = lastMonthRow?.match_wins ?? 0;
+      const winnerLosses = (lastMonthRow?.matches_played ?? 0) - winnerWins;
       const winnerRating =
         lastMonthRow?.win_percentage != null
           ? Math.round((lastMonthRow.win_percentage / 100) * 5 * 100) / 100
@@ -208,14 +210,18 @@ export default async function PlayerOfTheMonthPage() {
                 winStreak={longestWinStreak(winnerMatches)}
                 trendPoints={null}
                 winsVsHigherRated={winsVsHigherRated(winnerMatches, lastMonthRow?.win_percentage ?? 0, winPercentageByPersonId)}
-                totalMatches={winnerMatches.length}
+                totalMatches={lastMonthRow?.matches_played ?? 0}
                 winsInLast10={winsInLastN(winnerMatches, 10)}
                 signatureShots={[]}
               />
-            ) : (
+            ) : lastMonthRow ? (
               <p className="text-sm text-slate-500">
                 No Player of the Month for {MONTH_NAMES[lastMonth - 1]} {lastMonthYear} — nobody met the
                 3-match minimum at this venue.
+              </p>
+            ) : (
+              <p className="text-sm text-slate-500">
+                No tournaments recorded at {venue.name} in {MONTH_NAMES[lastMonth - 1]} {lastMonthYear}.
               </p>
             )}
           </div>
