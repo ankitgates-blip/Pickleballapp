@@ -19,8 +19,13 @@ function monthDateRange(year: number, month: number): { start: string; end: stri
 // venue, that hasn't been checked yet -- see monthsToCheck for why this checks a whole
 // range rather than just "last month". Safe to call on every single page load: once a
 // month has a row (winner or null), lock_player_of_the_month's on-conflict-do-nothing
-// makes every later call for that same month a no-op.
-export async function lockMissingPlayerOfTheMonthWinners(supabase: SupabaseClient): Promise<void> {
+// makes every later call for that same month a no-op. Tournaments are scoped to
+// organizerId -- venues themselves are shared/global, but since locked rows never
+// recompute, unscoped pooling across organizers would be permanent and unfixable.
+export async function lockMissingPlayerOfTheMonthWinners(
+  supabase: SupabaseClient,
+  organizerId: string
+): Promise<void> {
   const { data: venues } = await supabase.from('venues').select('id, name').order('name');
   if (!venues || venues.length === 0) return;
 
@@ -49,6 +54,7 @@ export async function lockMissingPlayerOfTheMonthWinners(supabase: SupabaseClien
         .from('tournaments')
         .select('date')
         .eq('venue_id', venue.id)
+        .eq('organizer_id', organizerId)
         .order('date', { ascending: true })
         .limit(1)
         .maybeSingle();
@@ -67,11 +73,12 @@ export async function lockMissingPlayerOfTheMonthWinners(supabase: SupabaseClien
         .from('tournaments')
         .select('id, date, format, completed_at')
         .eq('venue_id', venue.id)
+        .eq('organizer_id', organizerId)
         .gte('date', start)
         .lt('date', end);
 
       if (!tournaments || tournaments.length === 0) {
-        await supabase.rpc('lock_player_of_the_month', {
+        const { error } = await supabase.rpc('lock_player_of_the_month', {
           p_venue_id: venue.id,
           p_year: year,
           p_month: month,
@@ -82,6 +89,14 @@ export async function lockMissingPlayerOfTheMonthWinners(supabase: SupabaseClien
           p_win_percentage: null,
           p_matches_played: null,
         });
+        if (error) {
+          // Stop checking further months for this venue -- the "start from most-recent
+          // row + 1" logic on the next page load assumes every locked month is
+          // contiguous, so locking a later month while this one silently failed would
+          // permanently strand this month unchecked.
+          console.error('lockMissingPlayerOfTheMonthWinners: lock RPC failed', venue.id, year, month, error);
+          break;
+        }
         continue;
       }
 
@@ -152,7 +167,7 @@ export async function lockMissingPlayerOfTheMonthWinners(supabase: SupabaseClien
       const ranked = rankMonthlyCandidates(candidates);
       const winner = ranked[0] ?? null;
 
-      await supabase.rpc('lock_player_of_the_month', {
+      const { error } = await supabase.rpc('lock_player_of_the_month', {
         p_venue_id: venue.id,
         p_year: year,
         p_month: month,
@@ -163,6 +178,10 @@ export async function lockMissingPlayerOfTheMonthWinners(supabase: SupabaseClien
         p_win_percentage: winner?.winPercentage ?? null,
         p_matches_played: winner?.matchesPlayed ?? null,
       });
+      if (error) {
+        console.error('lockMissingPlayerOfTheMonthWinners: lock RPC failed', venue.id, year, month, error);
+        break;
+      }
     }
   }
 }
