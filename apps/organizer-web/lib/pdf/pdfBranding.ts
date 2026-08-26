@@ -7,7 +7,7 @@ export const PDF_ACCENT_COLORS: Record<PdfAccent, string> = {
   roster: '#a8874f',
   schedule: '#bf5919',
   results: '#0f766e',
-  leaderboard: '#b6462a',
+  leaderboard: '#5b4b8a',
   playerStats: '#7c3a5c',
 };
 
@@ -47,13 +47,14 @@ export function pdfTableTheme(accent: PdfAccent) {
   };
 }
 
-// Fetches a same-origin static asset (e.g. /pdf-logo.png) and converts it to a data URL
-// for jsPDF's addImage, which needs image data directly rather than a URL it can fetch
-// itself. Not cached across calls -- the asset is small, so a repeat fetch is cheap and
-// this avoids any module-level mutable state. Returns null on any failure (404, offline,
-// corrupt response) rather than throwing, so a broken logo asset degrades the header to
-// text-only instead of blocking the entire PDF export -- before this module existed, PDF
-// generation had zero network dependency, and a decorative logo shouldn't introduce one.
+// Fetches an image URL -- the bundled logo asset (e.g. /pdf-logo.png) or a player's
+// stored photo -- and converts it to a data URL for jsPDF's addImage, which needs image
+// data directly rather than a URL it can fetch itself. Not cached across calls -- assets
+// are small, so a repeat fetch is cheap and this avoids any module-level mutable state.
+// Returns null on any failure (404, offline, corrupt response) rather than throwing, so a
+// broken image degrades gracefully (a text-only header, or no player photo) instead of
+// blocking the entire PDF export -- before this module existed, PDF generation had zero
+// network dependency, and a decorative image shouldn't introduce one.
 export async function loadImageAsDataUrl(url: string): Promise<string | null> {
   try {
     const response = await fetch(url);

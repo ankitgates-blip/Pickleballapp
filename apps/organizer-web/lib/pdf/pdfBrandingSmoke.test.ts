@@ -26,6 +26,25 @@ describe('pdfBranding drawing functions (smoke)', () => {
     expect(y).toBeGreaterThan(32); // past the 32mm band + accent bar
   });
 
+  it('drawPdfHeader draws without throwing when logoDataUrl is null (the logo-fetch-failed fallback)', async () => {
+    const [{ default: jsPDF }, { drawPdfHeader }] = await Promise.all([
+      import('jspdf'),
+      import('./pdfBranding'),
+    ]);
+    const doc = new jsPDF();
+
+    const y = drawPdfHeader(doc, {
+      accent: 'schedule',
+      title: 'Thursday Rumble',
+      subtitle: 'Match Schedule',
+      metaLine: '2026-08-27 · Pickleturf · Evening · League + Playoffs',
+      logoDataUrl: null,
+    });
+
+    expect(typeof y).toBe('number');
+    expect(y).toBeGreaterThan(32);
+  });
+
   it('drawPdfFooter stamps every existing page without throwing or adding pages', async () => {
     const [{ default: jsPDF }, { drawPdfFooter }] = await Promise.all([
       import('jspdf'),

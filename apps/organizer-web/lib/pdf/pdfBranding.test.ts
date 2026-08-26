@@ -7,7 +7,7 @@ describe('PDF_ACCENT_COLORS', () => {
       roster: '#a8874f',
       schedule: '#bf5919',
       results: '#0f766e',
-      leaderboard: '#b6462a',
+      leaderboard: '#5b4b8a',
       playerStats: '#7c3a5c',
     });
   });
@@ -32,7 +32,7 @@ describe('pdfTableTheme', () => {
 
   it('converts the leaderboard accent hex to its exact RGB triple', () => {
     const theme = pdfTableTheme('leaderboard');
-    expect(theme.headStyles.fillColor).toEqual([182, 70, 42]);
+    expect(theme.headStyles.fillColor).toEqual([91, 75, 138]);
   });
 
   it('converts the playerStats accent hex to its exact RGB triple', () => {
