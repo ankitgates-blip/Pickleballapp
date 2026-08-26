@@ -21,6 +21,7 @@ export type PlayerStatsCardProps = {
   totalMatches: number;
   winsInLast10: number;
   signatureShots: { emoji: string; skillName: string }[];
+  celebrationLabel?: string; // e.g. "PLAYER OF THE MONTH — AUGUST 2026" -- when set, adds a gold banner above the card
 };
 
 const CARD_WIDTH = 640;
@@ -105,10 +106,14 @@ export default function PlayerStatsCard({
   totalMatches,
   winsInLast10,
   signatureShots,
+  celebrationLabel,
 }: PlayerStatsCardProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [photoFailed, setPhotoFailed] = useState(false);
   const [status, setStatus] = useState<'idle' | 'generating' | 'error'>('idle');
+
+  const BANNER_HEIGHT = 44;
+  const totalHeight = celebrationLabel ? CARD_HEIGHT + BANNER_HEIGHT : CARD_HEIGHT;
 
   const threatTier = threatTierFor(threatPercentage);
   const palette = THREAT_PALETTE[threatTier.label] ?? THREAT_PALETTE['LOW THREAT'];
@@ -186,7 +191,7 @@ export default function PlayerStatsCard({
 
       const canvas = document.createElement('canvas');
       canvas.width = CARD_WIDTH * 2;
-      canvas.height = CARD_HEIGHT * 2;
+      canvas.height = totalHeight * 2;
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas not supported');
       ctx.scale(2, 2);
@@ -219,8 +224,8 @@ export default function PlayerStatsCard({
         <svg
           ref={svgRef}
           width={CARD_WIDTH}
-          height={CARD_HEIGHT}
-          viewBox={`0 0 ${CARD_WIDTH} ${CARD_HEIGHT}`}
+          height={totalHeight}
+          viewBox={`0 0 ${CARD_WIDTH} ${totalHeight}`}
           xmlns="http://www.w3.org/2000/svg"
           className="w-full h-auto max-w-[640px]"
         >
@@ -273,6 +278,7 @@ export default function PlayerStatsCard({
             </pattern>
           </defs>
 
+          <g transform={celebrationLabel ? `translate(0, ${BANNER_HEIGHT})` : undefined}>
           <rect x="0" y="0" width="410" height={CARD_HEIGHT} rx="16" fill="url(#mainBg)" />
           <rect x="0" y="0" width="410" height={CARD_HEIGHT} rx="16" fill="url(#cardTexture)" />
           <rect
@@ -574,6 +580,39 @@ export default function PlayerStatsCard({
           >
             ☠️ {statusLine.toUpperCase()}
           </text>
+          </g>
+          {celebrationLabel && (
+            <>
+              <rect x="0" y="0" width={CARD_WIDTH} height={BANNER_HEIGHT} rx="0" fill="url(#ribbonGrad)" />
+              <text
+                x={CARD_WIDTH / 2}
+                y={BANNER_HEIGHT / 2 - 6}
+                fontSize="16"
+                fontWeight="900"
+                fill="#ffffff"
+                textAnchor="middle"
+                letterSpacing="1"
+                fontFamily="system-ui, sans-serif"
+              >
+                🏆 {celebrationLabel} 🏆
+              </text>
+              <text
+                x={CARD_WIDTH / 2}
+                y={BANNER_HEIGHT / 2 + 14}
+                fontSize="11"
+                fontWeight="700"
+                fill="#fef3c7"
+                textAnchor="middle"
+                letterSpacing="2"
+                fontFamily="system-ui, sans-serif"
+              >
+                CONGRATULATIONS
+              </text>
+              {[40, 120, 200, 440, 520, 600].map((x, i) => (
+                <circle key={x} cx={x} cy={i % 2 === 0 ? 10 : 34} r="2.5" fill="#fef3c7" opacity="0.8" />
+              ))}
+            </>
+          )}
         </svg>
       </button>
       <p className="text-xs text-slate-400 mt-1.5">Click the card to share or download it as an image.</p>
