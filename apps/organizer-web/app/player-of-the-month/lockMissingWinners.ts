@@ -38,6 +38,7 @@ export async function lockMissingPlayerOfTheMonthWinners(
       .from('player_of_the_month')
       .select('year, month')
       .eq('venue_id', venue.id)
+      .eq('organizer_id', organizerId)
       .order('year', { ascending: false })
       .order('month', { ascending: false })
       .limit(1)

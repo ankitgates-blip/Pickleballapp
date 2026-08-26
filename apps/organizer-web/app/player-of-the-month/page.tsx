@@ -153,6 +153,7 @@ export default async function PlayerOfTheMonthPage() {
         .from('player_of_the_month')
         .select('person_id, match_wins, league_wins, win_percentage, matches_played')
         .eq('venue_id', venue.id)
+        .eq('organizer_id', organizer.id)
         .eq('year', lastMonthYear)
         .eq('month', lastMonth)
         .maybeSingle();
@@ -214,14 +215,9 @@ export default async function PlayerOfTheMonthPage() {
                 winsInLast10={winsInLastN(winnerMatches, 10)}
                 signatureShots={[]}
               />
-            ) : lastMonthRow ? (
-              <p className="text-sm text-slate-500">
-                No Player of the Month for {MONTH_NAMES[lastMonth - 1]} {lastMonthYear} — nobody met the
-                3-match minimum at this venue.
-              </p>
             ) : (
               <p className="text-sm text-slate-500">
-                No tournaments recorded at {venue.name} in {MONTH_NAMES[lastMonth - 1]} {lastMonthYear}.
+                No Player of the Month for {MONTH_NAMES[lastMonth - 1]} {lastMonthYear}.
               </p>
             )}
           </div>

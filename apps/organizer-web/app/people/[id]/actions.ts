@@ -155,6 +155,11 @@ export async function deletePerson(personId: string) {
     .eq('organizer_id', organizer.id);
 
   if (deleteError) {
+    if (deleteError.code === '23503') {
+      throw new Error(
+        'This person has won Player of the Month and their record must be preserved -- they cannot be deleted.'
+      );
+    }
     throw new Error(deleteError.message);
   }
 
