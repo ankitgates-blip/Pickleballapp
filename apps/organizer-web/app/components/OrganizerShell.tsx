@@ -30,6 +30,43 @@ function LeaderboardIcon() {
   );
 }
 
+// Decorative header accent: a paddle silhouette angled toward the ball-texture circle,
+// so the two read together as "paddle about to hit the ball" instead of a lone dot.
+// Reuses the same paddle silhouette as PaddleIcon (app/locations/page.tsx), just larger
+// and styled for the header's dark photo backdrop.
+function HeaderPaddleAccent() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      fill="none"
+      className="absolute top-2 right-16 h-16 w-16 -rotate-[28deg] opacity-80 drop-shadow-md"
+    >
+      <ellipse cx="12" cy="9" rx="6" ry="7" stroke="#e9d9b8" strokeWidth={1.4} fill="rgba(168,135,79,0.35)" />
+      <path d="M12 16v6" stroke="#e9d9b8" strokeWidth={1.4} strokeLinecap="round" />
+      <path d="M9 22h6" stroke="#e9d9b8" strokeWidth={1.4} strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// Decorative header accent: a faint pickleball-court line motif (baseline + kitchen line +
+// centerline), low-opacity so it reads as texture rather than competing with the photo or
+// the brand card. Echoes "pickleball courts" without needing a literal court photo.
+function HeaderCourtLines() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 400 60"
+      preserveAspectRatio="none"
+      className="absolute bottom-0 left-0 w-full h-10 opacity-[0.14]"
+    >
+      <line x1="0" y1="58" x2="400" y2="58" stroke="white" strokeWidth={2} />
+      <line x1="0" y1="30" x2="400" y2="30" stroke="white" strokeWidth={1.5} />
+      <line x1="200" y1="30" x2="200" y2="58" stroke="white" strokeWidth={1.5} />
+    </svg>
+  );
+}
+
 export default function OrganizerShell({
   children,
   organizerName,
@@ -48,7 +85,7 @@ export default function OrganizerShell({
           className="relative overflow-hidden text-white shadow-lg"
           style={{
             backgroundImage:
-              "linear-gradient(120deg, rgba(12,24,48,0.92), rgba(22,41,78,0.82) 55%, rgba(12,24,48,0.78)), url('/header-bg.png')",
+              "linear-gradient(120deg, rgba(12,24,48,0.92), rgba(22,41,78,0.82) 55%, rgba(12,24,48,0.78)), url('/header-bg.webp')",
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
@@ -58,6 +95,8 @@ export default function OrganizerShell({
             className="ball-texture absolute -top-6 -right-3 h-28 w-28 rounded-full opacity-90 shadow-lg"
             style={{ background: 'radial-gradient(circle at 35% 35%, #f2942e, #d2621c)' }}
           />
+          <HeaderPaddleAccent />
+          <HeaderCourtLines />
           <div aria-hidden className="header-dots absolute inset-0" />
           {/* pl-[170px] clears the overlapping logo: left-[30px] + 140px width below */}
           <div className="relative max-w-3xl mx-auto px-4 pt-4 pb-2 pl-[170px] min-h-[150px] flex flex-col justify-center">
