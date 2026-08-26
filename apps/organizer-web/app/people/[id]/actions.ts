@@ -147,12 +147,16 @@ export async function deletePerson(personId: string) {
   // this person's tournament/team history stripped even though neither their profile
   // nor their Player of the Month record actually got deleted. Checking first avoids
   // ever starting a deletion that can't complete.
-  const { data: wonPlayerOfTheMonth } = await supabase
+  const { data: wonPlayerOfTheMonth, error: potmCheckError } = await supabase
     .from('player_of_the_month')
     .select('id')
     .eq('person_id', personId)
     .limit(1)
     .maybeSingle();
+
+  if (potmCheckError) {
+    throw new Error(potmCheckError.message);
+  }
 
   if (wonPlayerOfTheMonth) {
     throw new Error(
