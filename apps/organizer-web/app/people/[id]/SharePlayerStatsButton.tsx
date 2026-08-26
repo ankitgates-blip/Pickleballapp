@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { outlineButtonClass } from '@/app/components/ui';
 import { shareOrDownloadPdf, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
+import { drawPdfHeader, drawPdfFooter, pdfTableTheme, loadImageAsDataUrl } from '@/lib/pdf/pdfBranding';
 import type { ExportLocationRow, ExportMatchHistoryRow, ExportPeriodRow } from '@/lib/stats/personStatsExport';
 
 type SharePlayerStatsButtonProps = {
@@ -28,22 +29,6 @@ type SharePlayerStatsButtonProps = {
   bestPartnerLabel: string;
   matchHistoryRows: ExportMatchHistoryRow[];
 };
-
-async function loadPhotoDataUrl(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    return await new Promise<string | null>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
-}
 
 export default function SharePlayerStatsButton({
   personName,
@@ -73,14 +58,22 @@ export default function SharePlayerStatsButton({
   const handleClick = async () => {
     setStatus('generating');
     try {
-      const [{ default: jsPDF }, { default: autoTable }, photoDataUrl] = await Promise.all([
+      const [{ default: jsPDF }, { default: autoTable }, logoDataUrl, photoDataUrl] = await Promise.all([
         import('jspdf'),
         import('jspdf-autotable'),
-        photoUrl ? loadPhotoDataUrl(photoUrl) : Promise.resolve(null),
+        loadImageAsDataUrl('/pdf-logo.png'),
+        photoUrl ? loadImageAsDataUrl(photoUrl) : Promise.resolve(null),
       ]);
 
       const doc = new jsPDF();
-      let y = 16;
+
+      let y = drawPdfHeader(doc, {
+        accent: 'playerStats',
+        title: nickname ? `${personName} (${nickname})` : personName,
+        subtitle: 'Player Stats',
+        metaLine: [lastPlayedDate ? `Last played: ${lastPlayedDate}` : 'No matches played yet', starLabel].join(' · '),
+        logoDataUrl,
+      });
 
       if (photoDataUrl) {
         try {
@@ -89,7 +82,7 @@ export default function SharePlayerStatsButton({
             : photoDataUrl.startsWith('data:image/webp')
               ? 'WEBP'
               : 'JPEG';
-          doc.addImage(photoDataUrl, format, 160, 10, 30, 30);
+          doc.addImage(photoDataUrl, format, 172, 4, 26, 26);
         } catch {
           // Malformed image data shouldn't break the rest of the export.
         }
@@ -101,21 +94,6 @@ export default function SharePlayerStatsButton({
           y = 16;
         }
       };
-
-      doc.setFontSize(16);
-      doc.text('PicklerAlly DXB', 14, y);
-      y += 8;
-      doc.setFontSize(13);
-      doc.text(nickname ? `${personName} (${nickname})` : personName, 14, y);
-      y += 7;
-
-      doc.setFontSize(10);
-      doc.text(
-        [lastPlayedDate ? `Last played: ${lastPlayedDate}` : 'No matches played yet', starLabel].join(' · '),
-        14,
-        y
-      );
-      y += 8;
 
       const profileRows: [string, string][] = [
         handedness ? (['Handedness', handedness] as [string, string]) : null,
@@ -153,6 +131,7 @@ export default function SharePlayerStatsButton({
         startY: y + 4,
         head: [['Location', 'Matches', 'Win %']],
         body: locationRows.map((r) => [r.location, String(r.matchCount), r.winPercentageLabel]),
+        ...pdfTableTheme('playerStats'),
       });
       // @ts-expect-error -- doc.lastAutoTable is set at runtime by jspdf-autotable, with no official type augmentation
       y = doc.lastAutoTable.finalY + 8;
@@ -172,6 +151,7 @@ export default function SharePlayerStatsButton({
             String(r.gamesWon),
             String(r.gamesLost),
           ]),
+          ...pdfTableTheme('playerStats'),
         });
         // @ts-expect-error -- doc.lastAutoTable is set at runtime by jspdf-autotable, with no official type augmentation
         y = doc.lastAutoTable.finalY + 8;
@@ -205,8 +185,10 @@ export default function SharePlayerStatsButton({
           r.result,
           r.scoreLabel,
         ]),
+        ...pdfTableTheme('playerStats'),
       });
 
+      drawPdfFooter(doc);
       const blob: Blob = doc.output('blob');
       const fileName = `${sanitizeFileNamePart(personName)}-stats.pdf`;
       const result = await shareOrDownloadPdf(blob, fileName, personName);
