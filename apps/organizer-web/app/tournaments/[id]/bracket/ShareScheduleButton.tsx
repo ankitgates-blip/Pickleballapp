@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { outlineButtonClass } from '@/app/components/ui';
 import { shareOrDownloadPdf, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
+import { drawPdfHeader, drawPdfFooter, pdfTableTheme, loadImageAsDataUrl } from '@/lib/pdf/pdfBranding';
 import type { ExportMatchGroup } from '@/lib/tournament/resultsExport';
 
 type ShareScheduleButtonProps = {
@@ -33,18 +34,14 @@ export default function ShareScheduleButton({
       ]);
 
       const doc = new jsPDF();
-      let y = 16;
-
-      doc.setFontSize(16);
-      doc.text('PicklerAlly DXB', 14, y);
-      y += 8;
-      doc.setFontSize(13);
-      doc.text(tournamentName, 14, y);
-      y += 7;
-
-      doc.setFontSize(10);
-      doc.text([date, venueName, timeslotLabel, formatLabel].join(' · '), 14, y);
-      y += 10;
+      const logoDataUrl = await loadImageAsDataUrl('/pdf-logo.png');
+      let y = drawPdfHeader(doc, {
+        accent: 'schedule',
+        title: tournamentName,
+        subtitle: 'Match Schedule',
+        metaLine: [date, venueName, timeslotLabel, formatLabel].join(' · '),
+        logoDataUrl,
+      });
 
       for (const group of matchGroups) {
         doc.setFontSize(11);
@@ -56,11 +53,12 @@ export default function ShareScheduleButton({
           m.teamBName,
           m.scoreLabel,
         ]);
-        autoTable(doc, { startY: y + 4, head: [['Round', 'Team A', 'Team B', 'Score']], body });
+        autoTable(doc, { startY: y + 4, head: [['Round', 'Team A', 'Team B', 'Score']], body, ...pdfTableTheme('schedule') });
         // @ts-expect-error -- doc.lastAutoTable is set at runtime by jspdf-autotable, with no official type augmentation
         y = doc.lastAutoTable.finalY + 8;
       }
 
+      drawPdfFooter(doc);
       const blob: Blob = doc.output('blob');
       const fileName = `${sanitizeFileNamePart(tournamentName)}-schedule.pdf`;
       const result = await shareOrDownloadPdf(blob, fileName, tournamentName);
