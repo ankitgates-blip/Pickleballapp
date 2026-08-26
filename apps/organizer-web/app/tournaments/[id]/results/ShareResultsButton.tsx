@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { outlineButtonClass } from '@/app/components/ui';
 import { shareOrDownloadPdf, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
+import { drawPdfHeader, drawPdfFooter, pdfTableTheme, drawHighlightBox, loadImageAsDataUrl } from '@/lib/pdf/pdfBranding';
 import type { ExportStandingsRow, ExportMatchGroup } from '@/lib/tournament/resultsExport';
 
 type ShareResultsButtonProps = {
@@ -41,25 +42,19 @@ export default function ShareResultsButton({
       ]);
 
       const doc = new jsPDF();
-      let y = 16;
-
-      doc.setFontSize(16);
-      doc.text('PicklerAlly DXB', 14, y);
-      y += 8;
-      doc.setFontSize(13);
-      doc.text(tournamentName, 14, y);
-      y += 7;
-
-      doc.setFontSize(10);
+      const logoDataUrl = await loadImageAsDataUrl('/pdf-logo.png');
       const metaParts = [date, venueName, timeslotLabel, formatLabel];
       if (completedAt) metaParts.push(`Completed ${new Date(completedAt).toLocaleDateString()}`);
-      doc.text(metaParts.join(' · '), 14, y);
-      y += 8;
+      let y = drawPdfHeader(doc, {
+        accent: 'results',
+        title: tournamentName,
+        subtitle: 'Results',
+        metaLine: metaParts.join(' · '),
+        logoDataUrl,
+      });
 
       if (championName) {
-        doc.setFontSize(12);
-        doc.text(`Champion: ${championName}`, 14, y);
-        y += 8;
+        y = drawHighlightBox(doc, { accent: 'results', text: `Champion: ${championName}`, x: 14, y });
       }
 
       const hasPrimaryStat = standingsRows.some((r) => r.primaryStat !== '');
@@ -72,7 +67,7 @@ export default function ShareResultsButton({
           : [String(r.rank), r.name, String(r.wins), String(r.losses), r.diffLabel]
       );
 
-      autoTable(doc, { startY: y, head: standingsHead, body: standingsBody });
+      autoTable(doc, { startY: y, head: standingsHead, body: standingsBody, ...pdfTableTheme('results') });
       // @ts-expect-error -- autoTable augments jsPDF's instance type with lastAutoTable at runtime
       y = doc.lastAutoTable.finalY + 8;
 
@@ -86,11 +81,12 @@ export default function ShareResultsButton({
           m.teamBName,
           m.scoreLabel,
         ]);
-        autoTable(doc, { startY: y + 4, head: [['Round', 'Team A', 'Team B', 'Score']], body });
+        autoTable(doc, { startY: y + 4, head: [['Round', 'Team A', 'Team B', 'Score']], body, ...pdfTableTheme('results') });
         // @ts-expect-error -- see above
         y = doc.lastAutoTable.finalY + 8;
       }
 
+      drawPdfFooter(doc);
       const blob: Blob = doc.output('blob');
       const fileName = `${sanitizeFileNamePart(tournamentName)}-results.pdf`;
       const result = await shareOrDownloadPdf(blob, fileName, tournamentName);
