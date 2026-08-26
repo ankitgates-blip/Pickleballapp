@@ -30,6 +30,19 @@ function LeaderboardIcon() {
   );
 }
 
+function TrophyIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M7 4h10v5a5 5 0 0 1-10 0V4z" fill="currentColor" />
+      <path d="M7 5.25H4.25a2.75 2.75 0 0 0 2.75 4.5" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
+      <path d="M17 5.25h2.75a2.75 2.75 0 0 1-2.75 4.5" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
+      <path d="M12 13.25v3" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+      <path d="M8.5 20h7" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+      <path d="M9.5 20v-1.5a2.5 2.5 0 0 1 5 0V20" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function OrganizerShell({
   children,
   organizerName,
@@ -40,6 +53,7 @@ export default function OrganizerShell({
   const pathname = usePathname();
   const isPlayerProfileActive = pathname.startsWith('/people');
   const isLocationsActive = pathname.startsWith('/locations');
+  const isPlayerOfTheMonthActive = pathname.startsWith('/player-of-the-month');
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -120,6 +134,15 @@ export default function OrganizerShell({
         >
           <PersonIcon />
           Player Profile
+        </Link>
+        <Link
+          href="/player-of-the-month"
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-bold ${
+            isPlayerOfTheMonthActive ? 'text-[#b69a6b]' : 'text-[#b9c4dd]'
+          }`}
+        >
+          <TrophyIcon />
+          Player of the Month
         </Link>
         <Link href="/tournaments/new" className="relative flex-1 flex flex-col items-center">
           <span className="absolute -top-[18px] flex h-[52px] w-[52px] items-center justify-center rounded-full bg-brand-orange border-[3px] border-white shadow-lg">
