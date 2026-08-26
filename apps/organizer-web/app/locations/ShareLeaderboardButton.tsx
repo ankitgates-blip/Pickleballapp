@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { outlineButtonClass } from '@/app/components/ui';
 import { shareOrDownloadFile, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
+import { drawPdfHeader, drawPdfFooter, pdfTableTheme, loadImageAsDataUrl } from '@/lib/pdf/pdfBranding';
 
 export type ExportLeaderboardVenue = {
   venueName: string;
@@ -33,14 +34,14 @@ export default function ShareLeaderboardButton({ venues }: ShareLeaderboardButto
       ]);
 
       const doc = new jsPDF();
-      let y = 16;
-
-      doc.setFontSize(16);
-      doc.text('PicklerAlly DXB', 14, y);
-      y += 8;
-      doc.setFontSize(13);
-      doc.text('Location Stats', 14, y);
-      y += 10;
+      const logoDataUrl = await loadImageAsDataUrl('/pdf-logo.png');
+      let y = drawPdfHeader(doc, {
+        accent: 'leaderboard',
+        title: 'PicklerAlly DXB',
+        subtitle: 'Location Stats',
+        metaLine: '',
+        logoDataUrl,
+      });
 
       for (const venue of venues) {
         if (y > 260) {
@@ -73,11 +74,13 @@ export default function ShareLeaderboardButton({ venues }: ShareLeaderboardButto
           startY: y + 4,
           head: [['#', 'Player', 'League Wins', 'Matches', 'Match Wins', 'Losses', 'Win %']],
           body,
+          ...pdfTableTheme('leaderboard'),
         });
         // @ts-expect-error -- autoTable augments jsPDF's instance type with lastAutoTable at runtime
         y = doc.lastAutoTable.finalY + 10;
       }
 
+      drawPdfFooter(doc);
       const blob: Blob = doc.output('blob');
       const fileName = `${sanitizeFileNamePart('picklerally-dxb')}-leaderboard.pdf`;
       const result = await shareOrDownloadFile(blob, fileName, 'PicklerAlly DXB Leaderboard', 'application/pdf');

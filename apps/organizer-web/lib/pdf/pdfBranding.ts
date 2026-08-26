@@ -1,12 +1,14 @@
 // apps/organizer-web/lib/pdf/pdfBranding.ts
 import type jsPDF from 'jspdf';
 
-export type PdfAccent = 'roster' | 'schedule' | 'results';
+export type PdfAccent = 'roster' | 'schedule' | 'results' | 'leaderboard' | 'playerStats';
 
 export const PDF_ACCENT_COLORS: Record<PdfAccent, string> = {
   roster: '#a8874f',
   schedule: '#bf5919',
   results: '#0f766e',
+  leaderboard: '#b6462a',
+  playerStats: '#7c3a5c',
 };
 
 const GOLD: [number, number, number] = [168, 135, 79]; // #a8874f, footer text color
