@@ -63,10 +63,10 @@ export default function ShareRosterButton({
           doc.text('Unpaired Players', 14, y);
           y += 2;
           autoTable(doc, {
-            ...pdfTableTheme('roster'),
             startY: y + 4,
             head: [['Player']],
             body: unpairedPlayerNames.map((name) => [name]),
+            ...pdfTableTheme('roster'),
           });
         }
       } else {
@@ -74,10 +74,10 @@ export default function ShareRosterButton({
         doc.text('Players', 14, y);
         y += 2;
         autoTable(doc, {
-          ...pdfTableTheme('roster'),
           startY: y + 4,
           head: [['Player']],
           body: allPlayerNames.map((name) => [name]),
+          ...pdfTableTheme('roster'),
         });
       }
 

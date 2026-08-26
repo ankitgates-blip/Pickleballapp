@@ -47,18 +47,25 @@ export function pdfTableTheme(accent: PdfAccent) {
 
 // Fetches a same-origin static asset (e.g. /pdf-logo.png) and converts it to a data URL
 // for jsPDF's addImage, which needs image data directly rather than a URL it can fetch
-// itself. Not cached across calls -- the asset is small and already browser-cached by
-// the time a Share button is clicked, so a repeat fetch is cheap and this avoids any
-// module-level mutable state.
-export async function loadImageAsDataUrl(url: string): Promise<string> {
-  const response = await fetch(url);
-  const blob = await response.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
+// itself. Not cached across calls -- the asset is small, so a repeat fetch is cheap and
+// this avoids any module-level mutable state. Returns null on any failure (404, offline,
+// corrupt response) rather than throwing, so a broken logo asset degrades the header to
+// text-only instead of blocking the entire PDF export -- before this module existed, PDF
+// generation had zero network dependency, and a decorative logo shouldn't introduce one.
+export async function loadImageAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
 }
 
 // Draws the branded header band (logo + title + subtitle + meta line + accent bar) at
@@ -72,7 +79,7 @@ export function drawPdfHeader(
     title: string;
     subtitle: string;
     metaLine: string;
-    logoDataUrl: string;
+    logoDataUrl: string | null;
   }
 ): number {
   const { accent, title, subtitle, metaLine, logoDataUrl } = params;
@@ -85,7 +92,9 @@ export function drawPdfHeader(
     doc.rect(0, i * stripHeight, pageWidth, stripHeight + 0.5, 'F'); // +0.5 avoids hairline gaps between strips
   });
 
-  doc.addImage(logoDataUrl, 'PNG', 14, 4, 24, 24);
+  if (logoDataUrl) {
+    doc.addImage(logoDataUrl, 'PNG', 14, 4, 24, 24);
+  }
 
   const textX = 44;
   doc.setTextColor(255, 255, 255);
@@ -102,6 +111,7 @@ export function drawPdfHeader(
   doc.rect(0, bandHeight, pageWidth, 2, 'F');
 
   doc.setTextColor(0, 0, 0); // reset for whatever the caller draws next
+  doc.setFontSize(10);
   return bandHeight + 2 + 8;
 }
 
@@ -130,15 +140,18 @@ export function drawHighlightBox(
   const { accent, text, x, y } = params;
   const [r, g, b] = hexToRgb(PDF_ACCENT_COLORS[accent]);
   const boxHeight = 10;
-  const textWidth = doc.getStringUnitWidth(text) * 12 * 1.15; // approx width at 12pt for box sizing
-  const boxWidth = textWidth * 0.5 + 12; // getStringUnitWidth returns em units, not mm -- pad generously
+  const pageWidth = doc.internal.pageSize.getWidth();
+  doc.setFontSize(12); // getTextWidth measures at the currently-set font size
+  const boxWidth = Math.min(doc.getTextWidth(text) + 12, pageWidth - x - 14);
 
   doc.setFillColor(r, g, b);
   doc.roundedRect(x, y, boxWidth, boxHeight, 2, 2, 'F');
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
   doc.text(text, x + 6, y + 7);
+  doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
+  doc.setFontSize(10);
 
   return y + boxHeight + 6;
 }
