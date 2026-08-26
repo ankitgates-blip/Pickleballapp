@@ -139,6 +139,27 @@ export async function removePersonPhoto(personId: string) {
 export async function deletePerson(personId: string) {
   const { supabase, organizer } = await requireOrganizer();
 
+  // Check this BEFORE deleting anything below. players.person_id has no ON DELETE
+  // clause (so those rows must be cleared manually before people can be deleted), but
+  // player_of_the_month.person_id is `on delete restrict`, which would reject the
+  // people delete further down. Since these are separate requests, not one
+  // transaction, deleting players first and then hitting that restriction would leave
+  // this person's tournament/team history stripped even though neither their profile
+  // nor their Player of the Month record actually got deleted. Checking first avoids
+  // ever starting a deletion that can't complete.
+  const { data: wonPlayerOfTheMonth } = await supabase
+    .from('player_of_the_month')
+    .select('id')
+    .eq('person_id', personId)
+    .limit(1)
+    .maybeSingle();
+
+  if (wonPlayerOfTheMonth) {
+    throw new Error(
+      'This person has won Player of the Month and their record must be preserved -- they cannot be deleted.'
+    );
+  }
+
   const { error: playersError } = await supabase
     .from('players')
     .delete()
