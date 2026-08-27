@@ -32,4 +32,4 @@ export const playerCardClass =
 export const playerCardAvatarClass =
   'w-14 h-14 rounded-full bg-gradient-to-br from-[#fde68a] to-[#f59e0b] flex items-center justify-center text-xl font-black text-[#451a03]';
 
-export const headingClass = 'font-heading font-bold tracking-tight text-navy-deep';
+export const headingClass = 'font-heading font-bold text-navy-deep';

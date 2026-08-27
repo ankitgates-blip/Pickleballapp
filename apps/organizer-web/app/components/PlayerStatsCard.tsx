@@ -314,7 +314,7 @@ export default function PlayerStatsCard({
                 fontWeight="700"
                 fill="#451a03"
                 textAnchor="middle"
-                fontFamily="system-ui, sans-serif"
+                fontFamily="Oswald, sans-serif"
               >
                 {initial}
               </text>
@@ -327,7 +327,7 @@ export default function PlayerStatsCard({
             fontSize="23"
             fontWeight="900"
             fill="#f8fafc"
-            fontFamily="system-ui, sans-serif"
+            fontFamily="Oswald, sans-serif"
             {...(nameNeedsCompression ? { textLength: 270, lengthAdjust: 'spacingAndGlyphs' } : {})}
           >
             {name}
@@ -360,47 +360,47 @@ export default function PlayerStatsCard({
                 fontWeight="900"
                 fill="#ffffff"
                 textAnchor="middle"
-                fontFamily="system-ui, sans-serif"
+                fontFamily="Oswald, sans-serif"
               >
                 #{playerNumber}
               </text>
             </>
           )}
           {ageHandednessLabel && (
-            <text x="118" y="64" fontSize="11" fill="#c9a865" fontFamily="system-ui, sans-serif">
+            <text x="118" y="64" fontSize="11" fill="#c9a865" fontFamily="Geist, sans-serif">
               {ageHandednessLabel}
             </text>
           )}
-          <text x="118" y="79" fontSize="10" fill="#94a3b8" letterSpacing="1" fontFamily="system-ui, sans-serif">
+          <text x="118" y="79" fontSize="10" fill="#94a3b8" letterSpacing="1" fontFamily="Oswald, sans-serif">
             PICKLERALLY DXB PLAYER CARD
           </text>
 
           <rect x="18" y="114" width="118" height="60" rx="8" fill="#1c1917" stroke="#3f3f46" />
-          <text x="77" y="142" fontSize="21" fontWeight="800" fill="#f8fafc" textAnchor="middle" fontFamily="system-ui, sans-serif">
+          <text x="77" y="142" fontSize="21" fontWeight="800" fill="#f8fafc" textAnchor="middle" fontFamily="Oswald, sans-serif">
             {rating.toFixed(2)}
           </text>
-          <text x="77" y="156" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="system-ui, sans-serif">
+          <text x="77" y="156" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="Oswald, sans-serif">
             RATING
           </text>
-          <text x="77" y="169" fontSize="11" fill="#fbbf24" textAnchor="middle" fontFamily="system-ui, sans-serif">
+          <text x="77" y="169" fontSize="11" fill="#fbbf24" textAnchor="middle" fontFamily="Geist, sans-serif">
             {renderStarRow(starCount)}
           </text>
 
           <rect x="144" y="114" width="118" height="60" rx="8" fill="#1c1917" stroke="#3f3f46" />
-          <text x="203" y="142" fontSize="21" fontWeight="800" fill={palette.accent} textAnchor="middle" fontFamily="system-ui, sans-serif">
+          <text x="203" y="142" fontSize="21" fontWeight="800" fill={palette.accent} textAnchor="middle" fontFamily="Oswald, sans-serif">
             {formPercentage}
           </text>
-          <text x="203" y="156" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="system-ui, sans-serif">
+          <text x="203" y="156" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="Oswald, sans-serif">
             FORM
           </text>
           <rect x="152" y="161" width="102" height="6" rx="3" fill="url(#heatScale)" />
           <rect x={formMarkerX} y="159" width="2.5" height="10" rx="1.25" fill="#ffffff" />
 
           <rect x="270" y="114" width="118" height="60" rx="8" fill="#1c1917" stroke="#3f3f46" />
-          <text x="329" y="142" fontSize="21" fontWeight="800" fill={palette.accent} textAnchor="middle" fontFamily="system-ui, sans-serif">
+          <text x="329" y="142" fontSize="21" fontWeight="800" fill={palette.accent} textAnchor="middle" fontFamily="Oswald, sans-serif">
             {threatPercentage}
           </text>
-          <text x="329" y="156" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="system-ui, sans-serif">
+          <text x="329" y="156" fontSize="8" fill="#94a3b8" textAnchor="middle" letterSpacing="1" fontFamily="Oswald, sans-serif">
             THREAT LVL
           </text>
           <rect x="278" y="161" width="102" height="6" rx="3" fill="url(#heatScale)" />
@@ -408,7 +408,7 @@ export default function PlayerStatsCard({
 
           {shownShots.length > 0 && (
             <>
-              <text x="18" y="198" fontSize="12" fontWeight="700" fill="#94a3b8" letterSpacing="1.5" fontFamily="system-ui, sans-serif">
+              <text x="18" y="198" fontSize="12" fontWeight="700" fill="#94a3b8" letterSpacing="1.5" fontFamily="Oswald, sans-serif">
                 SIGNATURE SHOTS
               </text>
               {shownShots.map((shot, i) => (
@@ -419,7 +419,7 @@ export default function PlayerStatsCard({
                   fontSize="14"
                   fontStyle="italic"
                   fill="#e2e8f0"
-                  fontFamily="system-ui, sans-serif"
+                  fontFamily="Geist, sans-serif"
                 >
                   {shot.emoji} {shot.skillName}
                 </text>
@@ -431,7 +431,7 @@ export default function PlayerStatsCard({
                   fontSize="14"
                   fontStyle="italic"
                   fill="#94a3b8"
-                  fontFamily="system-ui, sans-serif"
+                  fontFamily="Geist, sans-serif"
                 >
                   +{extraShotsCount} more
                 </text>
@@ -512,7 +512,7 @@ export default function PlayerStatsCard({
             fill={palette.accent}
             textAnchor="middle"
             letterSpacing="1"
-            fontFamily="system-ui, sans-serif"
+            fontFamily="Oswald, sans-serif"
           >
             {threatTier.label}
           </text>
@@ -539,32 +539,32 @@ export default function PlayerStatsCard({
             fill="#ffffff"
             textAnchor="middle"
             letterSpacing="1"
-            fontFamily="system-ui, sans-serif"
+            fontFamily="Oswald, sans-serif"
           >
             {threatTier.emoji} {threatTier.label} {threatTier.emoji}
           </text>
 
-          <text x="444" y="84" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <text x="444" y="84" fontSize="11.5" fill="#e2e8f0" fontFamily="Geist, sans-serif">
             🏆 {wins}-{losses} record
           </text>
           <line x1="444" y1="94" x2="616" y2="94" stroke="#3f1d5c" />
-          <text x="444" y="122" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <text x="444" y="122" fontSize="11.5" fill="#e2e8f0" fontFamily="Geist, sans-serif">
             🔥 Best streak: {winStreak} games
           </text>
           <line x1="444" y1="132" x2="616" y2="132" stroke="#3f1d5c" />
-          <text x="444" y="160" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <text x="444" y="160" fontSize="11.5" fill="#e2e8f0" fontFamily="Geist, sans-serif">
             🏆 {winsInLast10} wins in last 10 games
           </text>
           <line x1="444" y1="170" x2="616" y2="170" stroke="#3f1d5c" />
-          <text x="444" y="198" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <text x="444" y="198" fontSize="11.5" fill="#e2e8f0" fontFamily="Geist, sans-serif">
             📈 {trendLabel} percentage points
           </text>
           <line x1="444" y1="208" x2="616" y2="208" stroke="#3f1d5c" />
-          <text x="444" y="236" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <text x="444" y="236" fontSize="11.5" fill="#e2e8f0" fontFamily="Geist, sans-serif">
             ⚔️ {winsVsHigherRated} wins vs higher-rated
           </text>
           <line x1="444" y1="246" x2="616" y2="246" stroke="#3f1d5c" />
-          <text x="444" y="274" fontSize="11.5" fill="#e2e8f0" fontFamily="system-ui, sans-serif">
+          <text x="444" y="274" fontSize="11.5" fill="#e2e8f0" fontFamily="Geist, sans-serif">
             🎾 {totalMatches} matches played
           </text>
 
@@ -576,7 +576,7 @@ export default function PlayerStatsCard({
             fontWeight="800"
             fill={palette.accent}
             textAnchor="middle"
-            fontFamily="system-ui, sans-serif"
+            fontFamily="Oswald, sans-serif"
           >
             ☠️ {statusLine.toUpperCase()}
           </text>
@@ -592,7 +592,7 @@ export default function PlayerStatsCard({
                 fill="#ffffff"
                 textAnchor="middle"
                 letterSpacing="1"
-                fontFamily="system-ui, sans-serif"
+                fontFamily="Oswald, sans-serif"
               >
                 🏆 {celebrationLabel} 🏆
               </text>
@@ -604,7 +604,7 @@ export default function PlayerStatsCard({
                 fill="#fef3c7"
                 textAnchor="middle"
                 letterSpacing="2"
-                fontFamily="system-ui, sans-serif"
+                fontFamily="Oswald, sans-serif"
               >
                 CONGRATULATIONS
               </text>

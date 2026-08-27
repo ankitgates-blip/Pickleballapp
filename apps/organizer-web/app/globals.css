@@ -9,10 +9,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-space-grotesk);
-  --font-brand: var(--font-black-ops-one);
-  --font-script: var(--font-dancing-script);
+  --font-heading: var(--font-oswald);
   --color-navy-deep: #0c1830;
   --color-navy-mid: #16294e;
   --color-navy-light: #1c3560;
@@ -51,7 +48,6 @@ body {
 
 h1, h2, h3 {
   font-family: var(--font-heading);
-  letter-spacing: -0.01em;
 }
 
 .stat-num {

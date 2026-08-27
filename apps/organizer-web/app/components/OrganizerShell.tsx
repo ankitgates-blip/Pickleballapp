@@ -133,13 +133,10 @@ export default function OrganizerShell({
                 boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
               }}
             >
-              <span className="font-brand text-2xl sm:text-4xl tracking-wide leading-tight">
+              <span className="font-heading text-2xl sm:text-4xl tracking-wide leading-tight">
                 PICKLERALLY DXB
               </span>
-              <div className="w-12 h-[3px] bg-gold rounded-full mt-2 mb-2" />
-              <span className="font-script italic text-lg text-[#c9a865]">
-                Premier Dubai Pickleball League App
-              </span>
+              <div className="w-12 h-[3px] bg-gold rounded-full mt-2" />
             </div>
           </div>
           {organizerName && (
