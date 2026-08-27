@@ -11,22 +11,22 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   return (
-    <main className="relative min-h-screen overflow-hidden flex items-center justify-center bg-gradient-to-br from-emerald-800 via-teal-600 to-cyan-600 px-4 py-12">
+    <main className="relative min-h-screen overflow-hidden flex items-center justify-center bg-gradient-to-br from-navy-deep via-navy-mid to-navy-light px-4 py-12">
       <div
         aria-hidden
         className="ball-texture absolute -top-10 -right-10 h-64 w-64 rounded-full opacity-90 shadow-2xl"
-        style={{ background: 'radial-gradient(circle at 35% 35%, #eaff00, #c9e800)' }}
+        style={{ background: 'radial-gradient(circle at 35% 35%, #f2942e, #d2621c)' }}
       />
       <div
         aria-hidden
         className="ball-texture absolute -bottom-16 -left-16 h-72 w-72 rounded-full opacity-20"
-        style={{ background: 'radial-gradient(circle at 35% 35%, #eaff00, #c9e800)' }}
+        style={{ background: 'radial-gradient(circle at 35% 35%, #f2942e, #d2621c)' }}
       />
       <div className="relative w-full max-w-md space-y-6">
         <div className="text-center text-white">
-          <Image src="/logo.png" alt="PicklerAlly DXB" width={64} height={64} className="mx-auto mb-3 rounded-full" />
-          <h1 className="text-3xl font-bold tracking-tight">PICKLERALLY DXB</h1>
-          <p className="text-teal-50 text-sm mt-1 font-medium">Run your leagues, not a spreadsheet.</p>
+          <Image src="/logo.png" alt="PicklerAlly DXB" width={64} height={64} className="mx-auto mb-3 rounded-full object-cover" />
+          <h1 className="font-brand text-3xl tracking-wide">PICKLERALLY DXB</h1>
+          <p className="text-[#dbe4f5] text-sm mt-1 font-medium">Run your leagues, not a spreadsheet.</p>
         </div>
 
         {error && (

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
-import { cardClass, actionCardClass, accentButtonClass, linkClass, inputClass, primaryButtonClass, outlineButtonClass } from '@/app/components/ui';
+import { cardClass, actionCardClass, accentButtonClass, linkClass, inputClass, primaryButtonClass, outlineButtonClass, headingClass } from '@/app/components/ui';
 import { formatLabel, isLadderFormat as isLadderFormatCheck } from '@/lib/tournament/formats';
 import { courtLabel } from '@/lib/tournament/courts';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
@@ -321,7 +321,7 @@ export default async function BracketPage({
 
         return (
           <li key={m.id} className="text-sm text-slate-800">
-            <details>
+            <details open={canEditScoreValue && !isComplete && !isSkipped}>
               <summary className="cursor-pointer list-none flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2">
                   {m.court !== null && (
@@ -346,7 +346,7 @@ export default async function BracketPage({
                       defaultValue={m.score_a ?? ''}
                       placeholder="Team A"
                       required
-                      className={`${inputClass} w-20`}
+                      className={`${inputClass} w-20 min-h-[48px] text-lg`}
                     />
                     <span className="text-muted font-bold">–</span>
                     <input
@@ -355,7 +355,7 @@ export default async function BracketPage({
                       defaultValue={m.score_b ?? ''}
                       placeholder="Team B"
                       required
-                      className={`${inputClass} w-20`}
+                      className={`${inputClass} w-20 min-h-[48px] text-lg`}
                     />
                     <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
                       Save
@@ -433,7 +433,7 @@ export default async function BracketPage({
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="bracket" />
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Bracket</h1>
+        <h1 className={`text-2xl ${headingClass}`}>Bracket</h1>
         <span className="text-sm font-semibold text-navy-mid bg-navy-tint rounded-full px-3 py-1">
           {formatLabel(format)}
         </span>

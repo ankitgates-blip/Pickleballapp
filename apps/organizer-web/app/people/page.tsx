@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import EmptyState from '@/app/components/EmptyState';
-import { cardClass, playerCardClass, playerCardAvatarClass, primaryButtonClass } from '@/app/components/ui';
+import { cardClass, playerCardClass, playerCardAvatarClass, primaryButtonClass, headingClass } from '@/app/components/ui';
 
 function PeopleIcon() {
   return (
@@ -30,7 +30,7 @@ export default async function PeopleListPage() {
 
   return (
     <OrganizerShell organizerName={organizer.name}>
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Player Profiles</h1>
+      <h1 className={`text-2xl ${headingClass} mb-6`}>Player Profiles</h1>
 
       {(people ?? []).length === 0 && (
         <div className={cardClass}>

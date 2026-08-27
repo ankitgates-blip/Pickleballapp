@@ -13,7 +13,7 @@ import { starRating } from '@/lib/stats/starRating';
 import { buildWinPercentageByPersonId } from '@/lib/stats/buildWinPercentageByPersonId';
 import PlayerOfTheMonthCard from './PlayerOfTheMonthCard';
 import OrganizerShell from '@/app/components/OrganizerShell';
-import { cardClass } from '@/app/components/ui';
+import { cardClass, headingClass } from '@/app/components/ui';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
 
 const MONTH_NAMES = [
@@ -185,7 +185,7 @@ export default async function PlayerOfTheMonthPage() {
 
   return (
     <OrganizerShell organizerName={organizer.name}>
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Player of the Month</h1>
+      <h1 className={`text-2xl ${headingClass} mb-6`}>Player of the Month</h1>
 
       {venueSections.map(({ venue, lastMonthRow, winnerPerson, winnerMatches, winnerWins, winnerLosses, winnerRating, race }) => (
         <div key={venue.id} className="mb-8">

@@ -1,6 +1,6 @@
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
-import { cardClass, inputClass, accentButtonClass } from '@/app/components/ui';
+import { cardClass, inputClass, accentButtonClass, headingClass } from '@/app/components/ui';
 import { TIME_SLOTS } from '@/lib/tournament/timeslots';
 import { createTournament } from './actions';
 import FormatFields from './FormatFields';
@@ -13,7 +13,7 @@ export default async function NewTournamentPage() {
 
   return (
     <OrganizerShell organizerName={organizer.name}>
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">New League</h1>
+      <h1 className={`text-2xl ${headingClass} mb-6`}>New League</h1>
       <div className={cardClass}>
         <form action={createTournament} className="space-y-4">
           <div>

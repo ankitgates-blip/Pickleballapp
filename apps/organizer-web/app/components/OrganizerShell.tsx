@@ -71,6 +71,25 @@ function TrophyIcon({ active }: { active?: boolean }) {
   );
 }
 
+function LeaguesIcon({ active }: { active?: boolean }) {
+  if (active) {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <rect x="3.5" y="5" width="17" height="15" rx="2.5" fill="currentColor" />
+        <path d="M3.5 9.5h17" stroke="#0c1830" strokeWidth={2} />
+        <path d="M8 3v4M16 3v4" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <rect x="3.5" y="5" width="17" height="15" rx="2.5" stroke="currentColor" strokeWidth={2} />
+      <path d="M3.5 9.5h17" stroke="currentColor" strokeWidth={2} />
+      <path d="M8 3v4M16 3v4" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function OrganizerShell({
   children,
   organizerName,
@@ -79,6 +98,7 @@ export default function OrganizerShell({
   organizerName?: string;
 }) {
   const pathname = usePathname();
+  const isLeaguesActive = pathname.startsWith('/tournaments');
   const isPlayerProfileActive = pathname.startsWith('/people');
   const isLocationsActive = pathname.startsWith('/locations');
   const isPlayerOfTheMonthActive = pathname.startsWith('/player-of-the-month');
@@ -90,7 +110,7 @@ export default function OrganizerShell({
           className="relative overflow-hidden text-white shadow-lg"
           style={{
             backgroundImage:
-              "linear-gradient(120deg, rgba(12,24,48,0.92), rgba(22,41,78,0.82) 55%, rgba(12,24,48,0.78)), url('/header-bg.png')",
+              "linear-gradient(120deg, rgba(12,24,48,0.82), rgba(22,41,78,0.68) 55%, rgba(12,24,48,0.72)), url('/header-bg.webp')",
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
@@ -142,7 +162,7 @@ export default function OrganizerShell({
             alt="PicklerAlly DXB"
             width={140}
             height={140}
-            className="rounded-full border-[5px] border-white shadow-xl"
+            className="rounded-full border-[5px] border-white shadow-xl object-cover"
           />
         </Link>
       </div>
@@ -155,13 +175,30 @@ export default function OrganizerShell({
         }}
       >
         <Link
+          href="/tournaments"
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-bold border-t-[3px] transition-colors ${
+            isLeaguesActive ? 'border-t-gold-highlight text-gold-highlight' : 'border-t-transparent text-[#b9c4dd]'
+          }`}
+        >
+          <LeaguesIcon active={isLeaguesActive} />
+          Leagues
+        </Link>
+        <Link
           href="/people"
           className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-bold border-t-[3px] transition-colors ${
             isPlayerProfileActive ? 'border-t-gold-highlight text-gold-highlight' : 'border-t-transparent text-[#b9c4dd]'
           }`}
         >
           <PersonIcon active={isPlayerProfileActive} />
-          Player Profile
+          Players
+        </Link>
+        <Link href="/tournaments/new" className="relative flex-1 flex flex-col items-center">
+          <span className="absolute -top-[18px] flex h-[52px] w-[52px] items-center justify-center rounded-full bg-brand-orange border-[3px] border-white shadow-lg">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0c1830" strokeWidth={3} strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </span>
+          <span className="mt-9 text-[10px] font-extrabold text-white">New</span>
         </Link>
         <Link
           href="/player-of-the-month"
@@ -170,15 +207,7 @@ export default function OrganizerShell({
           }`}
         >
           <TrophyIcon active={isPlayerOfTheMonthActive} />
-          Player of the Month
-        </Link>
-        <Link href="/tournaments/new" className="relative flex-1 flex flex-col items-center">
-          <span className="absolute -top-[18px] flex h-[52px] w-[52px] items-center justify-center rounded-full bg-brand-orange border-[3px] border-white shadow-lg">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0c1830" strokeWidth={3} strokeLinecap="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </span>
-          <span className="mt-9 text-[10px] font-extrabold text-white">Create League</span>
+          Awards
         </Link>
         <Link
           href="/locations"

@@ -277,7 +277,7 @@ export default async function PersonDetailPage({
         {stats.winPercentage !== null ? (
           <>
             Win rate: {stats.winPercentage}%{' '}
-            <span className="text-green-600">
+            <span className="text-amber-400">
               {renderStars(starRating(stats.winPercentage))}
             </span>
           </>

@@ -9,7 +9,7 @@ import type { ClaimTheThroneRoundResult, MatchResult, Team } from '@/lib/types';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
 import PersonAvatar from '@/app/components/PersonAvatar';
-import { cardClass } from '@/app/components/ui';
+import { cardClass, headingClass } from '@/app/components/ui';
 import CopyLinkButton from './CopyLinkButton';
 
 type LadderRoundResult = ClaimTheThroneRoundResult;
@@ -209,13 +209,15 @@ export default async function StandingsPage({
       ? 'border-b border-slate-100 last:border-0 bg-gradient-to-r from-amber-50 via-amber-50/50 to-transparent'
       : 'border-b border-slate-100 last:border-0';
   const diffClass = (diff: number) =>
-    diff > 0 ? 'text-emerald-600' : diff < 0 ? 'text-red-500' : 'text-muted';
+    diff > 0 ? 'text-win' : diff < 0 ? 'text-loss' : 'text-muted';
+  // Glyph-first signal (▲/▼) so win/loss direction isn't carried by color alone.
+  const diffPrefix = (diff: number) => (diff > 0 ? '▲ ' : diff < 0 ? '▼ ' : '');
 
   return (
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="standings" />
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Standings</h1>
+        <h1 className={`text-2xl ${headingClass}`}>Standings</h1>
         <CopyLinkButton tournamentId={id} />
       </div>
 
@@ -260,6 +262,7 @@ export default async function StandingsPage({
                         <span className={lossPillClass}>{s.losses}</span>
                       </td>
                       <td className={`stat-num py-2 text-center font-bold ${diffClass(avgDiff)}`}>
+                        {diffPrefix(avgDiff)}
                         {avgDiff > 0 ? '+' : ''}
                         {avgDiff.toFixed(1)}
                       </td>
@@ -283,6 +286,7 @@ export default async function StandingsPage({
                           <span className={lossPillClass}>{s.losses}</span>
                         </td>
                         <td className={`stat-num py-2 text-center font-bold ${diffClass(diff)}`}>
+                          {diffPrefix(diff)}
                           {diff > 0 ? '+' : ''}
                           {diff}
                         </td>
@@ -305,6 +309,7 @@ export default async function StandingsPage({
                           <span className={lossPillClass}>{s.losses}</span>
                         </td>
                         <td className={`stat-num py-2 text-center font-bold ${diffClass(diff)}`}>
+                          {diffPrefix(diff)}
                           {diff > 0 ? '+' : ''}
                           {diff}
                         </td>

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
-import { cardClass } from '@/app/components/ui';
+import { cardClass, headingClass } from '@/app/components/ui';
 import EmptyState from '@/app/components/EmptyState';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computeLocationLeaderboard } from '@/lib/stats/locationLeaderboard';
@@ -182,7 +182,7 @@ export default async function LocationsPage() {
 
   return (
     <OrganizerShell organizerName={organizer.name}>
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Location Stats</h1>
+      <h1 className={`text-2xl ${headingClass} mb-6`}>Location Stats</h1>
 
       <ShareLeaderboardButton venues={exportVenues} />
 

@@ -180,7 +180,7 @@ export default async function PublicPersonPage({
           style={{ background: 'radial-gradient(circle at 35% 35%, #eaff00, #c9e800)' }}
         />
         <div className="relative max-w-2xl mx-auto px-4 py-6 text-center">
-          <Image src="/logo.png" alt="PicklerAlly DXB" width={40} height={40} className="mx-auto mb-2 rounded-full" />
+          <Image src="/logo.png" alt="PicklerAlly DXB" width={40} height={40} className="mx-auto mb-2 rounded-full object-cover" />
           {person.photo_url && (
             <div className="flex justify-center mb-2">
               <PersonAvatar photoUrl={person.photo_url} name={person.name} size={64} />
@@ -284,7 +284,7 @@ export default async function PublicPersonPage({
                       </span>
                       <span className="block text-xs text-slate-500">
                         {locationWinPercentage}%{' '}
-                        <span className="text-green-600">
+                        <span className="text-amber-400">
                           {renderStars(starRating(locationWinPercentage))}
                         </span>
                       </span>

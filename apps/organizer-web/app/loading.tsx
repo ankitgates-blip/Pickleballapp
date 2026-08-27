@@ -8,7 +8,7 @@ export default function Loading() {
         alt="PicklerAlly DXB"
         width={100}
         height={100}
-        className="rounded-full animate-pulse"
+        className="rounded-full animate-pulse object-cover"
         priority
       />
     </div>
