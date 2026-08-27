@@ -25,7 +25,9 @@ export default async function LoginPage({
       <div className="relative w-full max-w-md space-y-6">
         <div className="text-center text-white">
           <Image src="/logo.png" alt="PicklerAlly DXB" width={64} height={64} className="mx-auto mb-3 rounded-full object-cover" />
-          <h1 className="font-brand text-3xl tracking-wide">PICKLERALLY DXB</h1>
+          <h1 className="text-3xl tracking-wide">
+            <span className="font-brand">PICKLERALLY DXB</span>
+          </h1>
           <p className="text-[#dbe4f5] text-sm mt-1 font-medium">Run your leagues, not a spreadsheet.</p>
         </div>
 
