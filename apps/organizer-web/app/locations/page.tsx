@@ -210,7 +210,7 @@ export default async function LocationsPage() {
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 font-bold text-slate-900">
+                  <p className="stat-num mt-1 font-bold text-slate-900">
                     {entry.matchesPlayed} match{entry.matchesPlayed === 1 ? '' : 'es'} ·{' '}
                     {entry.matchWins} win{entry.matchWins === 1 ? '' : 's'} ·{' '}
                     {entry.losses} loss{entry.losses === 1 ? '' : 'es'}

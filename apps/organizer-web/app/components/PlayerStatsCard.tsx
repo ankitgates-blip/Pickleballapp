@@ -615,7 +615,7 @@ export default function PlayerStatsCard({
           )}
         </svg>
       </button>
-      <p className="text-xs text-slate-400 mt-1.5">Click the card to share or download it as an image.</p>
+      <p className="text-xs text-muted mt-1.5">Click the card to share or download it as an image.</p>
       {status === 'error' && (
         <p className="text-xs text-red-600 mt-1">Couldn&apos;t generate the image. Try again.</p>
       )}

@@ -7,7 +7,16 @@ import { usePathname } from 'next/navigation';
 import { signOut } from '@/app/login/actions';
 import SaveButton from './SaveButton';
 
-function PersonIcon() {
+function PersonIcon({ active }: { active?: boolean }) {
+  if (active) {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="4" width="18" height="16" rx="4" fill="currentColor" />
+        <circle cx="12" cy="10.25" r="2.75" fill="#0c1830" />
+        <path d="M6.75 17c0-2.21 2.35-3.5 5.25-3.5s5.25 1.29 5.25 3.5" stroke="#0c1830" strokeWidth={2} strokeLinecap="round" />
+      </svg>
+    );
+  }
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
       <rect x="3" y="4" width="18" height="16" rx="4" stroke="currentColor" strokeWidth={2} />
@@ -17,20 +26,39 @@ function PersonIcon() {
   );
 }
 
-function LeaderboardIcon() {
+/** Distinct ranked-bars glyph — deliberately not trophy-shaped, unlike TrophyIcon. */
+function LeaderboardIcon({ active }: { active?: boolean }) {
+  if (active) {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <rect x="4" y="13" width="4" height="7" rx="1" fill="currentColor" />
+        <rect x="10" y="9" width="4" height="11" rx="1" fill="currentColor" />
+        <rect x="16" y="5" width="4" height="15" rx="1" fill="currentColor" />
+      </svg>
+    );
+  }
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <path d="M8 3h8v5.25a4 4 0 0 1-8 0V3z" fill="currentColor" />
-      <path d="M8 4.25H5.25a2.75 2.75 0 0 0 2.75 4.5" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
-      <path d="M16 4.25h2.75a2.75 2.75 0 0 1-2.75 4.5" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
-      <path d="M12 12.25v2.75" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
-      <path d="M8.25 20h7.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
-      <path d="M9.25 20v-2.25a2.75 2.75 0 0 1 5.5 0V20" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="4" y="13" width="4" height="7" rx="1" stroke="currentColor" strokeWidth={2} />
+      <rect x="10" y="9" width="4" height="11" rx="1" stroke="currentColor" strokeWidth={2} />
+      <rect x="16" y="5" width="4" height="15" rx="1" stroke="currentColor" strokeWidth={2} />
     </svg>
   );
 }
 
-function TrophyIcon() {
+function TrophyIcon({ active }: { active?: boolean }) {
+  if (active) {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M7 4h10v5a5 5 0 0 1-10 0V4z" fill="currentColor" />
+        <path d="M7 5.25H4.25a2.75 2.75 0 0 0 2.75 4.5" fill="currentColor" />
+        <path d="M17 5.25h2.75a2.75 2.75 0 0 1-2.75 4.5" fill="currentColor" />
+        <path d="M12 13.25v3" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+        <path d="M8.5 20h7" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+        <path d="M9.5 20v-1.5a2.5 2.5 0 0 1 5 0V20" fill="currentColor" />
+      </svg>
+    );
+  }
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
       <path d="M7 4h10v5a5 5 0 0 1-10 0V4z" fill="currentColor" />
@@ -128,20 +156,20 @@ export default function OrganizerShell({
       >
         <Link
           href="/people"
-          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-bold ${
-            isPlayerProfileActive ? 'text-[#b69a6b]' : 'text-[#b9c4dd]'
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-bold border-t-[3px] transition-colors ${
+            isPlayerProfileActive ? 'border-t-gold-highlight text-gold-highlight' : 'border-t-transparent text-[#b9c4dd]'
           }`}
         >
-          <PersonIcon />
+          <PersonIcon active={isPlayerProfileActive} />
           Player Profile
         </Link>
         <Link
           href="/player-of-the-month"
-          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-bold ${
-            isPlayerOfTheMonthActive ? 'text-[#b69a6b]' : 'text-[#b9c4dd]'
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-bold border-t-[3px] transition-colors ${
+            isPlayerOfTheMonthActive ? 'border-t-gold-highlight text-gold-highlight' : 'border-t-transparent text-[#b9c4dd]'
           }`}
         >
-          <TrophyIcon />
+          <TrophyIcon active={isPlayerOfTheMonthActive} />
           Player of the Month
         </Link>
         <Link href="/tournaments/new" className="relative flex-1 flex flex-col items-center">
@@ -154,11 +182,11 @@ export default function OrganizerShell({
         </Link>
         <Link
           href="/locations"
-          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-bold ${
-            isLocationsActive ? 'text-[#b69a6b]' : 'text-[#b9c4dd]'
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-bold border-t-[3px] transition-colors ${
+            isLocationsActive ? 'border-t-gold-highlight text-gold-highlight' : 'border-t-transparent text-[#b9c4dd]'
           }`}
         >
-          <LeaderboardIcon />
+          <LeaderboardIcon active={isLocationsActive} />
           Leaderboard
         </Link>
       </nav>

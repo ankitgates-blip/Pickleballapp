@@ -199,8 +199,8 @@ export default async function PublicTournamentPage({
                       {medal && <span className="mr-1.5">{medal}</span>}
                       {teamById.get(s.teamId)}
                     </td>
-                    <td className="py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
-                    <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
+                    <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
+                    <td className="stat-num py-2 text-center text-muted font-semibold">{s.losses}</td>
                   </tr>
                 );
               })}
@@ -224,9 +224,9 @@ export default async function PublicTournamentPage({
                       <li key={i} className="flex items-center justify-between">
                         <span>
                           {stage === 'league' && (
-                            <span className="text-slate-400 mr-2">R{m.round}</span>
+                            <span className="text-muted mr-2">R{m.round}</span>
                           )}
-                          <span className="text-slate-400">Sitting out:</span>{' '}
+                          <span className="text-muted">Sitting out:</span>{' '}
                           <span className="font-semibold">{teamById.get(m.team_a_id!)}</span>
                         </span>
                       </li>
@@ -236,19 +236,19 @@ export default async function PublicTournamentPage({
                     <li key={i} className="flex items-center justify-between">
                       <span>
                         {stage === 'league' && (
-                          <span className="text-slate-400 mr-2">R{m.round}</span>
+                          <span className="text-muted mr-2">R{m.round}</span>
                         )}
                         {!isLadder && m.court !== null && (
-                          <span className="text-slate-400 mr-2">{courtLabel(m.court)}</span>
+                          <span className="text-muted mr-2">{courtLabel(m.court)}</span>
                         )}
                         <span className="font-semibold">{teamById.get(m.team_a_id!)}</span>
-                        <span className="text-slate-400 mx-1">vs</span>
+                        <span className="text-muted mx-1">vs</span>
                         <span className="font-semibold">
                           {m.team_b_id ? teamById.get(m.team_b_id) : 'BYE'}
                         </span>
                       </span>
                       {m.status === 'complete' && (
-                        <span className="font-bold text-navy-mid">
+                        <span className="stat-num font-bold text-navy-mid">
                           {m.score_a}-{m.score_b}
                         </span>
                       )}

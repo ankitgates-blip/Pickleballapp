@@ -26,7 +26,7 @@ export default function TournamentNav({
             className={
               isActive
                 ? 'flex-1 text-center pb-2.5 text-sm font-bold text-navy-deep border-b-2 border-brand-orange -mb-px'
-                : 'flex-1 text-center pb-2.5 text-sm font-semibold text-slate-400 hover:text-navy-mid border-b-2 border-transparent -mb-px transition-colors'
+                : 'flex-1 text-center pb-2.5 text-sm font-semibold text-muted hover:text-navy-mid border-b-2 border-transparent -mb-px transition-colors'
             }
           >
             {step.label}

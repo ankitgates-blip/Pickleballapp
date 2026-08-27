@@ -136,7 +136,7 @@ export default async function RosterPage({
                 {m.name}
               </li>
             ))}
-            {matched.length === 0 && <li className="text-sm text-slate-400">None</li>}
+            {matched.length === 0 && <li className="text-sm text-muted">None</li>}
           </ul>
 
           <h2 className="text-lg font-bold text-slate-900 mb-2">New people ({newNames.length})</h2>
@@ -146,7 +146,7 @@ export default async function RosterPage({
                 {name}
               </li>
             ))}
-            {newNames.length === 0 && <li className="text-sm text-slate-400">None</li>}
+            {newNames.length === 0 && <li className="text-sm text-muted">None</li>}
           </ul>
 
           {rosterFull ? (
@@ -220,7 +220,7 @@ export default async function RosterPage({
           unpairedPlayerNames={unpairedPlayerNames}
           allPlayerNames={allPlayerNames}
         />
-        <p className="text-xs text-slate-400 mt-1.5">
+        <p className="text-xs text-muted mt-1.5">
           Opens your share sheet on mobile — downloads the file on desktop.
         </p>
       </div>

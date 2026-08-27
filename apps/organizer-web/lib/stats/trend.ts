@@ -21,5 +21,5 @@ export function trendColorClass(trend: 'up' | 'down' | 'flat' | null): string {
   if (trend === 'down') {
     return 'text-red-500';
   }
-  return 'text-slate-400';
+  return 'text-muted';
 }

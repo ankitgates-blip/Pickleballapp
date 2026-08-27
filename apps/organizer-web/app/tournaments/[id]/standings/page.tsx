@@ -201,15 +201,15 @@ export default async function StandingsPage({
         });
 
   const winPillClass =
-    'inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-full bg-navy-tint text-navy-deep font-extrabold';
+    'stat-num inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-full bg-navy-tint text-navy-deep font-extrabold';
   const lossPillClass =
-    'inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-full bg-slate-100 text-slate-500 font-extrabold';
+    'stat-num inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-full bg-slate-100 text-slate-500 font-extrabold';
   const rowClass = (rank: number) =>
     rank === 0
       ? 'border-b border-slate-100 last:border-0 bg-gradient-to-r from-amber-50 via-amber-50/50 to-transparent'
       : 'border-b border-slate-100 last:border-0';
   const diffClass = (diff: number) =>
-    diff > 0 ? 'text-emerald-600' : diff < 0 ? 'text-red-500' : 'text-slate-400';
+    diff > 0 ? 'text-emerald-600' : diff < 0 ? 'text-red-500' : 'text-muted';
 
   return (
     <OrganizerShell organizerName={organizer.name}>
@@ -252,14 +252,14 @@ export default async function StandingsPage({
                         {medal && <span className="mr-1.5">{medal}</span>}
                         {playerById.get(s.playerId)}
                       </td>
-                      <td className="py-2 text-center text-navy-mid font-extrabold">{s.ladderPoints}</td>
+                      <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.ladderPoints}</td>
                       <td className="py-2 text-center">
                         <span className={winPillClass}>{s.wins}</span>
                       </td>
                       <td className="py-2 text-center">
                         <span className={lossPillClass}>{s.losses}</span>
                       </td>
-                      <td className={`py-2 text-center font-bold ${diffClass(avgDiff)}`}>
+                      <td className={`stat-num py-2 text-center font-bold ${diffClass(avgDiff)}`}>
                         {avgDiff > 0 ? '+' : ''}
                         {avgDiff.toFixed(1)}
                       </td>
@@ -282,7 +282,7 @@ export default async function StandingsPage({
                         <td className="py-2 text-center">
                           <span className={lossPillClass}>{s.losses}</span>
                         </td>
-                        <td className={`py-2 text-center font-bold ${diffClass(diff)}`}>
+                        <td className={`stat-num py-2 text-center font-bold ${diffClass(diff)}`}>
                           {diff > 0 ? '+' : ''}
                           {diff}
                         </td>
@@ -304,7 +304,7 @@ export default async function StandingsPage({
                         <td className="py-2 text-center">
                           <span className={lossPillClass}>{s.losses}</span>
                         </td>
-                        <td className={`py-2 text-center font-bold ${diffClass(diff)}`}>
+                        <td className={`stat-num py-2 text-center font-bold ${diffClass(diff)}`}>
                           {diff > 0 ? '+' : ''}
                           {diff}
                         </td>

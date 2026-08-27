@@ -209,18 +209,18 @@ export default async function ResultsPage({
             {teamAWon && <span className="mr-1">🏆</span>}
             {teamAName}
           </span>
-          <span className="text-slate-400 text-xs">vs</span>
+          <span className="text-muted text-xs">vs</span>
           <span className={teamBWon ? 'font-extrabold text-slate-900' : 'font-medium text-slate-600'}>
             {teamBWon && <span className="mr-1">🏆</span>}
             {teamBName}
           </span>
         </div>
         {isComplete ? (
-          <div className="text-center font-bold text-navy-mid mt-1">
+          <div className="stat-num text-center font-bold text-navy-mid mt-1">
             {m.score_a}-{m.score_b}
           </div>
         ) : (
-          <div className="text-center text-slate-400 text-xs mt-1">
+          <div className="text-center text-muted text-xs mt-1">
             {isSkipped ? 'Skipped' : 'Not yet played'}
           </div>
         )}
@@ -252,7 +252,7 @@ export default async function ResultsPage({
           standingsRows={exportStandingsRows}
           matchGroups={exportMatchGroups}
         />
-        <p className="text-xs text-slate-400 mt-1.5">
+        <p className="text-xs text-muted mt-1.5">
           Opens your share sheet on mobile — downloads the file on desktop.
         </p>
       </div>
@@ -322,10 +322,10 @@ export default async function ResultsPage({
                         {medal && <span className="mr-1.5">{medal}</span>}
                         {playerById.get(s.playerId)}
                       </td>
-                      <td className="py-2 text-center text-navy-mid font-extrabold">{s.ladderPoints}</td>
-                      <td className="py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
-                      <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
-                      <td className="py-2 text-center font-bold">
+                      <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.ladderPoints}</td>
+                      <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
+                      <td className="stat-num py-2 text-center text-muted font-semibold">{s.losses}</td>
+                      <td className="stat-num py-2 text-center font-bold">
                         {avgDiff >= 0 ? '+' : ''}
                         {avgDiff.toFixed(1)}
                       </td>
@@ -341,9 +341,9 @@ export default async function ResultsPage({
                           {medal && <span className="mr-1.5">{medal}</span>}
                           {playerById.get(s.playerId)}
                         </td>
-                        <td className="py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
-                        <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
-                        <td className="py-2 text-center font-bold">
+                        <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
+                        <td className="stat-num py-2 text-center text-muted font-semibold">{s.losses}</td>
+                        <td className="stat-num py-2 text-center font-bold">
                           {s.pointsFor - s.pointsAgainst > 0 ? '+' : ''}
                           {s.pointsFor - s.pointsAgainst}
                         </td>
@@ -358,9 +358,9 @@ export default async function ResultsPage({
                           {medal && <span className="mr-1.5">{medal}</span>}
                           {teamById.get(s.teamId)}
                         </td>
-                        <td className="py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
-                        <td className="py-2 text-center text-slate-400 font-semibold">{s.losses}</td>
-                        <td className="py-2 text-center font-bold">
+                        <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
+                        <td className="stat-num py-2 text-center text-muted font-semibold">{s.losses}</td>
+                        <td className="stat-num py-2 text-center font-bold">
                           {s.pointsFor - s.pointsAgainst > 0 ? '+' : ''}
                           {s.pointsFor - s.pointsAgainst}
                         </td>

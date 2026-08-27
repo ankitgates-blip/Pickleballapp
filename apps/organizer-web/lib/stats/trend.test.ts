@@ -29,10 +29,10 @@ describe('trendColorClass', () => {
   });
 
   it('returns a slate class for flat', () => {
-    expect(trendColorClass('flat')).toBe('text-slate-400');
+    expect(trendColorClass('flat')).toBe('text-muted');
   });
 
   it('returns a slate class for null', () => {
-    expect(trendColorClass(null)).toBe('text-slate-400');
+    expect(trendColorClass(null)).toBe('text-muted');
   });
 });

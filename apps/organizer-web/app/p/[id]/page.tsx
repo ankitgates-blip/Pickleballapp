@@ -260,7 +260,7 @@ export default async function PublicPersonPage({
                 <div className={`text-[10px] font-bold leading-tight ${a.earned ? 'text-navy-deep' : 'text-slate-500'}`}>
                   {a.label}
                 </div>
-                <div className="text-[9px] text-slate-400 leading-tight">{a.description}</div>
+                <div className="text-[9px] text-muted leading-tight">{a.description}</div>
               </div>
             ))}
           </div>
@@ -294,7 +294,7 @@ export default async function PublicPersonPage({
               })}
             </ul>
           ) : (
-            <p className="text-slate-400 text-sm">No matches played yet.</p>
+            <p className="text-muted text-sm">No matches played yet.</p>
           )}
         </div>
 
@@ -319,7 +319,7 @@ export default async function PublicPersonPage({
               ))}
             </ul>
           ) : (
-            <p className="text-slate-400 text-sm mb-4">No matches played yet.</p>
+            <p className="text-muted text-sm mb-4">No matches played yet.</p>
           )}
 
           <h3 className="text-sm font-bold text-slate-700 mb-2">Monthly</h3>
@@ -340,7 +340,7 @@ export default async function PublicPersonPage({
               ))}
             </ul>
           ) : (
-            <p className="text-slate-400 text-sm mb-4">No matches played yet.</p>
+            <p className="text-muted text-sm mb-4">No matches played yet.</p>
           )}
 
           <h3 className="text-sm font-bold text-slate-700 mb-2">Yearly</h3>
@@ -361,7 +361,7 @@ export default async function PublicPersonPage({
               ))}
             </ul>
           ) : (
-            <p className="text-slate-400 text-sm">No matches played yet.</p>
+            <p className="text-muted text-sm">No matches played yet.</p>
           )}
         </div>
 
@@ -394,7 +394,7 @@ export default async function PublicPersonPage({
                   className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0"
                 >
                   <span>
-                    <span className="text-slate-400 mr-2">{m.tournamentDate}</span>
+                    <span className="text-muted mr-2">{m.tournamentDate}</span>
                     with <span className="font-semibold">{nameFor(m.partnerId)}</span> vs{' '}
                     <span className="font-semibold">
                       {nameFor(m.opponentIds[0])} / {nameFor(m.opponentIds[1])}
@@ -405,7 +405,7 @@ export default async function PublicPersonPage({
                       <span className={`${pillClass} ${m.won ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                         {m.won ? 'W' : 'L'}
                       </span>
-                      <span className={m.won ? 'font-bold text-navy-mid' : 'font-bold text-slate-400'}>
+                      <span className={m.won ? 'font-bold text-navy-mid' : 'font-bold text-muted'}>
                         {m.scoreFor}-{m.scoreAgainst}
                       </span>
                     </span>
@@ -429,7 +429,7 @@ export default async function PublicPersonPage({
               );
             })}
             {stats.matchHistory.length === 0 && (
-              <li className="text-slate-400">No completed matches yet.</li>
+              <li className="text-muted">No completed matches yet.</li>
             )}
           </ul>
         </div>

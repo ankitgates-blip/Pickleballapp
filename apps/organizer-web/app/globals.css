@@ -20,6 +20,16 @@
   --color-gold: #a8874f;
   --color-brand-orange: #bf5919;
   --color-brand-orange-deep: #b6462a;
+  --color-gold-bright: #d6af36;
+  --color-gold-highlight: #fde68a;
+  --color-silver: #a7a7ad;
+  --color-silver-light: #d7d7d7;
+  --color-bronze: #a77044;
+  --color-bronze-dark: #824a02;
+  --color-win: #0f766e;
+  --color-loss: #9f1239;
+  --color-ball: #d9e021;
+  --color-muted: #64748b;
 }
 
 body {
@@ -42,4 +52,8 @@ body {
 h1, h2, h3 {
   font-family: var(--font-heading);
   letter-spacing: -0.01em;
+}
+
+.stat-num {
+  font-variant-numeric: tabular-nums;
 }

@@ -273,13 +273,13 @@ export default async function BracketPage({
         if (!m.team_b_id) {
           return isLeaguePlayoffs ? (
             <li key={m.id} className="text-sm text-slate-500 flex items-center gap-2">
-              <span className="text-slate-400">Sitting out:</span>
+              <span className="text-muted">Sitting out:</span>
               <span className="font-semibold text-slate-700">{teamById.get(m.team_a_id!) ?? 'Unknown'}</span>
             </li>
           ) : (
             <li key={m.id} className="text-sm text-slate-800 flex items-center gap-2">
               <span className="font-semibold">{teamById.get(m.team_a_id!) ?? 'Bye'}</span>
-              <span className="text-slate-400">vs</span>
+              <span className="text-muted">vs</span>
               <span className="font-semibold">BYE</span>
             </li>
           );
@@ -299,7 +299,7 @@ export default async function BracketPage({
             {isFinal && teamAWon && <span className="mr-1">🏆</span>}
             {teamById.get(m.team_a_id!)}
             {!isFinal && isComplete && (teamAWon || teamBWon) && (
-              <span className={teamAWon ? 'text-navy-mid font-bold' : 'text-slate-400'}>
+              <span className={teamAWon ? 'text-navy-mid font-bold' : 'text-muted'}>
                 {' '}
                 ({teamAWon ? 'W' : 'L'})
               </span>
@@ -311,7 +311,7 @@ export default async function BracketPage({
             {isFinal && teamBWon && <span className="mr-1">🏆</span>}
             {teamById.get(m.team_b_id)}
             {!isFinal && isComplete && (teamAWon || teamBWon) && (
-              <span className={teamBWon ? 'text-navy-mid font-bold' : 'text-slate-400'}>
+              <span className={teamBWon ? 'text-navy-mid font-bold' : 'text-muted'}>
                 {' '}
                 ({teamBWon ? 'W' : 'L'})
               </span>
@@ -325,12 +325,12 @@ export default async function BracketPage({
               <summary className="cursor-pointer list-none flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2">
                   {m.court !== null && (
-                    <span className="text-xs font-bold text-slate-400">
+                    <span className="text-xs font-bold text-muted">
                       {isLadderFormat ? `C${m.court}` : courtLabel(m.court)}
                     </span>
                   )}
                   {teamALabel}
-                  <span className="text-slate-400">vs</span>
+                  <span className="text-muted">vs</span>
                   {teamBLabel}
                 </span>
                 <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">
@@ -348,7 +348,7 @@ export default async function BracketPage({
                       required
                       className={`${inputClass} w-20`}
                     />
-                    <span className="text-slate-400 font-bold">–</span>
+                    <span className="text-muted font-bold">–</span>
                     <input
                       name="scoreB"
                       type="number"
@@ -362,7 +362,7 @@ export default async function BracketPage({
                     </SaveButton>
                   </form>
                   {isSkipped ? (
-                    <p className="text-xs text-slate-400 mt-2 pl-1">
+                    <p className="text-xs text-muted mt-2 pl-1">
                       Marked as skipped — enter a score above to un-skip it.
                     </p>
                   ) : (
@@ -395,7 +395,7 @@ export default async function BracketPage({
               )}
               {canEditTeamsValue && (
                 <div className="mt-3 pl-1">
-                  <p className="text-xs text-slate-400 mb-2">
+                  <p className="text-xs text-muted mb-2">
                     Standings recalculate automatically when you change a match&apos;s teams. Already-generated
                     semifinals, finals, and later rounds do <strong>not</strong> update — and if this tournament
                     has no final match, the champion shown elsewhere can change as a result.
@@ -408,7 +408,7 @@ export default async function BracketPage({
                         </option>
                       ))}
                     </select>
-                    <span className="text-slate-400 font-bold">vs</span>
+                    <span className="text-muted font-bold">vs</span>
                     <select name="teamBId" defaultValue={m.team_b_id ?? ''} className={inputClass}>
                       {(teams ?? []).map((t) => (
                         <option key={t.id} value={t.id}>
@@ -462,7 +462,7 @@ export default async function BracketPage({
           formatLabel={formatLabel(format)}
           matchGroups={exportMatchGroups}
         />
-        <p className="text-xs text-slate-400 mt-1.5">
+        <p className="text-xs text-muted mt-1.5">
           Opens your share sheet on mobile — downloads the file on desktop.
         </p>
       </div>
@@ -699,7 +699,7 @@ export default async function BracketPage({
               max={leaguePlayoffsFullRounds}
               className={inputClass}
             />
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-muted mt-1">
               Full round-robin is {leaguePlayoffsFullRounds}{' '}
               round{leaguePlayoffsFullRounds === 1 ? '' : 's'}.
             </p>
@@ -728,7 +728,7 @@ export default async function BracketPage({
           <h2 className="text-sm font-bold text-navy-mid uppercase tracking-wide mb-1">
             Add Match
           </h2>
-          <p className="text-xs text-slate-400 mb-3">
+          <p className="text-xs text-muted mb-3">
             Target: {customTargetRounds} round{customTargetRounds === 1 ? '' : 's'} — highest
             round added so far: {currentCustomMaxRound || 'none yet'}.
           </p>
@@ -747,7 +747,7 @@ export default async function BracketPage({
           ) : (
             <>
               {!isDynamicMode && (
-                <p className="text-xs text-slate-400 mb-3">
+                <p className="text-xs text-muted mb-3">
                   Full round-robin coverage for {customFixedTeamCount} team{customFixedTeamCount === 1 ? '' : 's'} needs{' '}
                   {customFullCoverageRoundsValue} round{customFullCoverageRoundsValue === 1 ? '' : 's'}.
                 </p>
@@ -806,7 +806,7 @@ export default async function BracketPage({
                         </select>
                       </div>
                     </div>
-                    <span className="text-slate-400 font-bold pb-2">vs</span>
+                    <span className="text-muted font-bold pb-2">vs</span>
                     <div className="flex items-end gap-2">
                       <div>
                         <label className="block text-xs font-semibold text-slate-500 mb-1">
@@ -855,7 +855,7 @@ export default async function BracketPage({
                         ))}
                       </select>
                     </div>
-                    <span className="text-slate-400 font-bold pb-2">vs</span>
+                    <span className="text-muted font-bold pb-2">vs</span>
                     <div>
                       <label className="block text-xs font-semibold text-slate-500 mb-1">Team B</label>
                       <select name="teamBId" defaultValue="" required className={inputClass}>
