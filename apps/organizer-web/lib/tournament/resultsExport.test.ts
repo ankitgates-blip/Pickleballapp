@@ -4,6 +4,7 @@ import {
   buildIndividualStandingsRows,
   buildLadderStandingsRows,
   buildMatchGroups,
+  buildUpcomingMatchGroups,
 } from './resultsExport';
 
 describe('buildTeamStandingsRows', () => {
@@ -144,6 +145,111 @@ describe('buildMatchGroups', () => {
 
   it('excludes bye matches (team_b_id null)', () => {
     const result = buildMatchGroups(
+      [{ round: 1, stage: 'league', team_a_id: 't1', team_b_id: null, score_a: null, score_b: null, status: 'pending' }],
+      teamById,
+      false
+    );
+    expect(result).toEqual([]);
+  });
+});
+
+describe('buildUpcomingMatchGroups', () => {
+  const teamById = new Map([
+    ['t1', 'Alice / Bob'],
+    ['t2', 'Carol / Dave'],
+    ['t3', 'Erin / Frank'],
+  ]);
+
+  it('drops completed and skipped matches, keeping only pending ones', () => {
+    const result = buildUpcomingMatchGroups(
+      [
+        { round: 1, stage: 'league', team_a_id: 't1', team_b_id: 't2', score_a: 11, score_b: 7, status: 'complete' },
+        { round: 1, stage: 'league', team_a_id: 't1', team_b_id: 't3', score_a: null, score_b: null, status: 'skipped' },
+        { round: 2, stage: 'league', team_a_id: 't2', team_b_id: 't3', score_a: null, score_b: null, status: 'pending' },
+      ],
+      teamById,
+      false
+    );
+    expect(result).toEqual([
+      {
+        stageLabel: 'Matches',
+        roundGroups: [
+          { round: 2, matches: [{ teamAName: 'Carol / Dave', teamBName: 'Erin / Frank' }] },
+        ],
+      },
+    ]);
+  });
+
+  it('returns an empty array when there are no pending matches', () => {
+    const result = buildUpcomingMatchGroups(
+      [{ round: 1, stage: 'league', team_a_id: 't1', team_b_id: 't2', score_a: 11, score_b: 7, status: 'complete' }],
+      teamById,
+      false
+    );
+    expect(result).toEqual([]);
+  });
+
+  it('groups pending matches by round, sorted ascending, within a single flat stage', () => {
+    const result = buildUpcomingMatchGroups(
+      [
+        { round: 2, stage: 'league', team_a_id: 't1', team_b_id: 't2', score_a: null, score_b: null, status: 'pending' },
+        { round: 1, stage: 'league', team_a_id: 't2', team_b_id: 't3', score_a: null, score_b: null, status: 'pending' },
+        { round: 1, stage: 'league', team_a_id: 't1', team_b_id: 't3', score_a: null, score_b: null, status: 'pending' },
+      ],
+      teamById,
+      false
+    );
+    expect(result).toEqual([
+      {
+        stageLabel: 'Matches',
+        roundGroups: [
+          {
+            round: 1,
+            matches: [
+              { teamAName: 'Carol / Dave', teamBName: 'Erin / Frank' },
+              { teamAName: 'Alice / Bob', teamBName: 'Erin / Frank' },
+            ],
+          },
+          { round: 2, matches: [{ teamAName: 'Alice / Bob', teamBName: 'Carol / Dave' }] },
+        ],
+      },
+    ]);
+  });
+
+  it('splits league_playoffs pending matches into League (round-grouped)/Semifinal/Final, with round null outside League', () => {
+    const result = buildUpcomingMatchGroups(
+      [
+        { round: 1, stage: 'league', team_a_id: 't1', team_b_id: 't2', score_a: null, score_b: null, status: 'pending' },
+        { round: 1, stage: 'semifinal', team_a_id: 't1', team_b_id: 't3', score_a: null, score_b: null, status: 'pending' },
+        { round: 1, stage: 'final', team_a_id: 't2', team_b_id: 't3', score_a: null, score_b: null, status: 'pending' },
+      ],
+      teamById,
+      true
+    );
+    expect(result).toEqual([
+      {
+        stageLabel: 'League',
+        roundGroups: [
+          { round: 1, matches: [{ teamAName: 'Alice / Bob', teamBName: 'Carol / Dave' }] },
+        ],
+      },
+      {
+        stageLabel: 'Semifinal',
+        roundGroups: [
+          { round: null, matches: [{ teamAName: 'Alice / Bob', teamBName: 'Erin / Frank' }] },
+        ],
+      },
+      {
+        stageLabel: 'Final',
+        roundGroups: [
+          { round: null, matches: [{ teamAName: 'Carol / Dave', teamBName: 'Erin / Frank' }] },
+        ],
+      },
+    ]);
+  });
+
+  it('excludes bye matches (team_b_id null)', () => {
+    const result = buildUpcomingMatchGroups(
       [{ round: 1, stage: 'league', team_a_id: 't1', team_b_id: null, score_a: null, score_b: null, status: 'pending' }],
       teamById,
       false

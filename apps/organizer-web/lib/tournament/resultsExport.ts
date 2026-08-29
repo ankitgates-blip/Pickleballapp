@@ -145,3 +145,78 @@ export function buildMatchGroups(
   }
   return groups;
 }
+
+export type UpcomingMatch = {
+  teamAName: string;
+  teamBName: string;
+};
+
+export type UpcomingRoundGroup = {
+  // null only for a stage where round numbering isn't meaningful (Semifinal/Final --
+  // those matches are always numbered round 1 as a DB-schema formality, not a real
+  // round sequence) -- League/Matches rounds are always a real number.
+  round: number | null;
+  matches: UpcomingMatch[];
+};
+
+export type UpcomingStageGroup = {
+  stageLabel: string;
+  roundGroups: UpcomingRoundGroup[];
+};
+
+function toUpcomingMatch(m: ExportRawMatch, teamById: Map<string, string>): UpcomingMatch {
+  return {
+    teamAName: (m.team_a_id && teamById.get(m.team_a_id)) ?? 'Unknown',
+    teamBName: (m.team_b_id && teamById.get(m.team_b_id)) ?? 'Unknown',
+  };
+}
+
+function groupPendingByRound(
+  matches: ExportRawMatch[],
+  teamById: Map<string, string>
+): UpcomingRoundGroup[] {
+  const byRound = new Map<number, UpcomingMatch[]>();
+  for (const m of matches) {
+    const list = byRound.get(m.round) ?? [];
+    list.push(toUpcomingMatch(m, teamById));
+    byRound.set(m.round, list);
+  }
+  return [...byRound.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([round, roundMatches]) => ({ round, matches: roundMatches }));
+}
+
+// A separate, additive builder from buildMatchGroups above -- deliberately not a
+// modification of it, since ChampionCard/ShareResultsButton consume that one for
+// completed results (with scores and winners) and must keep working unchanged.
+// This one is for a forward-looking "what's left to play" schedule: only pending
+// matches (completed and skipped ones are dropped entirely, and so is the score --
+// there isn't one yet), grouped by round within each stage. Semifinal/Final matches
+// aren't round-grouped (see UpcomingRoundGroup.round) -- each becomes a single group.
+export function buildUpcomingMatchGroups(
+  matches: ExportRawMatch[],
+  teamById: Map<string, string>,
+  splitByStage: boolean
+): UpcomingStageGroup[] {
+  const pending = matches.filter((m) => m.team_b_id !== null && m.status === 'pending');
+
+  if (!splitByStage) {
+    return pending.length > 0
+      ? [{ stageLabel: 'Matches', roundGroups: groupPendingByRound(pending, teamById) }]
+      : [];
+  }
+
+  const groups: UpcomingStageGroup[] = [];
+  for (const stage of ['league', 'semifinal', 'final'] as const) {
+    const stageMatches = pending.filter((m) => m.stage === stage);
+    if (stageMatches.length === 0) continue;
+    groups.push({
+      stageLabel: STAGE_LABELS[stage],
+      roundGroups:
+        stage === 'league'
+          ? groupPendingByRound(stageMatches, teamById)
+          : [{ round: null, matches: stageMatches.map((m) => toUpcomingMatch(m, teamById)) }],
+    });
+  }
+  return groups;
+}

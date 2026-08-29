@@ -11,11 +11,12 @@ import { computeStandings } from '@/lib/tournament/standings';
 import { customFullCoverageRounds } from '@/lib/tournament/customAuto';
 import { MAX_LEAGUE_PLAYOFFS_ROUND_CYCLES } from '@/lib/tournament/roundRobin';
 import { canEditScore, canEditTeams } from '@/lib/tournament/completion';
-import { buildMatchGroups } from '@/lib/tournament/resultsExport';
+import { buildMatchGroups, buildUpcomingMatchGroups } from '@/lib/tournament/resultsExport';
 import type { MatchResult } from '@/lib/types';
 import { generateBracket, generatePopcornBracket, advanceGauntletRound, advanceClaimTheThroneRound, advanceUpAndDownRiverRound, generateLeaguePlayoffsBracket, regenerateLeaguePlayoffsBracket, generateSemifinalMatches, generateFinalMatch, skipToFinalMatch, updateMatchTeams, addCustomMatch, autoGenerateCustomRound, removeCustomMatch, unlockTournamentResults, lockTournamentResults } from './actions';
 import { enterScore, skipMatch } from '../matches/actions';
 import ShareScheduleButton from './ShareScheduleButton';
+import ScheduleCard from './ScheduleCard';
 import RegenerateLeagueRoundsButton from './RegenerateLeagueRoundsButton';
 import SaveButton from '@/app/components/SaveButton';
 
@@ -110,6 +111,30 @@ export default async function BracketPage({
     teamById,
     splitByStage
   );
+
+  // "Share Schedule" is a shareable image (rather than the PDF ShareScheduleButton
+  // still used by every other format) only for League + Playoffs and Custom League --
+  // the two formats organized into numbered rounds where a forward-looking "what's
+  // left to play" schedule, plus a teams roster, is actually useful to share.
+  const usesScheduleCard = isLeaguePlayoffs || isCustom;
+  const upcomingStageGroups = usesScheduleCard
+    ? buildUpcomingMatchGroups(
+        (matches ?? []).map((m) => ({
+          round: m.round,
+          stage: m.stage,
+          team_a_id: m.team_a_id,
+          team_b_id: m.team_b_id,
+          score_a: m.score_a,
+          score_b: m.score_b,
+          status: m.status,
+        })),
+        teamById,
+        splitByStage
+      )
+    : [];
+  const scheduleTeams = usesScheduleCard
+    ? fixedTeams.map((t) => ({ name: teamById.get(t.id) ?? 'Unknown' }))
+    : [];
 
   const teamCount = (teams ?? []).length;
   const playerCount = (players ?? []).length;
@@ -470,17 +495,31 @@ export default async function BracketPage({
       )}
 
       <div className="mb-6">
-        <ShareScheduleButton
-          tournamentName={tournament?.name ?? ''}
-          date={tournament?.date ?? ''}
-          venueName={venueName}
-          timeslotLabel={timeslotLabel(tournament?.timeslot ?? '')}
-          formatLabel={formatLabel(format)}
-          matchGroups={exportMatchGroups}
-        />
-        <p className="text-xs text-muted mt-1.5">
-          Opens your share sheet on mobile — downloads the file on desktop.
-        </p>
+        {usesScheduleCard ? (
+          <ScheduleCard
+            tournamentName={tournament?.name ?? ''}
+            date={tournament?.date ?? ''}
+            venueName={venueName}
+            timeslotLabel={timeslotLabel(tournament?.timeslot ?? '')}
+            formatLabel={formatLabel(format)}
+            stageGroups={upcomingStageGroups}
+            teams={scheduleTeams}
+          />
+        ) : (
+          <>
+            <ShareScheduleButton
+              tournamentName={tournament?.name ?? ''}
+              date={tournament?.date ?? ''}
+              venueName={venueName}
+              timeslotLabel={timeslotLabel(tournament?.timeslot ?? '')}
+              formatLabel={formatLabel(format)}
+              matchGroups={exportMatchGroups}
+            />
+            <p className="text-xs text-muted mt-1.5">
+              Opens your share sheet on mobile — downloads the file on desktop.
+            </p>
+          </>
+        )}
       </div>
 
       {!isSupported && (
