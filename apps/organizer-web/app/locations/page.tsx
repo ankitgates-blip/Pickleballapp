@@ -2,6 +2,9 @@ import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, headingClass } from '@/app/components/ui';
 import EmptyState from '@/app/components/EmptyState';
+import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
+import { computeLocationLeaderboard } from '@/lib/stats/locationLeaderboard';
+import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
 import { computePointsLeaderboard, POINTS_SYSTEM_START_DATE, type PointsTournament } from '@/lib/stats/points';
 import { monthDateRange, monthToDateRange, monthsToCheck } from '@/lib/stats/monthRange';
@@ -144,6 +147,8 @@ export default async function LocationsPage({
         status: 'complete' as const,
       }));
 
+    // Also used for the tournamentWinsByPersonId champion-credit loop below.
+    const tournamentWinsByPersonId = new Map<string, number>();
     const pointsTournaments: PointsTournament[] = [];
     for (const tournamentId of venueTournamentIds) {
       const tournament = tournamentById.get(tournamentId);
@@ -153,6 +158,16 @@ export default async function LocationsPage({
         .filter((t) => t.tournamentId === tournamentId)
         .map((t) => ({ id: t.id, person1Id: t.player1PersonId, person2Id: t.player2PersonId }));
       const tournamentMatches = (matchesRaw ?? []).filter((m) => m.tournament_id === tournamentId);
+
+      const championPersonIds = computeTournamentChampionPersonIds({
+        format: tournament.format,
+        completedAt: tournament.completed_at,
+        matches: tournamentMatches,
+        teams: tournamentTeams,
+      });
+      for (const personId of championPersonIds ?? []) {
+        tournamentWinsByPersonId.set(personId, (tournamentWinsByPersonId.get(personId) ?? 0) + 1);
+      }
 
       pointsTournaments.push({
         id: tournamentId,
@@ -171,26 +186,64 @@ export default async function LocationsPage({
       range: pointsRange,
     });
 
+    // The points system has no data at all before September 2026 (or, later, for a
+    // quiet period with zero completed matches) -- computePointsLeaderboard returns
+    // an empty array by design in both cases. Rather than the leaderboard just
+    // vanishing while everyone waits for a real points period to exist, fall back to
+    // the all-time match-record ranking this page always showed before the points
+    // merge. The Points column reads 0 in that case, which is accurate: none have
+    // been awarded yet.
+    const allTimeCandidates = (people ?? [])
+      .map((person) => {
+        const records = buildPersonMatchRecords(person.id, venueCompleteMatches, teams);
+        return {
+          personId: person.id,
+          matchWins: records.filter((r) => r.won).length,
+          tournamentWins: tournamentWinsByPersonId.get(person.id) ?? 0,
+          matchesPlayed: records.length,
+        };
+      })
+      .filter((c) => c.matchesPlayed > 0);
+    const allTimeLeaderboard = computeLocationLeaderboard(allTimeCandidates);
+
     return {
       venueId: venue.id,
       venueName: venue.name,
       points,
+      allTimeLeaderboard,
     };
   });
 
-  const leaderboardCardRowsByVenue = leaderboardsByVenue.map(({ venueId, venueName, points }) => ({
-    venueId,
-    venueName,
-    rows: points.map((entry, i) => ({
-      rank: i + 1,
-      name: personNameById.get(entry.personId) ?? 'Unknown',
-      matchesPlayed: entry.matchesPlayed,
-      matchWins: entry.matchWins,
-      winPercentage: entry.matchesPlayed > 0 ? (entry.matchWins / entry.matchesPlayed) * 100 : null,
-      leagueWins: entry.leagueWins,
-      totalPoints: entry.totalPoints,
-    })),
-  }));
+  const leaderboardCardRowsByVenue = leaderboardsByVenue.map(
+    ({ venueId, venueName, points, allTimeLeaderboard }) => {
+      const usingPoints = points.length > 0;
+      return {
+        venueId,
+        venueName,
+        periodLabel: usingPoints ? periodLabel : 'All-Time',
+        rows: usingPoints
+          ? points.map((entry, i) => ({
+              rank: i + 1,
+              name: personNameById.get(entry.personId) ?? 'Unknown',
+              matchesPlayed: entry.matchesPlayed,
+              matchWins: entry.matchWins,
+              winPercentage:
+                entry.matchesPlayed > 0 ? (entry.matchWins / entry.matchesPlayed) * 100 : null,
+              leagueWins: entry.leagueWins,
+              totalPoints: entry.totalPoints,
+            }))
+          : allTimeLeaderboard.map((entry, i) => ({
+              rank: i + 1,
+              name: personNameById.get(entry.personId) ?? 'Unknown',
+              matchesPlayed: entry.matchesPlayed,
+              matchWins: entry.matchWins,
+              winPercentage: entry.winPercentage,
+              leagueWins: entry.tournamentWins,
+              totalPoints: 0,
+            })),
+      };
+    }
+  );
 
   return (
     <OrganizerShell organizerName={organizer.name}>
@@ -228,12 +281,12 @@ export default async function LocationsPage({
         })}
       </div>
 
-      {leaderboardCardRowsByVenue.map(({ venueId, venueName, rows }) =>
+      {leaderboardCardRowsByVenue.map(({ venueId, venueName, periodLabel: cardPeriodLabel, rows }) =>
         rows.length > 0 ? (
           <div key={venueId} className="mb-6">
             <LocationLeaderboardCard
               venueName={venueName}
-              periodLabel={periodLabel}
+              periodLabel={cardPeriodLabel}
               generatedDateLabel={generatedDateLabel}
               rows={rows}
             />
@@ -241,7 +294,7 @@ export default async function LocationsPage({
         ) : (
           <div key={venueId} className={`${cardClass} mb-6`}>
             <h2 className="text-lg font-bold text-slate-900 mb-3">{venueName}</h2>
-            <EmptyState icon={<PaddleIcon />}>No points recorded for this period yet.</EmptyState>
+            <EmptyState icon={<PaddleIcon />}>No matches played here yet.</EmptyState>
           </div>
         )
       )}

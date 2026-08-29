@@ -101,11 +101,14 @@ export default function LocationLeaderboardCard({
     try {
       const exportSvg = svgRef.current.cloneNode(true) as SVGSVGElement;
 
-      const imageEl = exportSvg.querySelector('image');
-      if (imageEl) {
-        const logoDataUrl = await loadDataUrl('/logo.png');
-        if (logoDataUrl) {
-          imageEl.setAttribute('href', logoDataUrl);
+      // Two <image> elements now (logo + the skyline photo) -- inline each from its
+      // own original href, since neither survives an isolated standalone-SVG render.
+      for (const imageEl of Array.from(exportSvg.querySelectorAll('image'))) {
+        const src = imageEl.getAttribute('href');
+        if (!src) continue;
+        const dataUrl = await loadDataUrl(src);
+        if (dataUrl) {
+          imageEl.setAttribute('href', dataUrl);
         } else {
           imageEl.remove();
         }
@@ -186,6 +189,14 @@ export default function LocationLeaderboardCard({
               <stop offset="50%" stopColor="#fde68a" />
               <stop offset="100%" stopColor={GOLD_MEDAL} />
             </linearGradient>
+            <linearGradient id="llSkylineFadeGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+              <stop offset="70%" stopColor="#ffffff" stopOpacity="1" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            </linearGradient>
+            <mask id="llSkylineFade">
+              <rect x={CARD_WIDTH - 138} y="0" width="32" height="160" fill="url(#llSkylineFadeGrad)" />
+            </mask>
           </defs>
 
           <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} rx="20" fill="url(#llBg)" />
@@ -200,17 +211,18 @@ export default function LocationLeaderboardCard({
             strokeOpacity="0.3"
           />
 
-          {/* Decorative skyline + paddle motif (vector silhouette, top-right) */}
-          <g opacity="0.5">
-            <rect x={CARD_WIDTH - 150} y="70" width="18" height="80" fill="#1c2230" />
-            <rect x={CARD_WIDTH - 128} y="45" width="16" height="105" fill="#1c2230" />
-            <path
-              d={`M ${CARD_WIDTH - 104} 150 L ${CARD_WIDTH - 104} 40 L ${CARD_WIDTH - 98} 10 L ${CARD_WIDTH - 92} 40 L ${CARD_WIDTH - 92} 150 Z`}
-              fill="#1c2230"
-            />
-            <rect x={CARD_WIDTH - 76} y="90" width="14" height="60" fill="#1c2230" />
-            <rect x={CARD_WIDTH - 56} y="60" width="16" height="90" fill="#1c2230" />
-          </g>
+          {/* Decorative Dubai skyline photo (top-right) + a vector paddle icon --
+              the skyline is a real photo (cropped from a reference the user provided,
+              with its text and the branded paddle removed); no unbranded paddle photo
+              was available, so the paddle stays a simple vector drawing. */}
+          <image
+            href="/dxb-skyline.webp"
+            x={CARD_WIDTH - 138}
+            y="0"
+            width="32"
+            height="160"
+            mask="url(#llSkylineFade)"
+          />
           <g transform={`translate(${CARD_WIDTH - 60}, 88) rotate(18)`} opacity="0.9">
             <ellipse cx="0" cy="0" rx="17" ry="21" fill="#0c0a09" stroke={NEON} strokeWidth="2.5" />
             <rect x="-3" y="19" width="6" height="16" rx="2" fill="#0c0a09" stroke={NEON} strokeWidth="2" />
