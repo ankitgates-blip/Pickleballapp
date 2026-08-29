@@ -70,4 +70,26 @@ describe('pdfBranding drawing functions (smoke)', () => {
 
     expect(y).toBeGreaterThan(50);
   });
+
+  it('drawTrophyIcon draws without throwing', async () => {
+    const [{ default: jsPDF }, { drawTrophyIcon }] = await Promise.all([
+      import('jspdf'),
+      import('./pdfBranding'),
+    ]);
+    const doc = new jsPDF();
+
+    expect(() => drawTrophyIcon(doc, 90, 40, 14)).not.toThrow();
+  });
+
+  it('drawChampionBanner draws without throwing and returns a Y below the banner', async () => {
+    const [{ default: jsPDF }, { drawChampionBanner }] = await Promise.all([
+      import('jspdf'),
+      import('./pdfBranding'),
+    ]);
+    const doc = new jsPDF();
+
+    const y = drawChampionBanner(doc, { accent: 'results', name: 'Team Alpha', x: 14, y: 40, width: 180 });
+
+    expect(y).toBeGreaterThan(40);
+  });
 });

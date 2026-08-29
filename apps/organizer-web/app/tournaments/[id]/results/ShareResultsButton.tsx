@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { outlineButtonClass } from '@/app/components/ui';
 import { shareOrDownloadPdf, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
-import { drawPdfHeader, drawPdfFooter, pdfTableTheme, drawHighlightBox, loadImageAsDataUrl } from '@/lib/pdf/pdfBranding';
+import { drawPdfHeader, drawPdfFooter, pdfTableTheme, drawChampionBanner, loadImageAsDataUrl } from '@/lib/pdf/pdfBranding';
 import type { ExportStandingsRow, ExportMatchGroup } from '@/lib/tournament/resultsExport';
 
 type ShareResultsButtonProps = {
@@ -54,7 +54,8 @@ export default function ShareResultsButton({
       });
 
       if (championName) {
-        y = drawHighlightBox(doc, { accent: 'results', text: `Champion: ${championName}`, x: 14, y });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        y = drawChampionBanner(doc, { accent: 'results', name: championName, x: 14, y, width: pageWidth - 28 });
       }
 
       const hasPrimaryStat = standingsRows.some((r) => r.primaryStat !== '');
@@ -66,8 +67,14 @@ export default function ShareResultsButton({
           ? [String(r.rank), r.name, r.primaryStat, String(r.wins), String(r.losses), r.diffLabel]
           : [String(r.rank), r.name, String(r.wins), String(r.losses), r.diffLabel]
       );
+      const diffColumnIndex = hasPrimaryStat ? 5 : 4;
 
-      autoTable(doc, { startY: y, head: standingsHead, body: standingsBody, ...pdfTableTheme('results') });
+      autoTable(doc, {
+        startY: y,
+        head: standingsHead,
+        body: standingsBody,
+        ...pdfTableTheme('results', { medalRankColumn: 0, diffColumn: diffColumnIndex }),
+      });
       // @ts-expect-error -- autoTable augments jsPDF's instance type with lastAutoTable at runtime
       y = doc.lastAutoTable.finalY + 8;
 
