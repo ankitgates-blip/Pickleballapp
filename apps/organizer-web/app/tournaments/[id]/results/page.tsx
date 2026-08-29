@@ -97,6 +97,13 @@ export default async function ResultsPage({
   const standings = computeStandings(leagueMatchResults);
 
   const isLeaguePlayoffs = tournament.format === 'league_playoffs';
+  // Custom League has no playoff stage by default, but can generate one (from its
+  // fixed teams) the same way League + Playoffs always does -- once it has, its
+  // matches should split into League/Semifinal/Final sections the same way too.
+  const hasPlayoffStages = (matches ?? []).some(
+    (m) => m.stage === 'semifinal' || m.stage === 'final'
+  );
+  const splitByStage = isLeaguePlayoffs || hasPlayoffStages;
   const isLadderFormat = isLadderFormatCheck(tournament.format);
   const isIndividualFormat = usesIndividualStandings(tournament.format);
 
@@ -187,7 +194,7 @@ export default async function ResultsPage({
       status: m.status,
     })),
     teamById,
-    isLeaguePlayoffs
+    splitByStage
   );
 
   const renderMatch = (m: NonNullable<typeof matches>[number]) => {
@@ -379,7 +386,7 @@ export default async function ResultsPage({
         </table>
       </div>
 
-      {isLeaguePlayoffs ? (
+      {splitByStage ? (
         (['league', 'semifinal', 'final'] as const).map((stage) => {
           const stageMatches = (matches ?? []).filter(
             (m) => m.stage === stage && m.team_b_id !== null

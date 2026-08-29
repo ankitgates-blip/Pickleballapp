@@ -13,9 +13,20 @@ export function isTournamentComplete(
   matches: CompletionCheckMatch[],
   targetRounds?: number
 ): boolean {
+  const finalMatch = matches.find((m) => m.stage === 'final');
+
   if (format === 'league_playoffs' && teamCount >= 4) {
-    const finalMatch = matches.find((m) => m.stage === 'final');
     return Boolean(finalMatch && isResolved(finalMatch.status));
+  }
+
+  // Custom League normally has no playoff stage at all, so completion falls through
+  // to the generic "every match resolved and the target round reached" rule below.
+  // But once a Final has actually been generated (the Custom-with-fixed-teams
+  // playoffs feature), the tournament is done exactly when that Final is resolved --
+  // same as League + Playoffs -- regardless of any still-pending League match that
+  // organizer chose to skip past on the way to playoffs.
+  if (format === 'custom' && finalMatch) {
+    return isResolved(finalMatch.status);
   }
 
   const realMatches = matches.filter((m) => m.teamBId !== null);

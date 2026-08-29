@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { generateRoundRobin, generateDoubleHeaderRoundRobin } from './roundRobin';
+import {
+  generateRoundRobin,
+  generateDoubleHeaderRoundRobin,
+  generateMultiCycleRoundRobin,
+} from './roundRobin';
 
 describe('generateRoundRobin', () => {
   it('throws with fewer than 2 teams', () => {
@@ -81,5 +85,45 @@ describe('generateDoubleHeaderRoundRobin', () => {
     const singleReal = single.filter((p) => p.teamBId !== null);
     const doubledReal = doubled.filter((p) => p.teamBId !== null);
     expect(doubledReal).toHaveLength(singleReal.length * 2);
+  });
+});
+
+describe('generateMultiCycleRoundRobin', () => {
+  it('matches a plain single-cycle round robin when targetRounds is within one cycle', () => {
+    const single = generateRoundRobin(['A', 'B', 'C', 'D']).filter((p) => p.round <= 2);
+    const multi = generateMultiCycleRoundRobin(['A', 'B', 'C', 'D'], 2);
+    expect(multi).toEqual(single);
+  });
+
+  it('repeats the full cycle with round numbers continuing on from the first', () => {
+    const single = generateRoundRobin(['A', 'B', 'C', 'D']); // 3 rounds for 4 teams
+    const multi = generateMultiCycleRoundRobin(['A', 'B', 'C', 'D'], 6); // exactly 2 cycles
+
+    expect(multi).toHaveLength(single.length * 2);
+    const secondCycle = multi.filter((p) => p.round > 3);
+    expect(secondCycle).toHaveLength(single.length);
+    for (const pairing of single) {
+      const repeat = secondCycle.find(
+        (p) => p.round === pairing.round + 3 && p.teamAId === pairing.teamAId && p.teamBId === pairing.teamBId
+      );
+      expect(repeat).toBeDefined();
+    }
+  });
+
+  it('trims the final cycle down to exactly targetRounds when it only partially repeats', () => {
+    const multi = generateMultiCycleRoundRobin(['A', 'B', 'C', 'D'], 4); // 1 full cycle (3) + 1 round
+    expect(Math.max(...multi.map((p) => p.round))).toBe(4);
+    expect(multi.every((p) => p.round <= 4)).toBe(true);
+  });
+
+  it('preserves the same bye rotation on every repeated cycle for an odd team count', () => {
+    const multi = generateMultiCycleRoundRobin(['A', 'B', 'C'], 6); // 2 cycles of 3 rounds
+    const byesByRound = new Map<number, string>();
+    for (const p of multi.filter((p) => p.teamBId === null)) {
+      byesByRound.set(p.round, p.teamAId);
+    }
+    expect(byesByRound.get(1)).toBe(byesByRound.get(4));
+    expect(byesByRound.get(2)).toBe(byesByRound.get(5));
+    expect(byesByRound.get(3)).toBe(byesByRound.get(6));
   });
 });

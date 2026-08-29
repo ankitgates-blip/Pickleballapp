@@ -72,6 +72,14 @@ export default async function PublicTournamentPage({
   const isLeaguePlayoffs = tournament.format === 'league_playoffs';
   const isLadder = isLadderFormat(tournament.format);
   const leagueMatches = (matches ?? []).filter((m) => m.stage === 'league');
+  // Custom League has no playoff stage by default, but can generate one (from its
+  // fixed teams) the same way League + Playoffs always does -- once it has, its
+  // Semifinal/Final sections should be labeled the same way too, instead of the
+  // generic "Schedule" heading every non-league_playoffs format otherwise gets.
+  const hasPlayoffStages = (matches ?? []).some(
+    (m) => m.stage === 'semifinal' || m.stage === 'final'
+  );
+  const splitByStage = isLeaguePlayoffs || hasPlayoffStages;
 
   const matchResults: MatchResult[] = leagueMatches.map((m) => ({
     teamAId: m.team_a_id!,
@@ -215,7 +223,7 @@ export default async function PublicTournamentPage({
           return (
             <div key={stage} className={cardClass}>
               <h2 className="text-lg font-bold text-slate-900 mb-3">
-                {isLeaguePlayoffs ? STAGE_LABELS[stage] : 'Schedule'}
+                {splitByStage ? STAGE_LABELS[stage] : 'Schedule'}
               </h2>
               <ul className="space-y-2 text-sm">
                 {stageMatches.map((m, i) => {

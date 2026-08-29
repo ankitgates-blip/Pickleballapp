@@ -181,6 +181,33 @@ describe('isTournamentComplete', () => {
     ];
     expect(isTournamentComplete('custom', 4, matches, 2)).toBe(true);
   });
+
+  it('returns false for custom with a pending Final, even if every League match is complete', () => {
+    const matches: CompletionCheckMatch[] = [
+      { stage: 'league', status: 'complete', teamBId: 't2', round: 1 },
+      { stage: 'semifinal', status: 'complete', teamBId: 't4', round: 1 },
+      { stage: 'semifinal', status: 'complete', teamBId: 't6', round: 1 },
+      { stage: 'final', status: 'pending', teamBId: 't7', round: 1 },
+    ];
+    expect(isTournamentComplete('custom', 4, matches, 1)).toBe(false);
+  });
+
+  it('returns true for custom once the Final is resolved, even with an unrelated pending League match', () => {
+    const matches: CompletionCheckMatch[] = [
+      { stage: 'league', status: 'complete', teamBId: 't2', round: 1 },
+      { stage: 'league', status: 'pending', teamBId: 't3', round: 2 },
+      { stage: 'final', status: 'complete', teamBId: 't7', round: 1 },
+    ];
+    expect(isTournamentComplete('custom', 4, matches, 5)).toBe(true);
+  });
+
+  it('treats a skipped custom Final as resolved, same as a scored one', () => {
+    const matches: CompletionCheckMatch[] = [
+      { stage: 'league', status: 'complete', teamBId: 't2', round: 1 },
+      { stage: 'final', status: 'skipped', teamBId: 't7', round: 1 },
+    ];
+    expect(isTournamentComplete('custom', 4, matches, 1)).toBe(true);
+  });
 });
 
 describe('canEditScore', () => {

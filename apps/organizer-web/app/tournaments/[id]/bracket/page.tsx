@@ -9,6 +9,7 @@ import { courtLabel } from '@/lib/tournament/courts';
 import { timeslotLabel } from '@/lib/tournament/timeslots';
 import { computeStandings } from '@/lib/tournament/standings';
 import { customFullCoverageRounds } from '@/lib/tournament/customAuto';
+import { MAX_LEAGUE_PLAYOFFS_ROUND_CYCLES } from '@/lib/tournament/roundRobin';
 import { canEditScore, canEditTeams } from '@/lib/tournament/completion';
 import { buildMatchGroups } from '@/lib/tournament/resultsExport';
 import type { MatchResult } from '@/lib/types';
@@ -88,6 +89,14 @@ export default async function BracketPage({
     .order('round', { ascending: true })
     .order('created_at', { ascending: true });
 
+  // Custom League has no playoff stage by default, but can generate one (from its
+  // fixed teams) the same way League + Playoffs always does -- once it has, its
+  // matches should split into League/Semifinal/Final sections the same way too.
+  const hasPlayoffStages = (matches ?? []).some(
+    (m) => m.stage === 'semifinal' || m.stage === 'final'
+  );
+  const splitByStage = isLeaguePlayoffs || hasPlayoffStages;
+
   const exportMatchGroups = buildMatchGroups(
     (matches ?? []).map((m) => ({
       round: m.round,
@@ -99,7 +108,7 @@ export default async function BracketPage({
       status: m.status,
     })),
     teamById,
-    isLeaguePlayoffs
+    splitByStage
   );
 
   const teamCount = (teams ?? []).length;
@@ -207,15 +216,22 @@ export default async function BracketPage({
   const showRegenerateLeaguePlayoffsRounds =
     isLeaguePlayoffs && hasLeagueMatches && !playoffsStarted && !tournament?.completed_at;
 
+  // Custom League can also run a Semifinal/Final stage, but only when it's using
+  // fixed teams throughout -- ad-hoc/dynamic pairing has no stable team identity to
+  // seed a bracket from (a pairing might have played exactly one match all league).
+  const customPlayoffsEligible = isCustom && !isDynamicMode;
+  const supportsPlayoffs = isLeaguePlayoffs || customPlayoffsEligible;
+  const playoffTeamCount = isCustom ? customFixedTeamCount : teamCount;
+
   const showGenerateSemifinals =
-    isLeaguePlayoffs &&
+    supportsPlayoffs &&
     semifinalMatches.length === 0 &&
     !hasFinalMatch &&
-    teamCount >= 4;
+    playoffTeamCount >= 4;
   const showSkipToFinal = showGenerateSemifinals;
-  const showGenerateFinal = isLeaguePlayoffs && allSemifinalComplete && !hasFinalMatch;
+  const showGenerateFinal = supportsPlayoffs && allSemifinalComplete && !hasFinalMatch;
 
-  const leagueStandings = isLeaguePlayoffs
+  const leagueStandings = supportsPlayoffs
     ? computeStandings(
         leagueMatches.map(
           (m): MatchResult => ({
@@ -696,12 +712,13 @@ export default async function BracketPage({
               type="number"
               defaultValue={leaguePlayoffsFullRounds}
               min={1}
-              max={leaguePlayoffsFullRounds}
+              max={leaguePlayoffsFullRounds * MAX_LEAGUE_PLAYOFFS_ROUND_CYCLES}
               className={inputClass}
             />
             <p className="text-xs text-muted mt-1">
               Full round-robin is {leaguePlayoffsFullRounds}{' '}
-              round{leaguePlayoffsFullRounds === 1 ? '' : 's'}.
+              round{leaguePlayoffsFullRounds === 1 ? '' : 's'}. Ask for more to repeat it —
+              e.g. {leaguePlayoffsFullRounds * 2} rounds plays everyone twice.
             </p>
           </div>
           <SaveButton className={accentButtonClass} pendingLabel="Generating…">
@@ -898,9 +915,17 @@ export default async function BracketPage({
         </div>
       )}
 
-      {isLeaguePlayoffs && allLeagueComplete && teamCount < 4 && (
+      {supportsPlayoffs && allLeagueComplete && playoffTeamCount < 4 && (
         <div className="rounded-lg bg-navy-tint border border-navy-mid/25 text-navy-deep text-sm px-4 py-3 mb-6">
-          Fewer than 4 teams — no playoff stage. League standings decide the champion.
+          Fewer than 4 teams — no playoff stage. {isCustom ? 'Individual' : 'League'} standings decide
+          the champion.
+        </div>
+      )}
+
+      {isCustom && isDynamicMode && allLeagueComplete && (
+        <div className="rounded-lg bg-navy-tint border border-navy-mid/25 text-navy-deep text-sm px-4 py-3 mb-6">
+          Playoffs need fixed teams for the whole league — this one used ad-hoc pairing, so
+          there's no stable team to seed a bracket from. Individual standings decide the champion.
         </div>
       )}
 
@@ -951,10 +976,10 @@ export default async function BracketPage({
         </div>
       )}
 
-      {isLeaguePlayoffs && leagueStandings.length > 0 && (
+      {supportsPlayoffs && leagueStandings.length > 0 && (
         <div className={`${cardClass} mb-6 overflow-x-auto`}>
           <h2 className="text-sm font-bold text-navy-mid uppercase tracking-wide mb-2">
-            League Standings
+            {isCustom ? 'Team Standings (Playoff Seeding)' : 'League Standings'}
           </h2>
           <table className="w-full text-sm">
             <thead>

@@ -99,7 +99,14 @@ function computeChampionCore(params: {
     : [];
 
   const finalMatch = finalMatches[0];
-  const championTeamId = !isIndividual
+  // Custom League's standings are always individual (see usesIndividualStandings),
+  // but a Custom League that opted into the fixed-teams playoffs feature has a real
+  // Final match decide the winner, same as League + Playoffs -- so once that match
+  // exists, the champion comes from it (the winning pair) rather than from
+  // pre-playoffs individual standings. A Custom League that never generated a Final
+  // keeps its existing individual-standings-based champion, unchanged.
+  const useTeamChampion = !isIndividual || (format === 'custom' && Boolean(finalMatch));
+  const championTeamId = useTeamChampion
     ? finalMatch
       ? (finalMatch.score_a ?? 0) > (finalMatch.score_b ?? 0)
         ? finalMatch.team_a_id
@@ -108,7 +115,7 @@ function computeChampionCore(params: {
     : undefined;
   const championPlayerId = isLadderFormat
     ? ladderStandings[0]?.playerId
-    : isIndividual
+    : isIndividual && !useTeamChampion
       ? individualStandings[0]?.playerId
       : undefined;
 

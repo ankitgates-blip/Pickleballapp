@@ -40,6 +40,37 @@ export function generateRoundRobin(teamIds: string[]): RoundRobinPairing[] {
   return pairings;
 }
 
+// League + Playoffs lets an organizer request more rounds than a single full
+// round-robin cycle covers (everyone plays everyone once) -- up to this many
+// repeats of that cycle, back to back, each repeat picking up the round
+// numbering where the previous one left off. A generous ceiling rather than
+// unlimited: enough for a season of repeat play without an open-ended input.
+export const MAX_LEAGUE_PLAYOFFS_ROUND_CYCLES = 3;
+
+// Repeats a single round-robin cycle back to back until `targetRounds` is
+// covered, then trims the final partial cycle down to exactly that many
+// rounds. For targetRounds <= one cycle's length this is identical to a
+// plain generateRoundRobin(...).filter(p => p.round <= targetRounds) -- the
+// repeats only kick in once more rounds are requested than one cycle has.
+export function generateMultiCycleRoundRobin(
+  teamIds: string[],
+  targetRounds: number
+): RoundRobinPairing[] {
+  const singleCycle = generateRoundRobin(teamIds);
+  const cycleLength = Math.max(...singleCycle.map((p) => p.round));
+  const cyclesNeeded = Math.max(1, Math.ceil(targetRounds / cycleLength));
+
+  const pairings: RoundRobinPairing[] = [];
+  for (let cycle = 0; cycle < cyclesNeeded; cycle++) {
+    for (const p of singleCycle) {
+      const round = p.round + cycle * cycleLength;
+      if (round > targetRounds) continue;
+      pairings.push({ ...p, round });
+    }
+  }
+  return pairings;
+}
+
 export function generateDoubleHeaderRoundRobin(teamIds: string[]): RoundRobinPairing[] {
   const singleRound = generateRoundRobin(teamIds);
   const doubled: RoundRobinPairing[] = [];

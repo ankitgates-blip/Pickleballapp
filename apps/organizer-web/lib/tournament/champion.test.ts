@@ -154,6 +154,62 @@ describe('computeTournamentChampionName', () => {
     expect(result).toBe('Alice');
   });
 
+  it("returns the final match winner's team name for Custom League when a final exists, even though Custom's regular-season standings are per-player", () => {
+    const result = computeTournamentChampionName({
+      format: 'custom',
+      completedAt: '2026-01-01T00:00:00Z',
+      matches: [
+        {
+          stage: 'league',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 11,
+          score_b: 5,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+        {
+          stage: 'final',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 8,
+          score_b: 11,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+      ],
+      teams: teamsFixture,
+      players: playersFixture,
+    });
+    // t1 (Alice/Bob) won the league stage and leads individual standings, but t2
+    // (Carol/Dave) won the actual Final -- the champion must follow the Final.
+    expect(result).toBe('Carol / Dave');
+  });
+
+  it('falls back to individual standings for Custom League when no final match was generated', () => {
+    const result = computeTournamentChampionName({
+      format: 'custom',
+      completedAt: '2026-01-01T00:00:00Z',
+      matches: [
+        {
+          stage: 'league',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 11,
+          score_b: 5,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+      ],
+      teams: teamsFixture,
+      players: playersFixture,
+    });
+    expect(result).toBe('Alice');
+  });
+
   it('returns the top ladder standings player name for a ladder format', () => {
     const result = computeTournamentChampionName({
       format: 'claim_the_throne',

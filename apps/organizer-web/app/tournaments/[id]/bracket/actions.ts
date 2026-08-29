@@ -3,7 +3,12 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
-import { generateRoundRobin, generateDoubleHeaderRoundRobin } from '@/lib/tournament/roundRobin';
+import {
+  generateRoundRobin,
+  generateDoubleHeaderRoundRobin,
+  generateMultiCycleRoundRobin,
+  MAX_LEAGUE_PLAYOFFS_ROUND_CYCLES,
+} from '@/lib/tournament/roundRobin';
 import { generatePopcornSchedule } from '@/lib/tournament/popcorn';
 import { generateGauntletRound } from '@/lib/tournament/gauntlet';
 import { generateClaimTheThroneRound } from '@/lib/tournament/claimTheThrone';
@@ -100,12 +105,13 @@ export async function generateLeaguePlayoffsBracket(tournamentId: string, formDa
 
   const teamCount = teams.length;
   const fullRounds = teamCount % 2 === 0 ? teamCount - 1 : teamCount;
+  const maxRounds = fullRounds * MAX_LEAGUE_PLAYOFFS_ROUND_CYCLES;
 
   const rawRounds = formData?.get('rounds');
   const requested =
     typeof rawRounds === 'string' && rawRounds.trim() !== '' ? Number(rawRounds) : NaN;
   const targetRounds = Number.isFinite(requested)
-    ? Math.max(1, Math.min(fullRounds, Math.floor(requested)))
+    ? Math.max(1, Math.min(maxRounds, Math.floor(requested)))
     : fullRounds;
 
   const { error: updateError } = await supabase
@@ -117,9 +123,7 @@ export async function generateLeaguePlayoffsBracket(tournamentId: string, formDa
     throw new Error(updateError.message);
   }
 
-  const pairings = generateRoundRobin(teams.map((t) => t.id)).filter(
-    (p) => p.round <= targetRounds
-  );
+  const pairings = generateMultiCycleRoundRobin(teams.map((t) => t.id), targetRounds);
 
   const { error: matchesError } = await supabase.from('matches').insert(
     assignCourtsByRound(
@@ -201,9 +205,10 @@ export async function regenerateLeaguePlayoffsBracket(tournamentId: string) {
 
   const teamCount = teams.length;
   const fullRounds = teamCount % 2 === 0 ? teamCount - 1 : teamCount;
+  const maxRounds = fullRounds * MAX_LEAGUE_PLAYOFFS_ROUND_CYCLES;
   const targetRounds = Math.max(
     1,
-    Math.min(fullRounds, tournament?.league_playoffs_rounds ?? fullRounds)
+    Math.min(maxRounds, tournament?.league_playoffs_rounds ?? fullRounds)
   );
 
   const { error: deleteError } = await supabase
@@ -225,9 +230,7 @@ export async function regenerateLeaguePlayoffsBracket(tournamentId: string) {
     throw new Error(updateError.message);
   }
 
-  const pairings = generateRoundRobin(teams.map((t) => t.id)).filter(
-    (p) => p.round <= targetRounds
-  );
+  const pairings = generateMultiCycleRoundRobin(teams.map((t) => t.id), targetRounds);
 
   const { error: matchesError } = await supabase.from('matches').insert(
     assignCourtsByRound(
@@ -714,8 +717,65 @@ export async function advanceUpAndDownRiverRound(tournamentId: string) {
   revalidatePath(`/tournaments/${tournamentId}/bracket`);
 }
 
+// Semifinals/Final are available for League + Playoffs always, and for Custom
+// League only when it's used fixed teams throughout -- ad-hoc/dynamic pairing has no
+// stable team identity to seed a bracket from fairly. Shared by generateSemifinalMatches
+// and skipToFinalMatch so both enforce the exact same eligibility rule.
+async function assertPlayoffsAllowed(
+  supabase: Awaited<ReturnType<typeof requireOrganizer>>['supabase'],
+  tournamentId: string
+): Promise<void> {
+  const { data: tournament, error: tournamentError } = await supabase
+    .from('tournaments')
+    .select('format')
+    .eq('id', tournamentId)
+    .single();
+
+  if (tournamentError) {
+    throw new Error(tournamentError.message);
+  }
+
+  if (tournament?.format !== 'league_playoffs' && tournament?.format !== 'custom') {
+    throw new Error('Playoffs are only available for League + Playoffs or Custom League tournaments.');
+  }
+
+  if (tournament.format === 'custom') {
+    const { data: players, error: playersError } = await supabase
+      .from('players')
+      .select('id')
+      .eq('tournament_id', tournamentId);
+
+    if (playersError) {
+      throw new Error(playersError.message);
+    }
+
+    const { data: fixedTeams, error: fixedTeamsError } = await supabase
+      .from('teams')
+      .select('player_1_id, player_2_id')
+      .eq('tournament_id', tournamentId)
+      .eq('is_ad_hoc', false);
+
+    if (fixedTeamsError) {
+      throw new Error(fixedTeamsError.message);
+    }
+
+    const fixedPairedPlayerIds = new Set(
+      (fixedTeams ?? []).flatMap((t) => [t.player_1_id, t.player_2_id])
+    );
+    const isDynamicMode = (players ?? []).some((p) => !fixedPairedPlayerIds.has(p.id));
+
+    if (isDynamicMode) {
+      throw new Error(
+        'Playoffs need fixed teams for the whole league — this Custom League used ad-hoc pairing.'
+      );
+    }
+  }
+}
+
 export async function generateSemifinalMatches(tournamentId: string) {
   const { supabase } = await requireOrganizer();
+
+  await assertPlayoffsAllowed(supabase, tournamentId);
 
   const { count: existingPlayoffMatches, error: existingError } = await supabase
     .from('matches')
@@ -746,6 +806,7 @@ export async function generateSemifinalMatches(tournamentId: string) {
     .from('teams')
     .select('id')
     .eq('tournament_id', tournamentId)
+    .eq('is_ad_hoc', false)
     .order('created_at', { ascending: true })
     .order('id', { ascending: true });
 
@@ -789,6 +850,8 @@ export async function generateSemifinalMatches(tournamentId: string) {
 export async function skipToFinalMatch(tournamentId: string) {
   const { supabase } = await requireOrganizer();
 
+  await assertPlayoffsAllowed(supabase, tournamentId);
+
   const { count: existingPlayoffMatches, error: existingError } = await supabase
     .from('matches')
     .select('id', { count: 'exact', head: true })
@@ -818,6 +881,7 @@ export async function skipToFinalMatch(tournamentId: string) {
     .from('teams')
     .select('id')
     .eq('tournament_id', tournamentId)
+    .eq('is_ad_hoc', false)
     .order('created_at', { ascending: true })
     .order('id', { ascending: true });
 

@@ -116,14 +116,18 @@ function toExportMatch(m: ExportRawMatch, teamById: Map<string, string>): Export
   };
 }
 
+// splitByStage: true for League + Playoffs tournaments (always), and for any other
+// format's tournament that has actually produced semifinal/final matches -- e.g. a
+// Custom League that generated playoffs from its fixed teams. Everything else (the
+// common case) gets a single flat "Matches" group, same as always.
 export function buildMatchGroups(
   matches: ExportRawMatch[],
   teamById: Map<string, string>,
-  isLeaguePlayoffs: boolean
+  splitByStage: boolean
 ): ExportMatchGroup[] {
   const playable = matches.filter((m) => m.team_b_id !== null);
 
-  if (!isLeaguePlayoffs) {
+  if (!splitByStage) {
     return playable.length > 0
       ? [{ stageLabel: 'Matches', matches: playable.map((m) => toExportMatch(m, teamById)) }]
       : [];
