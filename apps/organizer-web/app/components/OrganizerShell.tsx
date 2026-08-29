@@ -121,7 +121,6 @@ export default function OrganizerShell({
             backgroundPosition: 'center bottom',
           }}
         >
-          <div aria-hidden className="header-dots absolute inset-0" />
           {/* pl-[170px] clears the overlapping logo: left-[30px] + 140px width below */}
           <div className="relative max-w-3xl mx-auto px-4 pt-4 pb-2 pl-[170px] min-h-[196px] flex flex-col justify-center">
             <div

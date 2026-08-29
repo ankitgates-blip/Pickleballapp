@@ -41,11 +41,6 @@ body {
   background-size: 14px 14px;
 }
 
-.header-dots {
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.14) 1.5px, transparent 1.5px);
-  background-size: 20px 20px;
-}
-
 h1, h2, h3 {
   font-family: var(--font-heading);
 }
