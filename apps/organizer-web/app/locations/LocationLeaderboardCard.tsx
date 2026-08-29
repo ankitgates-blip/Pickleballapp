@@ -30,19 +30,24 @@ const CONTENT_LEFT = PAD_X;
 const CONTENT_RIGHT = CARD_WIDTH - PAD_X;
 const CONTENT_WIDTH = CONTENT_RIGHT - CONTENT_LEFT;
 
-const HEADER_HEIGHT = 176;
+const HEADER_HEIGHT = 148;
 const ROW_HEIGHT = 72;
 const SECTION_GAP = 28;
 const FOOTER_HEIGHT = 40;
 
 const GOLD_BRIGHT = '#d6af36';
-const GOLD_HIGHLIGHT = '#fde68a';
+const GOLD_CHROME = '#a8874f';
 const SILVER = '#a7a7ad';
 const BRONZE = '#a77044';
 const NAVY_DEEP = '#0c1830';
-const NAVY_MID = '#16294e';
-const NAVY_LIGHT = '#1c3560';
-const MUTED_SILVER = '#94a3b8';
+// A single light card throughout (no navy block) -- navy/gold are used only as text
+// and accent color. Reworked from an earlier all-navy version after user feedback
+// that it read as "too dark"; see the sports-ux-designer research this was built
+// from for why a dense ranked list benefits from a light ground while a single-hero
+// celebratory card (ChampionCard/PlayerStatsCard) does not.
+const BODY_BG = '#f8fafc';
+const BODY_BORDER = '#e2e8f0';
+const MUTED_TEXT = '#64748b';
 
 function medalFill(rank: number): string | null {
   if (rank === 1) return 'url(#lbGoldMedal)';
@@ -60,16 +65,17 @@ function medalHex(rank: number): string | null {
   return null;
 }
 
-// Same 5 tiers as ThreatBadge/threatTierFor, compacted for a repeated-20-times list
-// row: a one-word label (the actual signal) plus the tier's own color (reinforcement,
-// not the only channel) -- and each tier's "accentLight" value rather than its base
-// "accent", since the base tones are tuned for large fills, not small text on navy.
-const THREAT_CHIP: Record<string, { short: string; color: string; width: number }> = {
-  'LOW THREAT': { short: 'LOW', color: '#86efac', width: 68 },
-  'WATCH OUT': { short: 'WATCH', color: '#fde047', width: 84 },
-  DANGEROUS: { short: 'DANGER', color: '#fdba74', width: 96 },
-  'HIGH THREAT': { short: 'HIGH', color: '#fca5a5', width: 74 },
-  'DO NOT PLAY': { short: 'AVOID', color: '#f0abfc', width: 84 },
+// Same 5 tiers as ThreatBadge/threatTierFor: a one-word label (the actual signal)
+// plus the tier's own color (reinforcement, not the only channel). On this light
+// ground, the saturated "accent" tone (the same one PlayerStatsCard.THREAT_PALETTE
+// uses for on-light surfaces) carries the hero-stat/chip text, and its paler "light"
+// partner becomes the chip's fill tint.
+const THREAT_CHIP: Record<string, { short: string; accent: string; light: string; width: number }> = {
+  'LOW THREAT': { short: 'LOW', accent: '#16a34a', light: '#86efac', width: 74 },
+  'WATCH OUT': { short: 'WATCH', accent: '#ca8a04', light: '#fde047', width: 90 },
+  DANGEROUS: { short: 'DANGER', accent: '#ea580c', light: '#fdba74', width: 102 },
+  'HIGH THREAT': { short: 'HIGH', accent: '#dc2626', light: '#fca5a5', width: 80 },
+  'DO NOT PLAY': { short: 'AVOID', accent: '#c026d3', light: '#f0abfc', width: 90 },
 };
 
 async function loadDataUrl(url: string): Promise<string | null> {
@@ -179,22 +185,242 @@ export default function LocationLeaderboardCard({
           className="w-full h-auto max-w-[760px] rounded-2xl"
         >
           <defs>
-            <linearGradient id="lbBg" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={NAVY_LIGHT} />
-              <stop offset="45%" stopColor={NAVY_MID} />
-              <stop offset="100%" stopColor={NAVY_DEEP} />
-            </linearGradient>
             <linearGradient id="lbGoldMedal" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor={GOLD_BRIGHT} />
-              <stop offset="50%" stopColor={GOLD_HIGHLIGHT} />
+              <stop offset="50%" stopColor="#fde68a" />
               <stop offset="100%" stopColor={GOLD_BRIGHT} />
             </linearGradient>
             <clipPath id="lbLogoClip">
-              <circle cx={CONTENT_LEFT + 21} cy="43" r="21" />
+              <circle cx={CONTENT_LEFT + 21} cy="46" r="21" />
+            </clipPath>
+            <clipPath id="lbCardClip">
+              <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} rx="20" />
             </clipPath>
           </defs>
 
-          <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} rx="20" fill="url(#lbBg)" />
+          <g clipPath="url(#lbCardClip)">
+            <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} fill={BODY_BG} />
+
+            {/* Header: logo + wordmark, venue name, kicker, generated-on stamp -- all on
+                the same light ground, navy/gold used only for text and the divider. */}
+            <image
+              href="/logo.png"
+              x={CONTENT_LEFT}
+              y="25"
+              width="42"
+              height="42"
+              preserveAspectRatio="xMidYMid slice"
+              clipPath="url(#lbLogoClip)"
+            />
+            <circle
+              cx={CONTENT_LEFT + 21}
+              cy="46"
+              r="21"
+              fill="none"
+              stroke={GOLD_CHROME}
+              strokeWidth="1.5"
+            />
+            <text
+              x={CONTENT_LEFT + 56}
+              y="54"
+              fontSize="21"
+              fontWeight="700"
+              fontStyle="italic"
+              fill={NAVY_DEEP}
+              letterSpacing="1"
+              fontFamily="var(--font-oswald), sans-serif"
+            >
+              PICKLERALLY DXB
+            </text>
+
+            <text
+              x={CONTENT_RIGHT}
+              y="46"
+              fontSize="26"
+              fontWeight="800"
+              fill={NAVY_DEEP}
+              textAnchor="end"
+              fontFamily="var(--font-oswald), sans-serif"
+            >
+              {venueName}
+            </text>
+            <text
+              x={CONTENT_RIGHT}
+              y="66"
+              fontSize="13"
+              fontWeight="700"
+              fill={GOLD_CHROME}
+              textAnchor="end"
+              letterSpacing="2.5"
+              fontFamily="var(--font-oswald), sans-serif"
+            >
+              LEADERBOARD
+            </text>
+            <text
+              x={CONTENT_RIGHT}
+              y="84"
+              fontSize="11.5"
+              fill={MUTED_TEXT}
+              textAnchor="end"
+              fontFamily="var(--font-geist-sans), sans-serif"
+            >
+              Generated {generatedDateLabel}
+            </text>
+            <line
+              x1={CONTENT_LEFT}
+              y1={HEADER_HEIGHT - 1}
+              x2={CONTENT_RIGHT}
+              y2={HEADER_HEIGHT - 1}
+              stroke={GOLD_CHROME}
+              strokeOpacity="0.5"
+              strokeWidth="1.5"
+            />
+
+            {rows.map((row, i) => {
+              const rowY = HEADER_HEIGHT + i * ROW_HEIGHT;
+              const line1Y = rowY + 30;
+              const line2Y = rowY + 58;
+              const medal = medalFill(row.rank);
+              const medalColor = medalHex(row.rank);
+              const tier =
+                row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
+              const chip = tier ? THREAT_CHIP[tier.label] : null;
+              const heroColor =
+                row.venueWinPercentage !== null && tier ? THREAT_CHIP[tier.label].accent : MUTED_TEXT;
+
+              return (
+                <g key={row.rank}>
+                  {medalColor && (
+                    <>
+                      <rect
+                        x={CONTENT_LEFT - 10}
+                        y={rowY}
+                        width={CONTENT_WIDTH + 20}
+                        height={ROW_HEIGHT}
+                        fill={medalColor}
+                        fillOpacity="0.16"
+                      />
+                      <rect x={CONTENT_LEFT - 10} y={rowY} width="5" height={ROW_HEIGHT} fill={medalColor} />
+                    </>
+                  )}
+                  {i > 0 &&
+                    (row.rank === 4 ? (
+                      <line
+                        x1={CONTENT_LEFT}
+                        y1={rowY}
+                        x2={CONTENT_RIGHT}
+                        y2={rowY}
+                        stroke={GOLD_CHROME}
+                        strokeOpacity="0.5"
+                        strokeWidth="1.5"
+                      />
+                    ) : (
+                      <line x1={CONTENT_LEFT} y1={rowY} x2={CONTENT_RIGHT} y2={rowY} stroke={BODY_BORDER} />
+                    ))}
+
+                  {medal ? (
+                    <circle cx={CONTENT_LEFT + 16} cy={line1Y - 6} r="16" fill={medal} />
+                  ) : (
+                    <circle
+                      cx={CONTENT_LEFT + 16}
+                      cy={line1Y - 6}
+                      r="16"
+                      fill="none"
+                      stroke="#cbd5e1"
+                      strokeWidth="1.5"
+                    />
+                  )}
+                  <text
+                    x={CONTENT_LEFT + 16}
+                    y={line1Y - 1}
+                    fontSize="15"
+                    fontWeight="800"
+                    fill={medal ? NAVY_DEEP : '#94a3b8'}
+                    textAnchor="middle"
+                    fontFamily="var(--font-oswald), sans-serif"
+                  >
+                    {row.rank}
+                  </text>
+
+                  <text
+                    x={CONTENT_LEFT + 46}
+                    y={line1Y}
+                    fontSize="23"
+                    fontWeight="800"
+                    fill={NAVY_DEEP}
+                    fontFamily="var(--font-oswald), sans-serif"
+                    {...(row.name.length > 20
+                      ? { textLength: CONTENT_WIDTH - 195, lengthAdjust: 'spacingAndGlyphs' }
+                      : {})}
+                  >
+                    {row.name}
+                  </text>
+                  <text
+                    x={CONTENT_RIGHT}
+                    y={line1Y + 3}
+                    fontSize="32"
+                    fontWeight="900"
+                    fill={heroColor}
+                    textAnchor="end"
+                    fontFamily="var(--font-oswald), sans-serif"
+                  >
+                    {row.venueWinPercentage !== null ? `${row.venueWinPercentage}%` : '—'}
+                  </text>
+
+                  {chip && (
+                    <>
+                      <rect
+                        x={CONTENT_LEFT + 46}
+                        y={line2Y - 15}
+                        width={chip.width}
+                        height="21"
+                        rx="10.5"
+                        fill={chip.light}
+                        fillOpacity="0.5"
+                        stroke={chip.accent}
+                        strokeWidth="1.25"
+                        strokeOpacity="0.7"
+                      />
+                      <text
+                        x={CONTENT_LEFT + 46 + chip.width / 2}
+                        y={line2Y + 1}
+                        fontSize="13"
+                        fontWeight="800"
+                        fill={chip.accent}
+                        textAnchor="middle"
+                        letterSpacing="0.5"
+                        fontFamily="var(--font-oswald), sans-serif"
+                      >
+                        {chip.short}
+                      </text>
+                    </>
+                  )}
+                  <text
+                    x={CONTENT_LEFT + 46 + (chip ? chip.width + 12 : 0)}
+                    y={line2Y}
+                    fontSize="15"
+                    fill={MUTED_TEXT}
+                    fontFamily="var(--font-geist-sans), sans-serif"
+                  >
+                    {row.matchesPlayed}M · {row.matchWins}W–{row.losses}L
+                    {row.tournamentWins > 0 ? ` · 🏆×${row.tournamentWins}` : ''}
+                  </text>
+                </g>
+              );
+            })}
+
+            <text
+              x={CARD_WIDTH / 2}
+              y={footerY + 24}
+              fontSize="12"
+              fill={MUTED_TEXT}
+              textAnchor="middle"
+              letterSpacing="1.5"
+              fontFamily="var(--font-oswald), sans-serif"
+            >
+              PICKLERALLY DXB
+            </text>
+          </g>
           <rect
             x="1"
             y="1"
@@ -202,229 +428,9 @@ export default function LocationLeaderboardCard({
             height={totalHeight - 2}
             rx="19"
             fill="none"
-            stroke={GOLD_BRIGHT}
-            strokeOpacity="0.35"
-          />
-
-          {/* Header: logo (circular crop) + wordmark, venue name, kicker, generated-on stamp */}
-          <image
-            href="/logo.png"
-            x={CONTENT_LEFT}
-            y="22"
-            width="42"
-            height="42"
-            preserveAspectRatio="xMidYMid slice"
-            clipPath="url(#lbLogoClip)"
-          />
-          <circle
-            cx={CONTENT_LEFT + 21}
-            cy="43"
-            r="21"
-            fill="none"
-            stroke={GOLD_BRIGHT}
-            strokeOpacity="0.6"
+            stroke={BODY_BORDER}
             strokeWidth="1.5"
           />
-          <text
-            x={CONTENT_LEFT + 56}
-            y="51"
-            fontSize="21"
-            fontWeight="700"
-            fontStyle="italic"
-            fill={GOLD_HIGHLIGHT}
-            letterSpacing="1"
-            fontFamily="var(--font-oswald), sans-serif"
-          >
-            PICKLERALLY DXB
-          </text>
-
-          <text
-            x={CARD_WIDTH / 2}
-            y="108"
-            fontSize="34"
-            fontWeight="800"
-            fill="#f8fafc"
-            textAnchor="middle"
-            fontFamily="var(--font-oswald), sans-serif"
-          >
-            {venueName}
-          </text>
-          <text
-            x={CARD_WIDTH / 2}
-            y="131"
-            fontSize="14"
-            fontWeight="700"
-            fill={GOLD_BRIGHT}
-            textAnchor="middle"
-            letterSpacing="3"
-            fontFamily="var(--font-oswald), sans-serif"
-          >
-            LEADERBOARD
-          </text>
-          <text
-            x={CARD_WIDTH / 2}
-            y="153"
-            fontSize="13"
-            fill={MUTED_SILVER}
-            textAnchor="middle"
-            fontFamily="var(--font-geist-sans), sans-serif"
-          >
-            Generated {generatedDateLabel}
-          </text>
-
-          {rows.map((row, i) => {
-            const rowY = HEADER_HEIGHT + i * ROW_HEIGHT;
-            const line1Y = rowY + 30;
-            const line2Y = rowY + 58;
-            const medal = medalFill(row.rank);
-            const medalColor = medalHex(row.rank);
-            const tier =
-              row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
-            const chip = tier ? THREAT_CHIP[tier.label] : null;
-            const heroColor =
-              row.venueWinPercentage !== null && tier
-                ? THREAT_CHIP[tier.label].color
-                : MUTED_SILVER;
-
-            return (
-              <g key={row.rank}>
-                {medalColor && (
-                  <>
-                    <rect
-                      x={CONTENT_LEFT - 10}
-                      y={rowY}
-                      width={CONTENT_WIDTH + 20}
-                      height={ROW_HEIGHT}
-                      fill={medalColor}
-                      fillOpacity="0.08"
-                    />
-                    <rect x={CONTENT_LEFT - 10} y={rowY} width="3" height={ROW_HEIGHT} fill={medalColor} />
-                  </>
-                )}
-                {i > 0 &&
-                  (row.rank === 4 ? (
-                    <line
-                      x1={CONTENT_LEFT}
-                      y1={rowY}
-                      x2={CONTENT_RIGHT}
-                      y2={rowY}
-                      stroke={GOLD_BRIGHT}
-                      strokeOpacity="0.4"
-                      strokeWidth="1.5"
-                    />
-                  ) : (
-                    <line
-                      x1={CONTENT_LEFT}
-                      y1={rowY}
-                      x2={CONTENT_RIGHT}
-                      y2={rowY}
-                      stroke="#ffffff"
-                      strokeOpacity="0.06"
-                    />
-                  ))}
-
-                {medal ? (
-                  <circle cx={CONTENT_LEFT + 15} cy={line1Y - 6} r="15" fill={medal} />
-                ) : (
-                  <circle
-                    cx={CONTENT_LEFT + 15}
-                    cy={line1Y - 6}
-                    r="15"
-                    fill="none"
-                    stroke={MUTED_SILVER}
-                    strokeOpacity="0.5"
-                  />
-                )}
-                <text
-                  x={CONTENT_LEFT + 15}
-                  y={line1Y - 1}
-                  fontSize="14"
-                  fontWeight="800"
-                  fill={medal ? NAVY_DEEP : MUTED_SILVER}
-                  textAnchor="middle"
-                  fontFamily="var(--font-oswald), sans-serif"
-                >
-                  {row.rank}
-                </text>
-
-                <text
-                  x={CONTENT_LEFT + 44}
-                  y={line1Y}
-                  fontSize="21"
-                  fontWeight="800"
-                  fill="#f8fafc"
-                  fontFamily="var(--font-oswald), sans-serif"
-                  {...(row.name.length > 20
-                    ? { textLength: CONTENT_WIDTH - 190, lengthAdjust: 'spacingAndGlyphs' }
-                    : {})}
-                >
-                  {row.name}
-                </text>
-                <text
-                  x={CONTENT_RIGHT}
-                  y={line1Y + 3}
-                  fontSize="30"
-                  fontWeight="900"
-                  fill={heroColor}
-                  textAnchor="end"
-                  fontFamily="var(--font-oswald), sans-serif"
-                >
-                  {row.venueWinPercentage !== null ? `${row.venueWinPercentage}%` : '—'}
-                </text>
-
-                {chip && (
-                  <>
-                    <rect
-                      x={CONTENT_LEFT + 44}
-                      y={line2Y - 14}
-                      width={chip.width}
-                      height="19"
-                      rx="9.5"
-                      fill={chip.color}
-                      fillOpacity="0.18"
-                      stroke={chip.color}
-                      strokeOpacity="0.5"
-                    />
-                    <text
-                      x={CONTENT_LEFT + 44 + chip.width / 2}
-                      y={line2Y}
-                      fontSize="12"
-                      fontWeight="800"
-                      fill={chip.color}
-                      textAnchor="middle"
-                      letterSpacing="0.5"
-                      fontFamily="var(--font-oswald), sans-serif"
-                    >
-                      {chip.short}
-                    </text>
-                  </>
-                )}
-                <text
-                  x={CONTENT_LEFT + 44 + (chip ? chip.width + 12 : 0)}
-                  y={line2Y}
-                  fontSize="15"
-                  fill={MUTED_SILVER}
-                  fontFamily="var(--font-geist-sans), sans-serif"
-                >
-                  {row.matchesPlayed}M · {row.matchWins}W–{row.losses}L
-                  {row.tournamentWins > 0 ? ` · 🏆×${row.tournamentWins}` : ''}
-                </text>
-              </g>
-            );
-          })}
-
-          <text
-            x={CARD_WIDTH / 2}
-            y={footerY + 24}
-            fontSize="12"
-            fill={MUTED_SILVER}
-            fillOpacity="0.8"
-            textAnchor="middle"
-            letterSpacing="1.5"
-            fontFamily="var(--font-oswald), sans-serif"
-          >
-            PICKLERALLY DXB
-          </text>
         </svg>
       </button>
       <p className="text-xs text-muted mt-1.5">Click the card to share or download it as an image.</p>
