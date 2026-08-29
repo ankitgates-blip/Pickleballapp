@@ -53,10 +53,14 @@ export default async function PublicTournamentPage({
 
   const { data: matches } = await supabase
     .from('matches')
-    .select('round, stage, team_a_id, team_b_id, score_a, score_b, status, court')
+    .select('id, round, stage, team_a_id, team_b_id, score_a, score_b, status, court')
     .eq('tournament_id', id)
     .order('round', { ascending: true })
-    .order('created_at', { ascending: true });
+    // See bracket/page.tsx for why created_at is not a usable tiebreaker here (every
+    // match in a round shares one batch-insert timestamp) -- court is stable across
+    // scoring and doesn't reorder a match after its score is saved.
+    .order('court', { ascending: true })
+    .order('id', { ascending: true });
 
   const playerById = new Map((players ?? []).map((p) => [p.id, p.name]));
   const teamById = new Map(

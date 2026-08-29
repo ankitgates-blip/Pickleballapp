@@ -88,7 +88,15 @@ export default async function BracketPage({
     .select('id, round, stage, team_a_id, team_b_id, score_a, score_b, status, court')
     .eq('tournament_id', id)
     .order('round', { ascending: true })
-    .order('created_at', { ascending: true });
+    // Not created_at: every match in a round is inserted via one batch .insert() call,
+    // so they all share the exact same created_at (Postgres evaluates now() once per
+    // statement) -- it's a no-op tiebreaker, leaving ties to Postgres's unspecified scan
+    // order, which can shift after an UPDATE (e.g. entering a score) rewrites a row's
+    // physical location. court is assigned once at generation time and never touched by
+    // scoring, so it's a genuinely stable secondary sort; id is a final tiebreaker for
+    // the rare round with more simultaneous matches than physical courts (court wraps).
+    .order('court', { ascending: true })
+    .order('id', { ascending: true });
 
   // Custom League has no playoff stage by default, but can generate one (from its
   // fixed teams) the same way League + Playoffs always does -- once it has, its
