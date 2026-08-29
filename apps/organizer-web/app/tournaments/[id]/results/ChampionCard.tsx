@@ -227,6 +227,9 @@ export default function ChampionCard({
               <stop offset="0%" stopColor={GOLD_HIGHLIGHT} stopOpacity="0.55" />
               <stop offset="100%" stopColor={GOLD_HIGHLIGHT} stopOpacity="0" />
             </radialGradient>
+            <clipPath id="ccLogoClip">
+              <circle cx={CONTENT_LEFT + 17} cy="37" r="17" />
+            </clipPath>
           </defs>
 
           <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} rx="20" fill="url(#ccBg)" />
@@ -241,13 +244,32 @@ export default function ChampionCard({
             strokeOpacity="0.35"
           />
 
-          {/* Header: logo + wordmark */}
-          <image href="/logo.png" x={CONTENT_LEFT} y="20" width="34" height="34" />
+          {/* Header: logo + wordmark -- circular logo clip + gold ring + italic
+              wordmark, matching LocationLeaderboardCard/RaceLeaderboardCard. */}
+          <image
+            href="/logo.png"
+            x={CONTENT_LEFT}
+            y="20"
+            width="34"
+            height="34"
+            preserveAspectRatio="xMidYMid slice"
+            clipPath="url(#ccLogoClip)"
+          />
+          <circle
+            cx={CONTENT_LEFT + 17}
+            cy="37"
+            r="17"
+            fill="none"
+            stroke={GOLD_BRIGHT}
+            strokeOpacity="0.6"
+            strokeWidth="1.5"
+          />
           <text
             x={CONTENT_LEFT + 44}
             y="42"
             fontSize="13"
             fontWeight="700"
+            fontStyle="italic"
             fill={GOLD_HIGHLIGHT}
             letterSpacing="2"
             fontFamily="var(--font-oswald), sans-serif"
