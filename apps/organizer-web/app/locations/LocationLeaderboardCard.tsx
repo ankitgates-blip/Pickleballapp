@@ -180,6 +180,9 @@ export default function LocationLeaderboardCard({
               <stop offset="50%" stopColor={GOLD_HIGHLIGHT} />
               <stop offset="100%" stopColor={GOLD_BRIGHT} />
             </linearGradient>
+            <clipPath id="lbLogoClip">
+              <circle cx={CONTENT_LEFT + 21} cy="43" r="21" />
+            </clipPath>
           </defs>
 
           <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} rx="20" fill="url(#lbBg)" />
@@ -194,15 +197,33 @@ export default function LocationLeaderboardCard({
             strokeOpacity="0.35"
           />
 
-          {/* Header: logo + wordmark, venue name, kicker, generated-on stamp */}
-          <image href="/logo.png" x={CONTENT_LEFT} y="22" width="42" height="42" />
+          {/* Header: logo (circular crop) + wordmark, venue name, kicker, generated-on stamp */}
+          <image
+            href="/logo.png"
+            x={CONTENT_LEFT}
+            y="22"
+            width="42"
+            height="42"
+            preserveAspectRatio="xMidYMid slice"
+            clipPath="url(#lbLogoClip)"
+          />
+          <circle
+            cx={CONTENT_LEFT + 21}
+            cy="43"
+            r="21"
+            fill="none"
+            stroke={GOLD_BRIGHT}
+            strokeOpacity="0.6"
+            strokeWidth="1.5"
+          />
           <text
-            x={CONTENT_LEFT + 54}
-            y="49"
-            fontSize="15"
+            x={CONTENT_LEFT + 56}
+            y="51"
+            fontSize="21"
             fontWeight="700"
+            fontStyle="italic"
             fill={GOLD_HIGHLIGHT}
-            letterSpacing="2"
+            letterSpacing="1"
             fontFamily="var(--font-oswald), sans-serif"
           >
             PICKLERALLY DXB
