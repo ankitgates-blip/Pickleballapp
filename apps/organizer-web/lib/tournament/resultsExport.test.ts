@@ -86,7 +86,9 @@ describe('buildMatchGroups', () => {
     expect(result).toEqual([
       {
         stageLabel: 'Matches',
-        matches: [{ round: 1, teamAName: 'Alice / Bob', teamBName: 'Carol / Dave', scoreLabel: '11-7' }],
+        matches: [
+          { round: 1, teamAName: 'Alice / Bob', teamBName: 'Carol / Dave', scoreLabel: '11-7', winner: 'a' },
+        ],
       },
     ]);
   });
@@ -108,13 +110,36 @@ describe('buildMatchGroups', () => {
     expect(result).toEqual([
       {
         stageLabel: 'League',
-        matches: [{ round: 1, teamAName: 'Alice / Bob', teamBName: 'Carol / Dave', scoreLabel: '11-7' }],
+        matches: [
+          { round: 1, teamAName: 'Alice / Bob', teamBName: 'Carol / Dave', scoreLabel: '11-7', winner: 'a' },
+        ],
       },
       {
         stageLabel: 'Final',
-        matches: [{ round: null, teamAName: 'Alice / Bob', teamBName: 'Carol / Dave', scoreLabel: 'Not yet played' }],
+        matches: [
+          {
+            round: null,
+            teamAName: 'Alice / Bob',
+            teamBName: 'Carol / Dave',
+            scoreLabel: 'Not yet played',
+            winner: null,
+          },
+        ],
       },
     ]);
+  });
+
+  it('sets winner to null on a tied complete score, and to "b" when team B has the higher score', () => {
+    const result = buildMatchGroups(
+      [
+        { round: 1, stage: 'league', team_a_id: 't1', team_b_id: 't2', score_a: 9, score_b: 9, status: 'complete' },
+        { round: 2, stage: 'league', team_a_id: 't1', team_b_id: 't2', score_a: 5, score_b: 11, status: 'complete' },
+      ],
+      teamById,
+      false
+    );
+    expect(result[0].matches[0].winner).toBeNull();
+    expect(result[0].matches[1].winner).toBe('b');
   });
 
   it('excludes bye matches (team_b_id null)', () => {

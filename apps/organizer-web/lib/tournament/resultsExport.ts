@@ -79,6 +79,7 @@ export type ExportMatch = {
   teamAName: string;
   teamBName: string;
   scoreLabel: string;
+  winner: 'a' | 'b' | null;
 };
 
 export type ExportMatchGroup = {
@@ -93,16 +94,25 @@ const STAGE_LABELS: Record<string, string> = {
 };
 
 function toExportMatch(m: ExportRawMatch, teamById: Map<string, string>): ExportMatch {
+  const isComplete = m.status === 'complete';
+  const winner: ExportMatch['winner'] =
+    isComplete && m.score_a !== null && m.score_b !== null
+      ? m.score_a > m.score_b
+        ? 'a'
+        : m.score_b > m.score_a
+          ? 'b'
+          : null
+      : null;
   return {
     round: m.stage === 'league' ? m.round : null,
     teamAName: (m.team_a_id && teamById.get(m.team_a_id)) ?? 'Unknown',
     teamBName: (m.team_b_id && teamById.get(m.team_b_id)) ?? 'Unknown',
-    scoreLabel:
-      m.status === 'complete'
-        ? `${m.score_a}-${m.score_b}`
-        : m.status === 'skipped'
-          ? 'Skipped'
-          : 'Not yet played',
+    scoreLabel: isComplete
+      ? `${m.score_a}-${m.score_b}`
+      : m.status === 'skipped'
+        ? 'Skipped'
+        : 'Not yet played',
+    winner,
   };
 }
 

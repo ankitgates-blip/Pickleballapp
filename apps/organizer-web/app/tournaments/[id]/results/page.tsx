@@ -20,6 +20,7 @@ import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
 import { cardClass } from '@/app/components/ui';
 import ShareResultsButton from './ShareResultsButton';
+import ChampionCard from './ChampionCard';
 import EditableTournamentName from './EditableTournamentName';
 import { renameTournament } from './actions';
 
@@ -258,12 +259,19 @@ export default async function ResultsPage({
       </div>
 
       {championName && (
-        <div
-          className={`${cardClass} mb-6 text-center bg-gradient-to-br from-amber-50 to-lime-50 border-amber-200`}
-        >
-          <div className="text-3xl mb-1">🏆</div>
-          <div className="text-xs font-bold text-amber-700 uppercase tracking-wide">Champion</div>
-          <div className="text-xl font-extrabold text-slate-900">{championName}</div>
+        <div className="mb-6">
+          <ChampionCard
+            tournamentName={tournament.name}
+            date={tournament.date}
+            venueName={venueName}
+            timeslotLabel={timeslotLabel(tournament.timeslot)}
+            formatLabel={formatLabel(tournament.format)}
+            completedAt={tournament.completed_at}
+            championName={championName}
+            standingsTitle={standingsTitle}
+            standingsRows={exportStandingsRows}
+            matchGroups={exportMatchGroups}
+          />
         </div>
       )}
 
