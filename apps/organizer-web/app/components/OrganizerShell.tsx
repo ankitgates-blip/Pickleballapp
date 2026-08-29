@@ -109,20 +109,21 @@ export default function OrganizerShell({
         <header
           className="relative overflow-hidden text-white shadow-lg"
           style={{
+            // Near-vertical wash (was a 120deg diagonal) -- the real skyline photo below
+            // sits at the bottom of the frame, so a diagonal gradient would darken one
+            // side of it unevenly. Darkest at the bottom (where the header meets the
+            // page and the skyline's busiest silhouette detail is), lightest at the top
+            // "sky" strip so a hint of the photo's own dusk color shows through behind
+            // the wordmark.
             backgroundImage:
-              "linear-gradient(120deg, rgba(12,24,48,0.82), rgba(22,41,78,0.68) 55%, rgba(12,24,48,0.72)), url('/header-bg.webp')",
+              "linear-gradient(105deg, rgba(28,53,96,0.4), rgba(22,41,78,0.62) 55%, rgba(12,24,48,0.9)), url('/header-dxb-skyline.webp')",
             backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            backgroundPosition: 'center bottom',
           }}
         >
-          <div
-            aria-hidden
-            className="ball-texture absolute -top-6 -right-3 h-28 w-28 rounded-full opacity-90 shadow-lg"
-            style={{ background: 'radial-gradient(circle at 35% 35%, #f2942e, #d2621c)' }}
-          />
           <div aria-hidden className="header-dots absolute inset-0" />
           {/* pl-[170px] clears the overlapping logo: left-[30px] + 140px width below */}
-          <div className="relative max-w-3xl mx-auto px-4 pt-4 pb-2 pl-[170px] min-h-[150px] flex flex-col justify-center">
+          <div className="relative max-w-3xl mx-auto px-4 pt-4 pb-2 pl-[170px] min-h-[196px] flex flex-col justify-center">
             <div
               className="rounded-2xl px-4 py-3 -mx-4 inline-block"
               style={{
@@ -133,7 +134,7 @@ export default function OrganizerShell({
                 boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
               }}
             >
-              <span className="font-heading text-2xl sm:text-4xl tracking-wide leading-tight">
+              <span className="font-heading italic text-2xl sm:text-4xl tracking-wide leading-tight">
                 PICKLERALLY DXB
               </span>
               <div className="w-12 h-[3px] bg-gold rounded-full mt-2" />
@@ -153,7 +154,7 @@ export default function OrganizerShell({
             </form>
           )}
         </header>
-        <Link href="/tournaments" className="absolute z-10 left-[30px] top-[150px] -translate-y-1/2">
+        <Link href="/tournaments" className="absolute z-10 left-[30px] top-[196px] -translate-y-1/2">
           <Image
             src="/logo.png"
             alt="PicklerAlly DXB"
