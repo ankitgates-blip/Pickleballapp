@@ -24,16 +24,16 @@ export type LocationLeaderboardCardProps = {
   rows: LeaderboardCardRow[];
 };
 
-const CARD_WIDTH = 640;
-const PAD_X = 32;
+const CARD_WIDTH = 760;
+const PAD_X = 40;
 const CONTENT_LEFT = PAD_X;
 const CONTENT_RIGHT = CARD_WIDTH - PAD_X;
 const CONTENT_WIDTH = CONTENT_RIGHT - CONTENT_LEFT;
 
-const HEADER_HEIGHT = 156;
-const ROW_HEIGHT = 56;
-const SECTION_GAP = 24;
-const FOOTER_HEIGHT = 34;
+const HEADER_HEIGHT = 176;
+const ROW_HEIGHT = 72;
+const SECTION_GAP = 28;
+const FOOTER_HEIGHT = 40;
 
 const GOLD_BRIGHT = '#d6af36';
 const GOLD_HIGHLIGHT = '#fde68a';
@@ -56,11 +56,11 @@ function medalFill(rank: number): string | null {
 // not the only channel) -- and each tier's "accentLight" value rather than its base
 // "accent", since the base tones are tuned for large fills, not small text on navy.
 const THREAT_CHIP: Record<string, { short: string; color: string; width: number }> = {
-  'LOW THREAT': { short: 'LOW', color: '#86efac', width: 54 },
-  'WATCH OUT': { short: 'WATCH', color: '#fde047', width: 66 },
-  DANGEROUS: { short: 'DANGER', color: '#fdba74', width: 76 },
-  'HIGH THREAT': { short: 'HIGH', color: '#fca5a5', width: 58 },
-  'DO NOT PLAY': { short: 'AVOID', color: '#f0abfc', width: 66 },
+  'LOW THREAT': { short: 'LOW', color: '#86efac', width: 68 },
+  'WATCH OUT': { short: 'WATCH', color: '#fde047', width: 84 },
+  DANGEROUS: { short: 'DANGER', color: '#fdba74', width: 96 },
+  'HIGH THREAT': { short: 'HIGH', color: '#fca5a5', width: 74 },
+  'DO NOT PLAY': { short: 'AVOID', color: '#f0abfc', width: 84 },
 };
 
 async function loadDataUrl(url: string): Promise<string | null> {
@@ -167,7 +167,7 @@ export default function LocationLeaderboardCard({
           height={totalHeight}
           viewBox={`0 0 ${CARD_WIDTH} ${totalHeight}`}
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-auto max-w-[640px] rounded-2xl"
+          className="w-full h-auto max-w-[760px] rounded-2xl"
         >
           <defs>
             <linearGradient id="lbBg" x1="0" y1="0" x2="0" y2="1">
@@ -195,11 +195,11 @@ export default function LocationLeaderboardCard({
           />
 
           {/* Header: logo + wordmark, venue name, kicker, generated-on stamp */}
-          <image href="/logo.png" x={CONTENT_LEFT} y="20" width="34" height="34" />
+          <image href="/logo.png" x={CONTENT_LEFT} y="22" width="42" height="42" />
           <text
-            x={CONTENT_LEFT + 44}
-            y="42"
-            fontSize="13"
+            x={CONTENT_LEFT + 54}
+            y="49"
+            fontSize="15"
             fontWeight="700"
             fill={GOLD_HIGHLIGHT}
             letterSpacing="2"
@@ -210,8 +210,8 @@ export default function LocationLeaderboardCard({
 
           <text
             x={CARD_WIDTH / 2}
-            y="92"
-            fontSize="28"
+            y="108"
+            fontSize="34"
             fontWeight="800"
             fill="#f8fafc"
             textAnchor="middle"
@@ -221,8 +221,8 @@ export default function LocationLeaderboardCard({
           </text>
           <text
             x={CARD_WIDTH / 2}
-            y="112"
-            fontSize="12"
+            y="131"
+            fontSize="14"
             fontWeight="700"
             fill={GOLD_BRIGHT}
             textAnchor="middle"
@@ -233,8 +233,8 @@ export default function LocationLeaderboardCard({
           </text>
           <text
             x={CARD_WIDTH / 2}
-            y="132"
-            fontSize="11"
+            y="153"
+            fontSize="13"
             fill={MUTED_SILVER}
             textAnchor="middle"
             fontFamily="var(--font-geist-sans), sans-serif"
@@ -244,8 +244,8 @@ export default function LocationLeaderboardCard({
 
           {rows.map((row, i) => {
             const rowY = HEADER_HEIGHT + i * ROW_HEIGHT;
-            const line1Y = rowY + 22;
-            const line2Y = rowY + 42;
+            const line1Y = rowY + 30;
+            const line2Y = rowY + 58;
             const medal = medalFill(row.rank);
             const tier =
               row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
@@ -280,21 +280,21 @@ export default function LocationLeaderboardCard({
                   ))}
 
                 {medal ? (
-                  <circle cx={CONTENT_LEFT + 12} cy={line1Y - 5} r="12" fill={medal} />
+                  <circle cx={CONTENT_LEFT + 15} cy={line1Y - 6} r="15" fill={medal} />
                 ) : (
                   <circle
-                    cx={CONTENT_LEFT + 12}
-                    cy={line1Y - 5}
-                    r="12"
+                    cx={CONTENT_LEFT + 15}
+                    cy={line1Y - 6}
+                    r="15"
                     fill="none"
                     stroke={MUTED_SILVER}
                     strokeOpacity="0.5"
                   />
                 )}
                 <text
-                  x={CONTENT_LEFT + 12}
+                  x={CONTENT_LEFT + 15}
                   y={line1Y - 1}
-                  fontSize="11"
+                  fontSize="14"
                   fontWeight="800"
                   fill={medal ? NAVY_DEEP : MUTED_SILVER}
                   textAnchor="middle"
@@ -304,22 +304,22 @@ export default function LocationLeaderboardCard({
                 </text>
 
                 <text
-                  x={CONTENT_LEFT + 34}
+                  x={CONTENT_LEFT + 44}
                   y={line1Y}
-                  fontSize="16"
+                  fontSize="21"
                   fontWeight="800"
                   fill="#f8fafc"
                   fontFamily="var(--font-oswald), sans-serif"
-                  {...(row.name.length > 22
-                    ? { textLength: CONTENT_WIDTH - 140, lengthAdjust: 'spacingAndGlyphs' }
+                  {...(row.name.length > 20
+                    ? { textLength: CONTENT_WIDTH - 190, lengthAdjust: 'spacingAndGlyphs' }
                     : {})}
                 >
                   {row.name}
                 </text>
                 <text
                   x={CONTENT_RIGHT}
-                  y={line1Y + 2}
-                  fontSize="22"
+                  y={line1Y + 3}
+                  fontSize="30"
                   fontWeight="900"
                   fill={heroColor}
                   textAnchor="end"
@@ -331,20 +331,20 @@ export default function LocationLeaderboardCard({
                 {chip && (
                   <>
                     <rect
-                      x={CONTENT_LEFT + 34}
-                      y={line2Y - 11}
+                      x={CONTENT_LEFT + 44}
+                      y={line2Y - 14}
                       width={chip.width}
-                      height="15"
-                      rx="7.5"
+                      height="19"
+                      rx="9.5"
                       fill={chip.color}
                       fillOpacity="0.18"
                       stroke={chip.color}
                       strokeOpacity="0.5"
                     />
                     <text
-                      x={CONTENT_LEFT + 34 + chip.width / 2}
+                      x={CONTENT_LEFT + 44 + chip.width / 2}
                       y={line2Y}
-                      fontSize="9.5"
+                      fontSize="12"
                       fontWeight="800"
                       fill={chip.color}
                       textAnchor="middle"
@@ -356,9 +356,9 @@ export default function LocationLeaderboardCard({
                   </>
                 )}
                 <text
-                  x={CONTENT_LEFT + 34 + (chip ? chip.width + 10 : 0)}
+                  x={CONTENT_LEFT + 44 + (chip ? chip.width + 12 : 0)}
                   y={line2Y}
-                  fontSize="12"
+                  fontSize="15"
                   fill={MUTED_SILVER}
                   fontFamily="var(--font-geist-sans), sans-serif"
                 >
@@ -371,8 +371,8 @@ export default function LocationLeaderboardCard({
 
           <text
             x={CARD_WIDTH / 2}
-            y={footerY + 20}
-            fontSize="10"
+            y={footerY + 24}
+            fontSize="12"
             fill={MUTED_SILVER}
             fillOpacity="0.8"
             textAnchor="middle"
