@@ -31,3 +31,36 @@ export function monthsToCheck(
   }
   return result;
 }
+
+/** Half-open [start, endExclusive) date window, ISO 'YYYY-MM-DD'. */
+export type DateRange = { start: string; endExclusive: string };
+
+function pad(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+/** A full calendar month, e.g. (2026, 9) -> 2026-09-01 .. 2026-10-01. */
+export function monthDateRange(year: number, month: number): DateRange {
+  const start = `${year}-${pad(month)}-01`;
+  const endYear = month === 12 ? year + 1 : year;
+  const endMonth = month === 12 ? 1 : month + 1;
+  const endExclusive = `${endYear}-${pad(endMonth)}-01`;
+  return { start, endExclusive };
+}
+
+/**
+ * The current UTC month so far, up to and including today -- endExclusive is
+ * tomorrow, so a tournament dated today is counted. UTC (not local time)
+ * deliberately, matching how "the current month" is already derived elsewhere
+ * in this codebase (app/player-of-the-month/page.tsx) -- the two views must
+ * never disagree about which month "this month" is.
+ */
+export function monthToDateRange(today: Date): DateRange {
+  const year = today.getUTCFullYear();
+  const month = today.getUTCMonth() + 1;
+  const day = today.getUTCDate();
+  const start = `${year}-${pad(month)}-01`;
+  const tomorrow = new Date(Date.UTC(year, month - 1, day + 1));
+  const endExclusive = `${tomorrow.getUTCFullYear()}-${pad(tomorrow.getUTCMonth() + 1)}-${pad(tomorrow.getUTCDate())}`;
+  return { start, endExclusive };
+}

@@ -9,7 +9,14 @@ import { winPercentageFromRecords } from '@/lib/stats/winRate';
 import ThreatBadge from '@/app/components/ThreatBadge';
 import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
+import { computePointsLeaderboard, POINTS_SYSTEM_START_DATE, type PointsTournament } from '@/lib/stats/points';
+import { monthDateRange, monthToDateRange, monthsToCheck } from '@/lib/stats/monthRange';
 import ShareLeaderboardButton from './ShareLeaderboardButton';
+
+const MONTH_ABBR = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
 
 function PaddleIcon() {
   return (
@@ -21,7 +28,12 @@ function PaddleIcon() {
   );
 }
 
-export default async function LocationsPage() {
+export default async function LocationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
+  const { month } = await searchParams;
   const { supabase, organizer } = await requireOrganizer();
 
   const { data: venues } = await supabase.from('venues').select('id, name').order('name');
@@ -99,6 +111,31 @@ export default async function LocationsPage() {
     ])
   );
 
+  // Points system: month-to-date by default; ?month=YYYY-MM selects a specific
+  // completed month from September 2026 onward. Anything unparseable, before the
+  // points system started, or not yet a completed month falls back to month-to-date
+  // silently rather than throwing.
+  const today = new Date();
+  const currentYear = today.getUTCFullYear();
+  const currentMonth = today.getUTCMonth() + 1;
+  const parsedMonth = /^\d{4}-(0[1-9]|1[0-2])$/.test(month ?? '')
+    ? { year: Number(month!.slice(0, 4)), month: Number(month!.slice(5, 7)) }
+    : null;
+  const isSelectableCompletedMonth =
+    parsedMonth !== null &&
+    `${month}-01` >= POINTS_SYSTEM_START_DATE &&
+    (parsedMonth.year < currentYear ||
+      (parsedMonth.year === currentYear && parsedMonth.month < currentMonth));
+  const pointsRange = isSelectableCompletedMonth
+    ? monthDateRange(parsedMonth!.year, parsedMonth!.month)
+    : monthToDateRange(today);
+  const selectedMonthParam = isSelectableCompletedMonth ? month! : null;
+
+  // September 2026 through last month — every completed month the points system has
+  // been live for, i.e. every month worth offering as a chip alongside "Month to date".
+  const [startYear, startMonthNum] = POINTS_SYSTEM_START_DATE.split('-').map(Number);
+  const pointsMonthOptions = monthsToCheck(startYear, startMonthNum, currentYear, currentMonth);
+
   const leaderboardsByVenue = (venues ?? []).map((venue) => {
     const venueTournamentIds = new Set(
       (tournaments ?? []).filter((t) => t.venue_id === venue.id).map((t) => t.id)
@@ -127,6 +164,7 @@ export default async function LocationsPage() {
     // "League Won" to whoever's ephemeral per-round pairing happened to have the best
     // record in Popcorn/Gauntlet tournaments, which isn't how those formats crown a winner.
     const tournamentWinsByPersonId = new Map<string, number>();
+    const pointsTournaments: PointsTournament[] = [];
     for (const tournamentId of venueTournamentIds) {
       const tournament = tournamentById.get(tournamentId);
       if (!tournament) continue;
@@ -146,6 +184,15 @@ export default async function LocationsPage() {
       for (const personId of championPersonIds ?? []) {
         tournamentWinsByPersonId.set(personId, (tournamentWinsByPersonId.get(personId) ?? 0) + 1);
       }
+
+      pointsTournaments.push({
+        id: tournamentId,
+        date: tournament.date,
+        format: tournament.format,
+        completedAt: tournament.completed_at,
+        matches: tournamentMatches,
+        teams: tournamentTeams,
+      });
     }
 
     const candidates = (people ?? [])
@@ -160,10 +207,18 @@ export default async function LocationsPage() {
       })
       .filter((c) => c.matchesPlayed > 0);
 
+    const points = computePointsLeaderboard({
+      matches: venueCompleteMatches,
+      teams,
+      tournaments: pointsTournaments,
+      range: pointsRange,
+    });
+
     return {
       venueId: venue.id,
       venueName: venue.name,
       leaderboard: computeLocationLeaderboard(candidates),
+      points,
     };
   });
 
@@ -226,6 +281,73 @@ export default async function LocationsPage() {
           )}
         </div>
       ))}
+
+      <div className={`${cardClass} mb-6`}>
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-lg font-bold text-slate-900">Total Points</h2>
+        </div>
+        <p className="text-xs text-muted mb-3">
+          10 pts per match win · 25 bonus pts per league win · starts September 2026
+        </p>
+
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Link
+            href="/locations"
+            className={`stat-num inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
+              selectedMonthParam === null
+                ? 'bg-navy-deep text-white'
+                : 'bg-navy-tint text-navy-deep hover:bg-navy-mid/20'
+            }`}
+          >
+            Month to date
+          </Link>
+          {pointsMonthOptions.map(({ year, month: m }) => {
+            const value = `${year}-${String(m).padStart(2, '0')}`;
+            return (
+              <Link
+                key={value}
+                href={`/locations?month=${value}`}
+                className={`stat-num inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
+                  selectedMonthParam === value
+                    ? 'bg-navy-deep text-white'
+                    : 'bg-navy-tint text-navy-deep hover:bg-navy-mid/20'
+                }`}
+              >
+                {MONTH_ABBR[m - 1]} {year}
+              </Link>
+            );
+          })}
+        </div>
+
+        {leaderboardsByVenue.map(({ venueId, venueName, points }) => (
+          <div key={venueId} className="mb-4 last:mb-0">
+            <h3 className="text-sm font-bold text-slate-700 mb-2">{venueName}</h3>
+            {points.length > 0 ? (
+              <ul className="space-y-2 text-sm">
+                {points.map((entry, i) => (
+                  <li key={entry.personId} className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2 last:border-0">
+                    <Link
+                      href={`/people/${entry.personId}`}
+                      className={`flex items-center gap-2 font-semibold hover:underline ${i === 0 ? 'text-navy-deep' : 'text-slate-800'}`}
+                    >
+                      <span className="text-slate-500">{i + 1}.</span>
+                      {personNameById.get(entry.personId) ?? 'Unknown'}
+                    </Link>
+                    <span className="stat-num text-right">
+                      <span className="font-extrabold text-navy-deep">{entry.totalPoints} pts</span>
+                      <span className="block text-xs text-muted">
+                        {entry.matchWins}×win{entry.leagueWins > 0 ? ` · ${entry.leagueWins}×league` : ''}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-muted">No points yet this period.</p>
+            )}
+          </div>
+        ))}
+      </div>
     </OrganizerShell>
   );
 }

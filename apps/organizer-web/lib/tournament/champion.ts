@@ -6,7 +6,7 @@ import {
 import { usesIndividualStandings, isLadderFormat as isLadderFormatCheck } from './formats';
 import type { ClaimTheThroneRoundResult, MatchResult, Team } from '@/lib/types';
 
-type ChampionMatch = {
+export type ChampionMatch = {
   stage: string;
   team_a_id: string | null;
   team_b_id: string | null;

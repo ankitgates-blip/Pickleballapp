@@ -11,6 +11,7 @@ import { winsInLastN } from '@/lib/stats/winsInLastN';
 import { winsVsHigherRated } from '@/lib/stats/winsVsHigherRated';
 import { starRating } from '@/lib/stats/starRating';
 import { buildWinPercentageByPersonId } from '@/lib/stats/buildWinPercentageByPersonId';
+import { monthDateRange } from '@/lib/stats/monthRange';
 import PlayerOfTheMonthCard from './PlayerOfTheMonthCard';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, headingClass } from '@/app/components/ui';
@@ -20,15 +21,6 @@ const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
-
-function monthDateRange(year: number, month: number): { start: string; end: string } {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const start = `${year}-${pad(month)}-01`;
-  const endYear = month === 12 ? year + 1 : year;
-  const endMonth = month === 12 ? 1 : month + 1;
-  const end = `${endYear}-${pad(endMonth)}-01`;
-  return { start, end };
-}
 
 export default async function PlayerOfTheMonthPage() {
   const { supabase, organizer } = await requireOrganizer();
@@ -70,7 +62,7 @@ export default async function PlayerOfTheMonthPage() {
   // plus league-win credits via computeTournamentChampionPersonIds. Shared by both the
   // live race (every candidate) and the locked winner's postcard (one specific person).
   async function fetchMonthData(venueId: string, venueName: string, year: number, month: number) {
-    const { start, end } = monthDateRange(year, month);
+    const { start, endExclusive: end } = monthDateRange(year, month);
     const { data: tournaments } = await supabase
       .from('tournaments')
       .select('id, date, format, completed_at')
