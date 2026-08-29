@@ -51,6 +51,15 @@ function medalFill(rank: number): string | null {
   return null;
 }
 
+// Solid (non-gradient) medal color, for the top-3 row wash/accent bar -- the
+// gradient reference above is for the small circle badge specifically.
+function medalHex(rank: number): string | null {
+  if (rank === 1) return GOLD_BRIGHT;
+  if (rank === 2) return SILVER;
+  if (rank === 3) return BRONZE;
+  return null;
+}
+
 // Same 5 tiers as ThreatBadge/threatTierFor, compacted for a repeated-20-times list
 // row: a one-word label (the actual signal) plus the tier's own color (reinforcement,
 // not the only channel) -- and each tier's "accentLight" value rather than its base
@@ -268,6 +277,7 @@ export default function LocationLeaderboardCard({
             const line1Y = rowY + 30;
             const line2Y = rowY + 58;
             const medal = medalFill(row.rank);
+            const medalColor = medalHex(row.rank);
             const tier =
               row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
             const chip = tier ? THREAT_CHIP[tier.label] : null;
@@ -278,6 +288,19 @@ export default function LocationLeaderboardCard({
 
             return (
               <g key={row.rank}>
+                {medalColor && (
+                  <>
+                    <rect
+                      x={CONTENT_LEFT - 10}
+                      y={rowY}
+                      width={CONTENT_WIDTH + 20}
+                      height={ROW_HEIGHT}
+                      fill={medalColor}
+                      fillOpacity="0.08"
+                    />
+                    <rect x={CONTENT_LEFT - 10} y={rowY} width="3" height={ROW_HEIGHT} fill={medalColor} />
+                  </>
+                )}
                 {i > 0 &&
                   (row.rank === 4 ? (
                     <line
