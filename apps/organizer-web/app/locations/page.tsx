@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, headingClass } from '@/app/components/ui';
@@ -6,12 +5,12 @@ import EmptyState from '@/app/components/EmptyState';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computeLocationLeaderboard } from '@/lib/stats/locationLeaderboard';
 import { winPercentageFromRecords } from '@/lib/stats/winRate';
-import ThreatBadge from '@/app/components/ThreatBadge';
 import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
 import { computePointsLeaderboard, POINTS_SYSTEM_START_DATE, type PointsTournament } from '@/lib/stats/points';
 import { monthDateRange, monthToDateRange, monthsToCheck } from '@/lib/stats/monthRange';
-import ShareLeaderboardButton from './ShareLeaderboardButton';
+import LocationLeaderboardCard from './LocationLeaderboardCard';
+import Link from 'next/link';
 
 const MONTH_ABBR = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -136,6 +135,17 @@ export default async function LocationsPage({
   const [startYear, startMonthNum] = POINTS_SYSTEM_START_DATE.split('-').map(Number);
   const pointsMonthOptions = monthsToCheck(startYear, startMonthNum, currentYear, currentMonth);
 
+  // Pre-formatted server-side (pinned to UTC) and passed to the leaderboard card as a
+  // plain string -- the card is a client component that's also server-rendered on
+  // first paint, so computing this inside it would risk the same server/client
+  // timezone hydration mismatch fixed in ChampionCard.
+  const generatedDateLabel = today.toLocaleDateString('en-US', {
+    timeZone: 'UTC',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
   const leaderboardsByVenue = (venues ?? []).map((venue) => {
     const venueTournamentIds = new Set(
       (tournaments ?? []).filter((t) => t.venue_id === venue.id).map((t) => t.id)
@@ -222,16 +232,18 @@ export default async function LocationsPage({
     };
   });
 
-  const exportVenues = leaderboardsByVenue.map(({ venueName, leaderboard }) => ({
+  const leaderboardCardRowsByVenue = leaderboardsByVenue.map(({ venueId, venueName, leaderboard }) => ({
+    venueId,
     venueName,
     rows: leaderboard.map((entry, i) => ({
       rank: i + 1,
       name: personNameById.get(entry.personId) ?? 'Unknown',
-      leagueWins: entry.tournamentWins,
+      venueWinPercentage: entry.winPercentage,
+      overallWinPercentage: overallWinPercentageByPersonId.get(entry.personId) ?? null,
       matchesPlayed: entry.matchesPlayed,
       matchWins: entry.matchWins,
       losses: entry.losses,
-      winPercentage: entry.winPercentage,
+      tournamentWins: entry.tournamentWins,
     })),
   }));
 
@@ -239,48 +251,22 @@ export default async function LocationsPage({
     <OrganizerShell organizerName={organizer.name}>
       <h1 className={`text-2xl ${headingClass} mb-6`}>Location Stats</h1>
 
-      <ShareLeaderboardButton venues={exportVenues} />
-
-      {leaderboardsByVenue.map(({ venueId, venueName, leaderboard }) => (
-        <div key={venueId} className={`${cardClass} mb-6`}>
-          <h2 className="text-lg font-bold text-slate-900 mb-3">{venueName}</h2>
-          {leaderboard.length > 0 ? (
-            <ul className="space-y-3 text-sm">
-              {leaderboard.map((entry, i) => (
-                <li key={entry.personId} className="border-b border-slate-100 pb-3 last:border-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Link
-                      href={`/people/${entry.personId}`}
-                      className={`flex items-center gap-2 font-semibold hover:underline ${i === 0 ? 'text-base text-slate-900' : 'text-slate-800'}`}
-                    >
-                      <span className="text-slate-500">{i + 1}.</span>
-                      {personNameById.get(entry.personId) ?? 'Unknown'}
-                    </Link>
-                    <ThreatBadge
-                      winPercentage={overallWinPercentageByPersonId.get(entry.personId) ?? null}
-                    />
-                    {entry.tournamentWins > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5">
-                        🏆 {entry.tournamentWins} League Win{entry.tournamentWins === 1 ? '' : 's'}
-                      </span>
-                    )}
-                  </div>
-                  <p className="stat-num mt-1 font-bold text-slate-900">
-                    {entry.matchesPlayed} match{entry.matchesPlayed === 1 ? '' : 'es'} ·{' '}
-                    {entry.matchWins} win{entry.matchWins === 1 ? '' : 's'} ·{' '}
-                    {entry.losses} loss{entry.losses === 1 ? '' : 'es'}
-                    {entry.winPercentage !== null && (
-                      <span className="text-navy-mid"> · {entry.winPercentage}% winning</span>
-                    )}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          ) : (
+      {leaderboardCardRowsByVenue.map(({ venueId, venueName, rows }) =>
+        rows.length > 0 ? (
+          <div key={venueId} className="mb-6">
+            <LocationLeaderboardCard
+              venueName={venueName}
+              generatedDateLabel={generatedDateLabel}
+              rows={rows}
+            />
+          </div>
+        ) : (
+          <div key={venueId} className={`${cardClass} mb-6`}>
+            <h2 className="text-lg font-bold text-slate-900 mb-3">{venueName}</h2>
             <EmptyState icon={<PaddleIcon />}>No matches played here yet.</EmptyState>
-          )}
-        </div>
-      ))}
+          </div>
+        )
+      )}
 
       <div className={`${cardClass} mb-6`}>
         <div className="flex items-center justify-between mb-1">

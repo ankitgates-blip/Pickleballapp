@@ -1,0 +1,392 @@
+'use client';
+
+import { useRef, useState } from 'react';
+import { shareOrDownloadFile, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
+import { threatTierFor } from '@/lib/stats/threatLevel';
+
+export type LeaderboardCardRow = {
+  rank: number;
+  name: string;
+  // Hero number on line 1 -- this venue's own win% (not cross-venue).
+  venueWinPercentage: number | null;
+  // Drives the tier chip on line 2 -- the player's overall, cross-venue win%,
+  // matching how ThreatBadge is driven elsewhere in the app.
+  overallWinPercentage: number | null;
+  matchesPlayed: number;
+  matchWins: number;
+  losses: number;
+  tournamentWins: number;
+};
+
+export type LocationLeaderboardCardProps = {
+  venueName: string;
+  generatedDateLabel: string;
+  rows: LeaderboardCardRow[];
+};
+
+const CARD_WIDTH = 640;
+const PAD_X = 32;
+const CONTENT_LEFT = PAD_X;
+const CONTENT_RIGHT = CARD_WIDTH - PAD_X;
+const CONTENT_WIDTH = CONTENT_RIGHT - CONTENT_LEFT;
+
+const HEADER_HEIGHT = 156;
+const ROW_HEIGHT = 56;
+const SECTION_GAP = 24;
+const FOOTER_HEIGHT = 34;
+
+const GOLD_BRIGHT = '#d6af36';
+const GOLD_HIGHLIGHT = '#fde68a';
+const SILVER = '#a7a7ad';
+const BRONZE = '#a77044';
+const NAVY_DEEP = '#0c1830';
+const NAVY_MID = '#16294e';
+const NAVY_LIGHT = '#1c3560';
+const MUTED_SILVER = '#94a3b8';
+
+function medalFill(rank: number): string | null {
+  if (rank === 1) return 'url(#lbGoldMedal)';
+  if (rank === 2) return SILVER;
+  if (rank === 3) return BRONZE;
+  return null;
+}
+
+// Same 5 tiers as ThreatBadge/threatTierFor, compacted for a repeated-20-times list
+// row: a one-word label (the actual signal) plus the tier's own color (reinforcement,
+// not the only channel) -- and each tier's "accentLight" value rather than its base
+// "accent", since the base tones are tuned for large fills, not small text on navy.
+const THREAT_CHIP: Record<string, { short: string; color: string; width: number }> = {
+  'LOW THREAT': { short: 'LOW', color: '#86efac', width: 54 },
+  'WATCH OUT': { short: 'WATCH', color: '#fde047', width: 66 },
+  DANGEROUS: { short: 'DANGER', color: '#fdba74', width: 76 },
+  'HIGH THREAT': { short: 'HIGH', color: '#fca5a5', width: 58 },
+  'DO NOT PLAY': { short: 'AVOID', color: '#f0abfc', width: 66 },
+};
+
+async function loadDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string | null>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+export default function LocationLeaderboardCard({
+  venueName,
+  generatedDateLabel,
+  rows,
+}: LocationLeaderboardCardProps) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [status, setStatus] = useState<'idle' | 'generating' | 'error'>('idle');
+
+  const totalHeight = HEADER_HEIGHT + rows.length * ROW_HEIGHT + SECTION_GAP + FOOTER_HEIGHT;
+  const footerY = HEADER_HEIGHT + rows.length * ROW_HEIGHT + SECTION_GAP;
+
+  const handleDownload = async () => {
+    if (!svgRef.current) return;
+    setStatus('generating');
+    try {
+      const exportSvg = svgRef.current.cloneNode(true) as SVGSVGElement;
+
+      const imageEl = exportSvg.querySelector('image');
+      if (imageEl) {
+        const logoDataUrl = await loadDataUrl('/logo.png');
+        if (logoDataUrl) {
+          imageEl.setAttribute('href', logoDataUrl);
+        } else {
+          imageEl.remove();
+        }
+      }
+
+      // See ChampionCard.tsx for why both of these are necessary: an isolated
+      // standalone-SVG render never sees the page's next/font stylesheet, so an
+      // unresolved var(--font-oswald)/var(--font-geist-sans) would invalidate the
+      // whole font-family declaration and silently fall back to the browser's serif
+      // default rather than just skipping to "sans-serif".
+      const fontDataUrl = await loadDataUrl('/fonts/oswald-variable.ttf');
+      if (fontDataUrl) {
+        const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+        styleEl.textContent = `@font-face{font-family:'Oswald Export';src:url(${fontDataUrl}) format('truetype');font-weight:200 900;}`;
+        const defs = exportSvg.querySelector('defs');
+        if (defs) defs.insertBefore(styleEl, defs.firstChild);
+        exportSvg.style.setProperty('--font-oswald', "'Oswald Export'");
+      }
+      exportSvg.style.setProperty('--font-geist-sans', 'sans-serif');
+
+      const svgString = new XMLSerializer().serializeToString(exportSvg);
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Failed to render card image'));
+        img.src = svgUrl;
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = CARD_WIDTH * 2;
+      canvas.height = totalHeight * 2;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas not supported');
+      ctx.scale(2, 2);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(svgUrl);
+
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('Failed to generate image');
+
+      const fileName = `${sanitizeFileNamePart(venueName)}-leaderboard.png`;
+      await shareOrDownloadFile(blob, fileName, `${venueName} Leaderboard`, 'image/png');
+      setStatus('idle');
+    } catch (err) {
+      console.error(err);
+      setStatus('error');
+    }
+  };
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={handleDownload}
+        disabled={status === 'generating'}
+        className="block w-full cursor-pointer border-0 bg-transparent p-0"
+        aria-label={`Download ${venueName} Leaderboard as an image`}
+      >
+        <svg
+          ref={svgRef}
+          width={CARD_WIDTH}
+          height={totalHeight}
+          viewBox={`0 0 ${CARD_WIDTH} ${totalHeight}`}
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-auto max-w-[640px] rounded-2xl"
+        >
+          <defs>
+            <linearGradient id="lbBg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={NAVY_LIGHT} />
+              <stop offset="45%" stopColor={NAVY_MID} />
+              <stop offset="100%" stopColor={NAVY_DEEP} />
+            </linearGradient>
+            <linearGradient id="lbGoldMedal" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor={GOLD_BRIGHT} />
+              <stop offset="50%" stopColor={GOLD_HIGHLIGHT} />
+              <stop offset="100%" stopColor={GOLD_BRIGHT} />
+            </linearGradient>
+          </defs>
+
+          <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} rx="20" fill="url(#lbBg)" />
+          <rect
+            x="1"
+            y="1"
+            width={CARD_WIDTH - 2}
+            height={totalHeight - 2}
+            rx="19"
+            fill="none"
+            stroke={GOLD_BRIGHT}
+            strokeOpacity="0.35"
+          />
+
+          {/* Header: logo + wordmark, venue name, kicker, generated-on stamp */}
+          <image href="/logo.png" x={CONTENT_LEFT} y="20" width="34" height="34" />
+          <text
+            x={CONTENT_LEFT + 44}
+            y="42"
+            fontSize="13"
+            fontWeight="700"
+            fill={GOLD_HIGHLIGHT}
+            letterSpacing="2"
+            fontFamily="var(--font-oswald), sans-serif"
+          >
+            PICKLERALLY DXB
+          </text>
+
+          <text
+            x={CARD_WIDTH / 2}
+            y="92"
+            fontSize="28"
+            fontWeight="800"
+            fill="#f8fafc"
+            textAnchor="middle"
+            fontFamily="var(--font-oswald), sans-serif"
+          >
+            {venueName}
+          </text>
+          <text
+            x={CARD_WIDTH / 2}
+            y="112"
+            fontSize="12"
+            fontWeight="700"
+            fill={GOLD_BRIGHT}
+            textAnchor="middle"
+            letterSpacing="3"
+            fontFamily="var(--font-oswald), sans-serif"
+          >
+            LEADERBOARD
+          </text>
+          <text
+            x={CARD_WIDTH / 2}
+            y="132"
+            fontSize="11"
+            fill={MUTED_SILVER}
+            textAnchor="middle"
+            fontFamily="var(--font-geist-sans), sans-serif"
+          >
+            Generated {generatedDateLabel}
+          </text>
+
+          {rows.map((row, i) => {
+            const rowY = HEADER_HEIGHT + i * ROW_HEIGHT;
+            const line1Y = rowY + 22;
+            const line2Y = rowY + 42;
+            const medal = medalFill(row.rank);
+            const tier =
+              row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
+            const chip = tier ? THREAT_CHIP[tier.label] : null;
+            const heroColor =
+              row.venueWinPercentage !== null && tier
+                ? THREAT_CHIP[tier.label].color
+                : MUTED_SILVER;
+
+            return (
+              <g key={row.rank}>
+                {i > 0 &&
+                  (row.rank === 4 ? (
+                    <line
+                      x1={CONTENT_LEFT}
+                      y1={rowY}
+                      x2={CONTENT_RIGHT}
+                      y2={rowY}
+                      stroke={GOLD_BRIGHT}
+                      strokeOpacity="0.4"
+                      strokeWidth="1.5"
+                    />
+                  ) : (
+                    <line
+                      x1={CONTENT_LEFT}
+                      y1={rowY}
+                      x2={CONTENT_RIGHT}
+                      y2={rowY}
+                      stroke="#ffffff"
+                      strokeOpacity="0.06"
+                    />
+                  ))}
+
+                {medal ? (
+                  <circle cx={CONTENT_LEFT + 12} cy={line1Y - 5} r="12" fill={medal} />
+                ) : (
+                  <circle
+                    cx={CONTENT_LEFT + 12}
+                    cy={line1Y - 5}
+                    r="12"
+                    fill="none"
+                    stroke={MUTED_SILVER}
+                    strokeOpacity="0.5"
+                  />
+                )}
+                <text
+                  x={CONTENT_LEFT + 12}
+                  y={line1Y - 1}
+                  fontSize="11"
+                  fontWeight="800"
+                  fill={medal ? NAVY_DEEP : MUTED_SILVER}
+                  textAnchor="middle"
+                  fontFamily="var(--font-oswald), sans-serif"
+                >
+                  {row.rank}
+                </text>
+
+                <text
+                  x={CONTENT_LEFT + 34}
+                  y={line1Y}
+                  fontSize="16"
+                  fontWeight="800"
+                  fill="#f8fafc"
+                  fontFamily="var(--font-oswald), sans-serif"
+                  {...(row.name.length > 22
+                    ? { textLength: CONTENT_WIDTH - 140, lengthAdjust: 'spacingAndGlyphs' }
+                    : {})}
+                >
+                  {row.name}
+                </text>
+                <text
+                  x={CONTENT_RIGHT}
+                  y={line1Y + 2}
+                  fontSize="22"
+                  fontWeight="900"
+                  fill={heroColor}
+                  textAnchor="end"
+                  fontFamily="var(--font-oswald), sans-serif"
+                >
+                  {row.venueWinPercentage !== null ? `${row.venueWinPercentage}%` : '—'}
+                </text>
+
+                {chip && (
+                  <>
+                    <rect
+                      x={CONTENT_LEFT + 34}
+                      y={line2Y - 11}
+                      width={chip.width}
+                      height="15"
+                      rx="7.5"
+                      fill={chip.color}
+                      fillOpacity="0.18"
+                      stroke={chip.color}
+                      strokeOpacity="0.5"
+                    />
+                    <text
+                      x={CONTENT_LEFT + 34 + chip.width / 2}
+                      y={line2Y}
+                      fontSize="9.5"
+                      fontWeight="800"
+                      fill={chip.color}
+                      textAnchor="middle"
+                      letterSpacing="0.5"
+                      fontFamily="var(--font-oswald), sans-serif"
+                    >
+                      {chip.short}
+                    </text>
+                  </>
+                )}
+                <text
+                  x={CONTENT_LEFT + 34 + (chip ? chip.width + 10 : 0)}
+                  y={line2Y}
+                  fontSize="12"
+                  fill={MUTED_SILVER}
+                  fontFamily="var(--font-geist-sans), sans-serif"
+                >
+                  {row.matchesPlayed}M · {row.matchWins}W–{row.losses}L
+                  {row.tournamentWins > 0 ? ` · 🏆×${row.tournamentWins}` : ''}
+                </text>
+              </g>
+            );
+          })}
+
+          <text
+            x={CARD_WIDTH / 2}
+            y={footerY + 20}
+            fontSize="10"
+            fill={MUTED_SILVER}
+            fillOpacity="0.8"
+            textAnchor="middle"
+            letterSpacing="1.5"
+            fontFamily="var(--font-oswald), sans-serif"
+          >
+            PICKLERALLY DXB
+          </text>
+        </svg>
+      </button>
+      <p className="text-xs text-muted mt-1.5">Click the card to share or download it as an image.</p>
+      {status === 'error' && (
+        <p className="text-xs text-red-600 mt-1">Couldn&apos;t generate the image. Try again.</p>
+      )}
+    </div>
+  );
+}
