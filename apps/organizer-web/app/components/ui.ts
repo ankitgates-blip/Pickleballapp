@@ -33,3 +33,10 @@ export const playerCardAvatarClass =
   'w-14 h-14 rounded-full bg-gradient-to-br from-[#fde68a] to-[#f59e0b] flex items-center justify-center text-xl font-black text-[#451a03]';
 
 export const headingClass = 'font-heading font-bold text-navy-deep';
+
+// A gold, tracked-caps section label with a small accent tick -- for a sub-section
+// inside a page (e.g. "Player of the Month" / "Race to Player of the Month") that
+// deserves more visual weight than a flat gray uppercase label, without competing
+// with the page's own h1/h2 hierarchy.
+export const sectionKickerClass =
+  'inline-flex items-center gap-2 text-xs font-extrabold text-gold uppercase tracking-[0.2em] mb-3';

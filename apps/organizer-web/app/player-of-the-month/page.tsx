@@ -1,5 +1,4 @@
 // apps/organizer-web/app/player-of-the-month/page.tsx
-import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import { lockMissingPlayerOfTheMonthWinners } from './lockMissingWinners';
 import { rankMonthlyCandidates } from '@/lib/stats/playerOfTheMonth';
@@ -13,8 +12,9 @@ import { starRating } from '@/lib/stats/starRating';
 import { buildWinPercentageByPersonId } from '@/lib/stats/buildWinPercentageByPersonId';
 import { monthDateRange } from '@/lib/stats/monthRange';
 import PlayerOfTheMonthCard from './PlayerOfTheMonthCard';
+import RaceLeaderboardCard from './RaceLeaderboardCard';
 import OrganizerShell from '@/app/components/OrganizerShell';
-import { cardClass, headingClass } from '@/app/components/ui';
+import { cardClass, headingClass, sectionKickerClass } from '@/app/components/ui';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
 
 const MONTH_NAMES = [
@@ -38,6 +38,17 @@ export default async function PlayerOfTheMonthPage() {
     lastMonth = 12;
     lastMonthYear = currentYear - 1;
   }
+
+  // Pre-formatted server-side (pinned to UTC) and passed to RaceLeaderboardCard as a
+  // plain string -- it's a client component that's also server-rendered on first
+  // paint, so computing this inside it would risk the same server/client timezone
+  // hydration mismatch fixed in ChampionCard/LocationLeaderboardCard.
+  const generatedDateLabel = today.toLocaleDateString('en-US', {
+    timeZone: 'UTC',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 
   const { data: people } = await supabase
     .from('people')
@@ -184,7 +195,8 @@ export default async function PlayerOfTheMonthPage() {
           <h2 className="text-lg font-bold text-slate-900 mb-3">{venue.name}</h2>
 
           <div className={`${cardClass} mb-4`}>
-            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-3">
+            <h3 className={sectionKickerClass}>
+              <span className="inline-block w-[3px] h-4 rounded-full bg-gold-bright" />
               🏆 Player of the Month
             </h3>
             {winnerPerson ? (
@@ -214,32 +226,30 @@ export default async function PlayerOfTheMonthPage() {
             )}
           </div>
 
-          <div className={cardClass}>
-            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-3">
-              🏁 Race to Player of the Month — {MONTH_NAMES[currentMonth - 1]} {currentYear}
-            </h3>
+          <div className={race.length > 0 ? '' : cardClass}>
             {race.length === 0 ? (
-              <p className="text-sm text-slate-500">No qualifying players yet this month.</p>
+              <>
+                <h3 className={sectionKickerClass}>
+                  <span className="inline-block w-[3px] h-4 rounded-full bg-gold-bright" />
+                  🏁 Race to Player of the Month — {MONTH_NAMES[currentMonth - 1]} {currentYear}
+                </h3>
+                <p className="text-sm text-slate-500">No qualifying players yet this month.</p>
+              </>
             ) : (
-              <ol className="space-y-2 text-sm">
-                {race.map((entry, i) => {
-                  const person = personById.get(entry.personId);
-                  return (
-                    <li key={entry.personId} className="flex items-center justify-between">
-                      <Link
-                        href={`/people/${entry.personId}`}
-                        className="font-semibold text-navy-deep hover:underline"
-                      >
-                        {i + 1}. {person?.name ?? 'Unknown'}
-                      </Link>
-                      <span className="text-slate-500">
-                        {entry.matchWins}W · {entry.leagueWins} league win{entry.leagueWins === 1 ? '' : 's'} ·{' '}
-                        {entry.winPercentage}%
-                      </span>
-                    </li>
-                  );
-                })}
-              </ol>
+              <RaceLeaderboardCard
+                venueName={venue.name}
+                monthLabel={`${MONTH_NAMES[currentMonth - 1].toUpperCase()} ${currentYear}`}
+                generatedDateLabel={generatedDateLabel}
+                rows={race.map((entry, i) => ({
+                  rank: i + 1,
+                  name: personById.get(entry.personId)?.name ?? 'Unknown',
+                  raceScore: Math.round(entry.score * 100),
+                  matchWins: entry.matchWins,
+                  leagueWins: entry.leagueWins,
+                  winPercentage: entry.winPercentage,
+                  overallWinPercentage: winPercentageByPersonId.get(entry.personId) ?? null,
+                }))}
+              />
             )}
           </div>
         </div>
