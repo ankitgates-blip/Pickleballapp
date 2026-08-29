@@ -2,66 +2,65 @@
 
 import { useRef, useState } from 'react';
 import { shareOrDownloadFile, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
-import { threatTierFor } from '@/lib/stats/threatLevel';
 
 export type LeaderboardCardRow = {
   rank: number;
   name: string;
-  // Hero number on line 1 -- this venue's own win% (not cross-venue).
-  venueWinPercentage: number | null;
-  // Drives the tier chip on line 2 -- the player's overall, cross-venue win%,
-  // matching how ThreatBadge is driven elsewhere in the app.
-  overallWinPercentage: number | null;
   matchesPlayed: number;
   matchWins: number;
-  losses: number;
-  tournamentWins: number;
+  // Raw (unrounded) percentage, e.g. 77.777... -- the card formats it to one decimal
+  // place itself, matching this design's "00.0%" convention.
+  winPercentage: number | null;
+  leagueWins: number;
+  totalPoints: number;
 };
 
 export type LocationLeaderboardCardProps = {
   venueName: string;
+  // e.g. "Month to Date" or "August 2026" -- Points are a windowed stat (10/match win,
+  // 25/league win, live from Sept 2026), so unlike the old all-time version of this
+  // card, everything on it now describes one specific period, and that period has to
+  // be named somewhere on the card itself.
+  periodLabel: string;
   generatedDateLabel: string;
   rows: LeaderboardCardRow[];
 };
 
-const CARD_WIDTH = 760;
+const CARD_WIDTH = 800;
 const PAD_X = 40;
 const CONTENT_LEFT = PAD_X;
 const CONTENT_RIGHT = CARD_WIDTH - PAD_X;
 const CONTENT_WIDTH = CONTENT_RIGHT - CONTENT_LEFT;
 
-const HEADER_HEIGHT = 176;
-const ROW_HEIGHT = 72;
-const SECTION_GAP = 28;
-const FOOTER_HEIGHT = 40;
+const HEADER_HEIGHT = 172;
+const STAT_STRIP_HEIGHT = 72;
+const SECTION_GAP = 24;
+const TABLE_HEADER_HEIGHT = 40;
+const ROW_HEIGHT = 58;
+const FOOTER_HEIGHT = 64;
 
-const GOLD_BRIGHT = '#d6af36';
-const GOLD_HIGHLIGHT = '#fde68a';
+const NEON = '#eaff00';
+const NEON_DIM = '#c9e800';
+const BG_TOP = '#12161e';
+const BG_BOTTOM = '#000000';
+const WHITE = '#f8fafc';
+const MUTED = '#94a3b8';
+const GOLD_MEDAL = '#d6af36';
 const SILVER = '#a7a7ad';
 const BRONZE = '#a77044';
 const NAVY_DEEP = '#0c1830';
-const NAVY_MID = '#16294e';
-const NAVY_LIGHT = '#1c3560';
-const MUTED_SILVER = '#94a3b8';
+
+const MATCHES_X = CONTENT_LEFT + 430;
+const WINS_X = CONTENT_LEFT + 510;
+const WINPCT_X = CONTENT_LEFT + 590;
+const NAME_X = CONTENT_LEFT + 64;
 
 function medalFill(rank: number): string | null {
-  if (rank === 1) return 'url(#lbGoldMedal)';
+  if (rank === 1) return 'url(#llGoldMedal)';
   if (rank === 2) return SILVER;
   if (rank === 3) return BRONZE;
   return null;
 }
-
-// Same 5 tiers as ThreatBadge/threatTierFor, compacted for a repeated-20-times list
-// row: a one-word label (the actual signal) plus the tier's own color (reinforcement,
-// not the only channel) -- and each tier's "accentLight" value rather than its base
-// "accent", since the base tones are tuned for large fills, not small text on navy.
-const THREAT_CHIP: Record<string, { short: string; color: string; width: number }> = {
-  'LOW THREAT': { short: 'LOW', color: '#86efac', width: 68 },
-  'WATCH OUT': { short: 'WATCH', color: '#fde047', width: 84 },
-  DANGEROUS: { short: 'DANGER', color: '#fdba74', width: 96 },
-  'HIGH THREAT': { short: 'HIGH', color: '#fca5a5', width: 74 },
-  'DO NOT PLAY': { short: 'AVOID', color: '#f0abfc', width: 84 },
-};
 
 async function loadDataUrl(url: string): Promise<string | null> {
   try {
@@ -81,14 +80,20 @@ async function loadDataUrl(url: string): Promise<string | null> {
 
 export default function LocationLeaderboardCard({
   venueName,
+  periodLabel,
   generatedDateLabel,
   rows,
 }: LocationLeaderboardCardProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [status, setStatus] = useState<'idle' | 'generating' | 'error'>('idle');
 
-  const totalHeight = HEADER_HEIGHT + rows.length * ROW_HEIGHT + SECTION_GAP + FOOTER_HEIGHT;
-  const footerY = HEADER_HEIGHT + rows.length * ROW_HEIGHT + SECTION_GAP;
+  const totalLeagueWins = rows.reduce((sum, r) => sum + r.leagueWins, 0);
+  const totalPointsAwarded = rows.reduce((sum, r) => sum + r.totalPoints, 0);
+
+  const tableHeaderY = HEADER_HEIGHT + STAT_STRIP_HEIGHT + SECTION_GAP;
+  const rowsStartY = tableHeaderY + TABLE_HEADER_HEIGHT;
+  const footerY = rowsStartY + rows.length * ROW_HEIGHT + SECTION_GAP;
+  const totalHeight = footerY + FOOTER_HEIGHT;
 
   const handleDownload = async () => {
     if (!svgRef.current) return;
@@ -152,6 +157,8 @@ export default function LocationLeaderboardCard({
     }
   };
 
+  const statColW = (CONTENT_WIDTH - 110) / 3;
+
   return (
     <div>
       <button
@@ -167,22 +174,21 @@ export default function LocationLeaderboardCard({
           height={totalHeight}
           viewBox={`0 0 ${CARD_WIDTH} ${totalHeight}`}
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-auto max-w-[760px] rounded-2xl"
+          className="w-full h-auto max-w-[800px] rounded-2xl"
         >
           <defs>
-            <linearGradient id="lbBg" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={NAVY_LIGHT} />
-              <stop offset="45%" stopColor={NAVY_MID} />
-              <stop offset="100%" stopColor={NAVY_DEEP} />
+            <linearGradient id="llBg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={BG_TOP} />
+              <stop offset="100%" stopColor={BG_BOTTOM} />
             </linearGradient>
-            <linearGradient id="lbGoldMedal" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor={GOLD_BRIGHT} />
-              <stop offset="50%" stopColor={GOLD_HIGHLIGHT} />
-              <stop offset="100%" stopColor={GOLD_BRIGHT} />
+            <linearGradient id="llGoldMedal" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor={GOLD_MEDAL} />
+              <stop offset="50%" stopColor="#fde68a" />
+              <stop offset="100%" stopColor={GOLD_MEDAL} />
             </linearGradient>
           </defs>
 
-          <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} rx="20" fill="url(#lbBg)" />
+          <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} rx="20" fill="url(#llBg)" />
           <rect
             x="1"
             y="1"
@@ -190,18 +196,35 @@ export default function LocationLeaderboardCard({
             height={totalHeight - 2}
             rx="19"
             fill="none"
-            stroke={GOLD_BRIGHT}
-            strokeOpacity="0.35"
+            stroke={NEON}
+            strokeOpacity="0.3"
           />
 
-          {/* Header: logo + wordmark, venue name, kicker, generated-on stamp */}
-          <image href="/logo.png" x={CONTENT_LEFT} y="22" width="42" height="42" />
+          {/* Decorative skyline + paddle motif (vector silhouette, top-right) */}
+          <g opacity="0.5">
+            <rect x={CARD_WIDTH - 150} y="70" width="18" height="80" fill="#1c2230" />
+            <rect x={CARD_WIDTH - 128} y="45" width="16" height="105" fill="#1c2230" />
+            <path
+              d={`M ${CARD_WIDTH - 104} 150 L ${CARD_WIDTH - 104} 40 L ${CARD_WIDTH - 98} 10 L ${CARD_WIDTH - 92} 40 L ${CARD_WIDTH - 92} 150 Z`}
+              fill="#1c2230"
+            />
+            <rect x={CARD_WIDTH - 76} y="90" width="14" height="60" fill="#1c2230" />
+            <rect x={CARD_WIDTH - 56} y="60" width="16" height="90" fill="#1c2230" />
+          </g>
+          <g transform={`translate(${CARD_WIDTH - 60}, 88) rotate(18)`} opacity="0.9">
+            <ellipse cx="0" cy="0" rx="17" ry="21" fill="#0c0a09" stroke={NEON} strokeWidth="2.5" />
+            <rect x="-3" y="19" width="6" height="16" rx="2" fill="#0c0a09" stroke={NEON} strokeWidth="2" />
+          </g>
+          <circle cx={CARD_WIDTH - 92} cy="140" r="7" fill={NEON} opacity="0.85" />
+
+          {/* Header: logo + wordmark */}
+          <image href="/logo.png" x={CONTENT_LEFT} y="20" width="30" height="30" />
           <text
-            x={CONTENT_LEFT + 54}
-            y="49"
-            fontSize="15"
+            x={CONTENT_LEFT + 38}
+            y="40"
+            fontSize="12"
             fontWeight="700"
-            fill={GOLD_HIGHLIGHT}
+            fill={NEON}
             letterSpacing="2"
             fontFamily="var(--font-oswald), sans-serif"
           >
@@ -209,94 +232,178 @@ export default function LocationLeaderboardCard({
           </text>
 
           <text
-            x={CARD_WIDTH / 2}
-            y="108"
-            fontSize="34"
-            fontWeight="800"
-            fill="#f8fafc"
-            textAnchor="middle"
-            fontFamily="var(--font-oswald), sans-serif"
-          >
-            {venueName}
-          </text>
-          <text
-            x={CARD_WIDTH / 2}
-            y="131"
-            fontSize="14"
-            fontWeight="700"
-            fill={GOLD_BRIGHT}
-            textAnchor="middle"
-            letterSpacing="3"
+            x={CONTENT_LEFT}
+            y="106"
+            fontSize="46"
+            fontWeight="900"
+            fill={WHITE}
+            letterSpacing="1"
             fontFamily="var(--font-oswald), sans-serif"
           >
             LEADERBOARD
           </text>
+          <rect x={CONTENT_LEFT} y="115" width="130" height="4" fill={NEON} />
           <text
-            x={CARD_WIDTH / 2}
-            y="153"
-            fontSize="13"
-            fill={MUTED_SILVER}
-            textAnchor="middle"
-            fontFamily="var(--font-geist-sans), sans-serif"
+            x={CONTENT_LEFT}
+            y="148"
+            fontSize="15"
+            fontFamily="var(--font-oswald), sans-serif"
           >
-            Generated {generatedDateLabel}
+            <tspan fontWeight="800" fill={NEON} letterSpacing="1">
+              {venueName.toUpperCase()}
+            </tspan>
+            <tspan fill={MUTED} fontWeight="500">
+              {'   ·   '}
+              {periodLabel}
+            </tspan>
+          </text>
+
+          {/* Stat strip */}
+          <rect
+            x={CONTENT_LEFT}
+            y={HEADER_HEIGHT}
+            width={CONTENT_WIDTH}
+            height={STAT_STRIP_HEIGHT}
+            rx="12"
+            fill="#ffffff"
+            fillOpacity="0.04"
+            stroke={NEON}
+            strokeOpacity="0.25"
+          />
+          {[
+            { label: 'PLAYERS', value: String(rows.length) },
+            { label: 'LEAGUE WINS', value: String(totalLeagueWins) },
+            { label: 'TOTAL POINTS', value: String(totalPointsAwarded) },
+          ].map((stat, i) => {
+            const cx = CONTENT_LEFT + i * statColW + statColW / 2;
+            return (
+              <g key={stat.label}>
+                {i > 0 && (
+                  <line
+                    x1={CONTENT_LEFT + i * statColW}
+                    y1={HEADER_HEIGHT + 14}
+                    x2={CONTENT_LEFT + i * statColW}
+                    y2={HEADER_HEIGHT + STAT_STRIP_HEIGHT - 14}
+                    stroke={NEON}
+                    strokeOpacity="0.2"
+                  />
+                )}
+                <text
+                  x={cx}
+                  y={HEADER_HEIGHT + 34}
+                  fontSize="24"
+                  fontWeight="800"
+                  fill={NEON}
+                  textAnchor="middle"
+                  fontFamily="var(--font-oswald), sans-serif"
+                >
+                  {stat.value}
+                </text>
+                <text
+                  x={cx}
+                  y={HEADER_HEIGHT + 52}
+                  fontSize="9.5"
+                  fontWeight="700"
+                  fill={MUTED}
+                  textAnchor="middle"
+                  letterSpacing="1"
+                  fontFamily="var(--font-oswald), sans-serif"
+                >
+                  {stat.label}
+                </text>
+              </g>
+            );
+          })}
+          <rect
+            x={CONTENT_RIGHT - 92}
+            y={HEADER_HEIGHT + 22}
+            width="82"
+            height="28"
+            rx="14"
+            fill="none"
+            stroke={NEON}
+            strokeOpacity="0.5"
+          />
+          <text
+            x={CONTENT_RIGHT - 51}
+            y={HEADER_HEIGHT + 40}
+            fontSize="12"
+            fontWeight="800"
+            fill={NEON}
+            textAnchor="middle"
+            fontFamily="var(--font-oswald), sans-serif"
+          >
+            📍 DXB
+          </text>
+
+          {/* Table header bar */}
+          <rect
+            x={CONTENT_LEFT}
+            y={tableHeaderY}
+            width={CONTENT_WIDTH}
+            height={TABLE_HEADER_HEIGHT}
+            rx="8"
+            fill={NEON}
+          />
+          <text x={CONTENT_LEFT + 26} y={tableHeaderY + 25} fontSize="12" fontWeight="800" fill={NAVY_DEEP} textAnchor="middle" letterSpacing="0.5" fontFamily="var(--font-oswald), sans-serif">
+            RANK
+          </text>
+          <text x={NAME_X} y={tableHeaderY + 25} fontSize="12" fontWeight="800" fill={NAVY_DEEP} letterSpacing="0.5" fontFamily="var(--font-oswald), sans-serif">
+            PLAYER / TEAM
+          </text>
+          <text x={MATCHES_X} y={tableHeaderY + 25} fontSize="12" fontWeight="800" fill={NAVY_DEEP} textAnchor="middle" letterSpacing="0.5" fontFamily="var(--font-oswald), sans-serif">
+            MATCHES
+          </text>
+          <text x={WINS_X} y={tableHeaderY + 25} fontSize="12" fontWeight="800" fill={NAVY_DEEP} textAnchor="middle" letterSpacing="0.5" fontFamily="var(--font-oswald), sans-serif">
+            WINS
+          </text>
+          <text x={WINPCT_X} y={tableHeaderY + 25} fontSize="12" fontWeight="800" fill={NAVY_DEEP} textAnchor="middle" letterSpacing="0.5" fontFamily="var(--font-oswald), sans-serif">
+            WIN %
+          </text>
+          <text x={CONTENT_RIGHT - 4} y={tableHeaderY + 25} fontSize="12" fontWeight="800" fill={NAVY_DEEP} textAnchor="end" letterSpacing="0.5" fontFamily="var(--font-oswald), sans-serif">
+            POINTS
           </text>
 
           {rows.map((row, i) => {
-            const rowY = HEADER_HEIGHT + i * ROW_HEIGHT;
-            const line1Y = rowY + 30;
-            const line2Y = rowY + 58;
+            const rowY = rowsStartY + i * ROW_HEIGHT;
+            const rowMidY = rowY + ROW_HEIGHT / 2 + 5;
             const medal = medalFill(row.rank);
-            const tier =
-              row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
-            const chip = tier ? THREAT_CHIP[tier.label] : null;
-            const heroColor =
-              row.venueWinPercentage !== null && tier
-                ? THREAT_CHIP[tier.label].color
-                : MUTED_SILVER;
+            const badgeCx = CONTENT_LEFT + 26;
+            const badgeCy = rowY + ROW_HEIGHT / 2;
 
             return (
               <g key={row.rank}>
-                {i > 0 &&
-                  (row.rank === 4 ? (
-                    <line
-                      x1={CONTENT_LEFT}
-                      y1={rowY}
-                      x2={CONTENT_RIGHT}
-                      y2={rowY}
-                      stroke={GOLD_BRIGHT}
-                      strokeOpacity="0.4"
-                      strokeWidth="1.5"
-                    />
-                  ) : (
-                    <line
-                      x1={CONTENT_LEFT}
-                      y1={rowY}
-                      x2={CONTENT_RIGHT}
-                      y2={rowY}
-                      stroke="#ffffff"
-                      strokeOpacity="0.06"
-                    />
-                  ))}
+                {i > 0 && (
+                  <line
+                    x1={CONTENT_LEFT}
+                    y1={rowY}
+                    x2={CONTENT_RIGHT}
+                    y2={rowY}
+                    stroke="#ffffff"
+                    strokeOpacity="0.07"
+                  />
+                )}
 
                 {medal ? (
-                  <circle cx={CONTENT_LEFT + 15} cy={line1Y - 6} r="15" fill={medal} />
+                  <circle cx={badgeCx} cy={badgeCy} r="17" fill={medal} />
                 ) : (
-                  <circle
-                    cx={CONTENT_LEFT + 15}
-                    cy={line1Y - 6}
-                    r="15"
+                  <rect
+                    x={badgeCx - 15}
+                    y={badgeCy - 15}
+                    width="30"
+                    height="30"
+                    rx="8"
                     fill="none"
-                    stroke={MUTED_SILVER}
+                    stroke={MUTED}
                     strokeOpacity="0.5"
                   />
                 )}
                 <text
-                  x={CONTENT_LEFT + 15}
-                  y={line1Y - 1}
-                  fontSize="14"
+                  x={badgeCx}
+                  y={badgeCy + 5}
+                  fontSize="15"
                   fontWeight="800"
-                  fill={medal ? NAVY_DEEP : MUTED_SILVER}
+                  fill={medal ? NAVY_DEEP : WHITE}
                   textAnchor="middle"
                   fontFamily="var(--font-oswald), sans-serif"
                 >
@@ -304,77 +411,78 @@ export default function LocationLeaderboardCard({
                 </text>
 
                 <text
-                  x={CONTENT_LEFT + 44}
-                  y={line1Y}
-                  fontSize="21"
-                  fontWeight="800"
-                  fill="#f8fafc"
+                  x={NAME_X}
+                  y={rowMidY}
+                  fontSize="17"
+                  fontWeight="700"
+                  fill={WHITE}
                   fontFamily="var(--font-oswald), sans-serif"
-                  {...(row.name.length > 20
-                    ? { textLength: CONTENT_WIDTH - 190, lengthAdjust: 'spacingAndGlyphs' }
+                  {...(row.name.length > 24
+                    ? { textLength: WINPCT_X - 40 - NAME_X, lengthAdjust: 'spacingAndGlyphs' }
                     : {})}
                 >
                   {row.name}
                 </text>
+                <text x={MATCHES_X} y={rowMidY} fontSize="14" fill={MUTED} textAnchor="middle" fontFamily="var(--font-geist-sans), sans-serif">
+                  {row.matchesPlayed}
+                </text>
+                <text x={WINS_X} y={rowMidY} fontSize="14" fontWeight="700" fill={WHITE} textAnchor="middle" fontFamily="var(--font-geist-sans), sans-serif">
+                  {row.matchWins}
+                </text>
+                <text x={WINPCT_X} y={rowMidY} fontSize="14" fill={MUTED} textAnchor="middle" fontFamily="var(--font-geist-sans), sans-serif">
+                  {row.winPercentage !== null ? `${row.winPercentage.toFixed(1)}%` : '—'}
+                </text>
                 <text
                   x={CONTENT_RIGHT}
-                  y={line1Y + 3}
-                  fontSize="30"
-                  fontWeight="900"
-                  fill={heroColor}
+                  y={rowMidY}
+                  fontSize="16"
+                  fontWeight="800"
+                  fill={NEON}
                   textAnchor="end"
                   fontFamily="var(--font-oswald), sans-serif"
                 >
-                  {row.venueWinPercentage !== null ? `${row.venueWinPercentage}%` : '—'}
-                </text>
-
-                {chip && (
-                  <>
-                    <rect
-                      x={CONTENT_LEFT + 44}
-                      y={line2Y - 14}
-                      width={chip.width}
-                      height="19"
-                      rx="9.5"
-                      fill={chip.color}
-                      fillOpacity="0.18"
-                      stroke={chip.color}
-                      strokeOpacity="0.5"
-                    />
-                    <text
-                      x={CONTENT_LEFT + 44 + chip.width / 2}
-                      y={line2Y}
-                      fontSize="12"
-                      fontWeight="800"
-                      fill={chip.color}
-                      textAnchor="middle"
-                      letterSpacing="0.5"
-                      fontFamily="var(--font-oswald), sans-serif"
-                    >
-                      {chip.short}
-                    </text>
-                  </>
-                )}
-                <text
-                  x={CONTENT_LEFT + 44 + (chip ? chip.width + 12 : 0)}
-                  y={line2Y}
-                  fontSize="15"
-                  fill={MUTED_SILVER}
-                  fontFamily="var(--font-geist-sans), sans-serif"
-                >
-                  {row.matchesPlayed}M · {row.matchWins}W–{row.losses}L
-                  {row.tournamentWins > 0 ? ` · 🏆×${row.tournamentWins}` : ''}
+                  🏆 {row.totalPoints}
                 </text>
               </g>
             );
           })}
 
+          {/* Footer */}
+          <line
+            x1={CONTENT_LEFT}
+            y1={footerY - 6}
+            x2={CONTENT_RIGHT}
+            y2={footerY - 6}
+            stroke={NEON}
+            strokeOpacity="0.2"
+          />
+          <text
+            x={CONTENT_LEFT}
+            y={footerY + 18}
+            fontSize="12"
+            fontStyle="italic"
+            fill={NEON_DIM}
+            fontFamily="var(--font-geist-sans), sans-serif"
+          >
+            Every match counts — keep climbing the ranks!
+          </text>
+          <text
+            x={CONTENT_RIGHT}
+            y={footerY + 18}
+            fontSize="11"
+            fill={MUTED}
+            textAnchor="end"
+            letterSpacing="0.5"
+            fontFamily="var(--font-oswald), sans-serif"
+          >
+            UPDATED {generatedDateLabel.toUpperCase()}
+          </text>
           <text
             x={CARD_WIDTH / 2}
-            y={footerY + 24}
-            fontSize="12"
-            fill={MUTED_SILVER}
-            fillOpacity="0.8"
+            y={footerY + 44}
+            fontSize="10"
+            fill={MUTED}
+            fillOpacity="0.7"
             textAnchor="middle"
             letterSpacing="1.5"
             fontFamily="var(--font-oswald), sans-serif"

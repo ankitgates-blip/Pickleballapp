@@ -2,10 +2,6 @@ import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, headingClass } from '@/app/components/ui';
 import EmptyState from '@/app/components/EmptyState';
-import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
-import { computeLocationLeaderboard } from '@/lib/stats/locationLeaderboard';
-import { winPercentageFromRecords } from '@/lib/stats/winRate';
-import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
 import { computePointsLeaderboard, POINTS_SYSTEM_START_DATE, type PointsTournament } from '@/lib/stats/points';
 import { monthDateRange, monthToDateRange, monthsToCheck } from '@/lib/stats/monthRange';
@@ -88,28 +84,6 @@ export default async function LocationsPage({
     }))
     .filter((t) => t.player1PersonId && t.player2PersonId);
 
-  // Overall (not venue-scoped) win rate, computed once from data already fetched above,
-  // for the Threat Level badge — separate from each venue's own winPercentage below.
-  const allCompleteMatches: RawMatch[] = (matchesRaw ?? [])
-    .filter((m) => m.team_b_id !== null && m.status === 'complete')
-    .map((m) => ({
-      tournamentId: m.tournament_id,
-      tournamentDate: tournamentDateById.get(m.tournament_id) ?? '',
-      venueName: '',
-      teamAId: m.team_a_id!,
-      teamBId: m.team_b_id!,
-      scoreA: m.score_a ?? 0,
-      scoreB: m.score_b ?? 0,
-      status: 'complete' as const,
-    }));
-
-  const overallWinPercentageByPersonId = new Map(
-    (people ?? []).map((person) => [
-      person.id,
-      winPercentageFromRecords(buildPersonMatchRecords(person.id, allCompleteMatches, teams)),
-    ])
-  );
-
   // Points system: month-to-date by default; ?month=YYYY-MM selects a specific
   // completed month from September 2026 onward. Anything unparseable, before the
   // points system started, or not yet a completed month falls back to month-to-date
@@ -129,6 +103,9 @@ export default async function LocationsPage({
     ? monthDateRange(parsedMonth!.year, parsedMonth!.month)
     : monthToDateRange(today);
   const selectedMonthParam = isSelectableCompletedMonth ? month! : null;
+  const periodLabel = isSelectableCompletedMonth
+    ? `${MONTH_ABBR[parsedMonth!.month - 1]} ${parsedMonth!.year}`
+    : 'Month to Date';
 
   // September 2026 through last month — every completed month the points system has
   // been live for, i.e. every month worth offering as a chip alongside "Month to date".
@@ -167,13 +144,6 @@ export default async function LocationsPage({
         status: 'complete' as const,
       }));
 
-    // Uses the same champion-detection rules as the tournaments list page (final-match
-    // winner when a final exists, individual/ladder standings for individual-pairing
-    // formats, and only once the tournament is actually completed) — see
-    // computeTournamentChampionPersonIds. Reimplementing this ad hoc previously credited
-    // "League Won" to whoever's ephemeral per-round pairing happened to have the best
-    // record in Popcorn/Gauntlet tournaments, which isn't how those formats crown a winner.
-    const tournamentWinsByPersonId = new Map<string, number>();
     const pointsTournaments: PointsTournament[] = [];
     for (const tournamentId of venueTournamentIds) {
       const tournament = tournamentById.get(tournamentId);
@@ -183,17 +153,6 @@ export default async function LocationsPage({
         .filter((t) => t.tournamentId === tournamentId)
         .map((t) => ({ id: t.id, person1Id: t.player1PersonId, person2Id: t.player2PersonId }));
       const tournamentMatches = (matchesRaw ?? []).filter((m) => m.tournament_id === tournamentId);
-
-      const championPersonIds = computeTournamentChampionPersonIds({
-        format: tournament.format,
-        completedAt: tournament.completed_at,
-        matches: tournamentMatches,
-        teams: tournamentTeams,
-      });
-
-      for (const personId of championPersonIds ?? []) {
-        tournamentWinsByPersonId.set(personId, (tournamentWinsByPersonId.get(personId) ?? 0) + 1);
-      }
 
       pointsTournaments.push({
         id: tournamentId,
@@ -205,18 +164,6 @@ export default async function LocationsPage({
       });
     }
 
-    const candidates = (people ?? [])
-      .map((person) => {
-        const records = buildPersonMatchRecords(person.id, venueCompleteMatches, teams);
-        return {
-          personId: person.id,
-          matchWins: records.filter((r) => r.won).length,
-          tournamentWins: tournamentWinsByPersonId.get(person.id) ?? 0,
-          matchesPlayed: records.length,
-        };
-      })
-      .filter((c) => c.matchesPlayed > 0);
-
     const points = computePointsLeaderboard({
       matches: venueCompleteMatches,
       teams,
@@ -227,23 +174,21 @@ export default async function LocationsPage({
     return {
       venueId: venue.id,
       venueName: venue.name,
-      leaderboard: computeLocationLeaderboard(candidates),
       points,
     };
   });
 
-  const leaderboardCardRowsByVenue = leaderboardsByVenue.map(({ venueId, venueName, leaderboard }) => ({
+  const leaderboardCardRowsByVenue = leaderboardsByVenue.map(({ venueId, venueName, points }) => ({
     venueId,
     venueName,
-    rows: leaderboard.map((entry, i) => ({
+    rows: points.map((entry, i) => ({
       rank: i + 1,
       name: personNameById.get(entry.personId) ?? 'Unknown',
-      venueWinPercentage: entry.winPercentage,
-      overallWinPercentage: overallWinPercentageByPersonId.get(entry.personId) ?? null,
       matchesPlayed: entry.matchesPlayed,
       matchWins: entry.matchWins,
-      losses: entry.losses,
-      tournamentWins: entry.tournamentWins,
+      winPercentage: entry.matchesPlayed > 0 ? (entry.matchWins / entry.matchesPlayed) * 100 : null,
+      leagueWins: entry.leagueWins,
+      totalPoints: entry.totalPoints,
     })),
   }));
 
@@ -251,11 +196,44 @@ export default async function LocationsPage({
     <OrganizerShell organizerName={organizer.name}>
       <h1 className={`text-2xl ${headingClass} mb-6`}>Location Stats</h1>
 
+      <p className="text-xs text-muted mb-2">
+        10 pts per match win · 25 bonus pts per league win · starts September 2026
+      </p>
+      <div className="flex flex-wrap gap-2 mb-6">
+        <Link
+          href="/locations"
+          className={`stat-num inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
+            selectedMonthParam === null
+              ? 'bg-navy-deep text-white'
+              : 'bg-navy-tint text-navy-deep hover:bg-navy-mid/20'
+          }`}
+        >
+          Month to date
+        </Link>
+        {pointsMonthOptions.map(({ year, month: m }) => {
+          const value = `${year}-${String(m).padStart(2, '0')}`;
+          return (
+            <Link
+              key={value}
+              href={`/locations?month=${value}`}
+              className={`stat-num inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
+                selectedMonthParam === value
+                  ? 'bg-navy-deep text-white'
+                  : 'bg-navy-tint text-navy-deep hover:bg-navy-mid/20'
+              }`}
+            >
+              {MONTH_ABBR[m - 1]} {year}
+            </Link>
+          );
+        })}
+      </div>
+
       {leaderboardCardRowsByVenue.map(({ venueId, venueName, rows }) =>
         rows.length > 0 ? (
           <div key={venueId} className="mb-6">
             <LocationLeaderboardCard
               venueName={venueName}
+              periodLabel={periodLabel}
               generatedDateLabel={generatedDateLabel}
               rows={rows}
             />
@@ -263,77 +241,10 @@ export default async function LocationsPage({
         ) : (
           <div key={venueId} className={`${cardClass} mb-6`}>
             <h2 className="text-lg font-bold text-slate-900 mb-3">{venueName}</h2>
-            <EmptyState icon={<PaddleIcon />}>No matches played here yet.</EmptyState>
+            <EmptyState icon={<PaddleIcon />}>No points recorded for this period yet.</EmptyState>
           </div>
         )
       )}
-
-      <div className={`${cardClass} mb-6`}>
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="text-lg font-bold text-slate-900">Total Points</h2>
-        </div>
-        <p className="text-xs text-muted mb-3">
-          10 pts per match win · 25 bonus pts per league win · starts September 2026
-        </p>
-
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Link
-            href="/locations"
-            className={`stat-num inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
-              selectedMonthParam === null
-                ? 'bg-navy-deep text-white'
-                : 'bg-navy-tint text-navy-deep hover:bg-navy-mid/20'
-            }`}
-          >
-            Month to date
-          </Link>
-          {pointsMonthOptions.map(({ year, month: m }) => {
-            const value = `${year}-${String(m).padStart(2, '0')}`;
-            return (
-              <Link
-                key={value}
-                href={`/locations?month=${value}`}
-                className={`stat-num inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
-                  selectedMonthParam === value
-                    ? 'bg-navy-deep text-white'
-                    : 'bg-navy-tint text-navy-deep hover:bg-navy-mid/20'
-                }`}
-              >
-                {MONTH_ABBR[m - 1]} {year}
-              </Link>
-            );
-          })}
-        </div>
-
-        {leaderboardsByVenue.map(({ venueId, venueName, points }) => (
-          <div key={venueId} className="mb-4 last:mb-0">
-            <h3 className="text-sm font-bold text-slate-700 mb-2">{venueName}</h3>
-            {points.length > 0 ? (
-              <ul className="space-y-2 text-sm">
-                {points.map((entry, i) => (
-                  <li key={entry.personId} className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2 last:border-0">
-                    <Link
-                      href={`/people/${entry.personId}`}
-                      className={`flex items-center gap-2 font-semibold hover:underline ${i === 0 ? 'text-navy-deep' : 'text-slate-800'}`}
-                    >
-                      <span className="text-slate-500">{i + 1}.</span>
-                      {personNameById.get(entry.personId) ?? 'Unknown'}
-                    </Link>
-                    <span className="stat-num text-right">
-                      <span className="font-extrabold text-navy-deep">{entry.totalPoints} pts</span>
-                      <span className="block text-xs text-muted">
-                        {entry.matchWins}×win{entry.leagueWins > 0 ? ` · ${entry.leagueWins}×league` : ''}
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs text-muted">No points yet this period.</p>
-            )}
-          </div>
-        ))}
-      </div>
     </OrganizerShell>
   );
 }
