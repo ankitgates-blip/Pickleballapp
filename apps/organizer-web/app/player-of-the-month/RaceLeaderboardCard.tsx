@@ -40,16 +40,14 @@ const SECTION_GAP = 28;
 const FOOTER_HEIGHT = 58;
 
 const GOLD_BRIGHT = '#d6af36';
+const GOLD_HIGHLIGHT = '#fde68a';
 const GOLD_CHROME = '#a8874f';
 const SILVER = '#a7a7ad';
 const BRONZE = '#a77044';
 const NAVY_DEEP = '#0c1830';
-// Same light-card language as LocationLeaderboardCard, extended here rather than
-// reinvented -- this is the same kind of artifact (a short ranked list), just five
-// rows instead of twenty and scored by a composite rather than raw win%.
-const BODY_BG = '#f8fafc';
-const BODY_BORDER = '#e2e8f0';
-const MUTED_TEXT = '#64748b';
+const NAVY_MID = '#16294e';
+const NAVY_LIGHT = '#1c3560';
+const MUTED_SILVER = '#94a3b8';
 
 function medalFill(rank: number): string | null {
   if (rank === 1) return 'url(#raceGoldMedal)';
@@ -58,19 +56,15 @@ function medalFill(rank: number): string | null {
   return null;
 }
 
-function medalHex(rank: number): string | null {
-  if (rank === 1) return GOLD_BRIGHT;
-  if (rank === 2) return SILVER;
-  if (rank === 3) return BRONZE;
-  return null;
-}
-
-const THREAT_CHIP: Record<string, { short: string; accent: string; light: string; width: number }> = {
-  'LOW THREAT': { short: 'LOW', accent: '#16a34a', light: '#86efac', width: 74 },
-  'WATCH OUT': { short: 'WATCH', accent: '#ca8a04', light: '#fde047', width: 90 },
-  DANGEROUS: { short: 'DANGER', accent: '#ea580c', light: '#fdba74', width: 102 },
-  'HIGH THREAT': { short: 'HIGH', accent: '#dc2626', light: '#fca5a5', width: 80 },
-  'DO NOT PLAY': { short: 'AVOID', accent: '#c026d3', light: '#f0abfc', width: 90 },
+// Pastel tones tuned for text/chips on a dark ground (as opposed to
+// LocationLeaderboardCard's saturated "accent" tones, which are tuned for text on a
+// light ground) -- same 5 tiers as ThreatBadge/threatTierFor.
+const THREAT_CHIP: Record<string, { short: string; color: string; width: number }> = {
+  'LOW THREAT': { short: 'LOW', color: '#86efac', width: 68 },
+  'WATCH OUT': { short: 'WATCH', color: '#fde047', width: 84 },
+  DANGEROUS: { short: 'DANGER', color: '#fdba74', width: 96 },
+  'HIGH THREAT': { short: 'HIGH', color: '#fca5a5', width: 74 },
+  'DO NOT PLAY': { short: 'AVOID', color: '#f0abfc', width: 84 },
 };
 
 async function loadDataUrl(url: string): Promise<string | null> {
@@ -181,11 +175,28 @@ export default function RaceLeaderboardCard({
           className="w-full h-auto max-w-[760px] rounded-2xl"
         >
           <defs>
+            <linearGradient id="raceBg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={NAVY_LIGHT} />
+              <stop offset="45%" stopColor={NAVY_MID} />
+              <stop offset="100%" stopColor={NAVY_DEEP} />
+            </linearGradient>
             <linearGradient id="raceGoldMedal" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor={GOLD_BRIGHT} />
-              <stop offset="50%" stopColor="#fde68a" />
+              <stop offset="50%" stopColor={GOLD_HIGHLIGHT} />
               <stop offset="100%" stopColor={GOLD_BRIGHT} />
             </linearGradient>
+            <linearGradient id="raceDivider" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor={GOLD_CHROME} stopOpacity="0" />
+              <stop offset="50%" stopColor={GOLD_BRIGHT} stopOpacity="0.9" />
+              <stop offset="100%" stopColor={GOLD_CHROME} stopOpacity="0" />
+            </linearGradient>
+            <radialGradient id="raceGlow" cx="50%" cy="0%" r="70%">
+              <stop offset="0%" stopColor={GOLD_HIGHLIGHT} stopOpacity="0.22" />
+              <stop offset="100%" stopColor={GOLD_HIGHLIGHT} stopOpacity="0" />
+            </radialGradient>
+            <pattern id="raceTexture" width="14" height="14" patternUnits="userSpaceOnUse">
+              <circle cx="1.5" cy="1.5" r="1.5" fill="#ffffff" fillOpacity="0.05" />
+            </pattern>
             <clipPath id="raceLogoClip">
               <circle cx={CONTENT_LEFT + 21} cy="46" r="21" />
             </clipPath>
@@ -195,7 +206,9 @@ export default function RaceLeaderboardCard({
           </defs>
 
           <g clipPath="url(#raceCardClip)">
-            <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} fill={BODY_BG} />
+            <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} fill="url(#raceBg)" />
+            <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} fill="url(#raceTexture)" />
+            <rect x="0" y="0" width={CARD_WIDTH} height={HEADER_HEIGHT + 30} fill="url(#raceGlow)" />
 
             {/* Header: logo + wordmark, venue name, kicker, month + generated-on stamp */}
             <image
@@ -212,7 +225,8 @@ export default function RaceLeaderboardCard({
               cy="46"
               r="21"
               fill="none"
-              stroke={GOLD_CHROME}
+              stroke={GOLD_BRIGHT}
+              strokeOpacity="0.6"
               strokeWidth="1.5"
             />
             <text
@@ -221,7 +235,7 @@ export default function RaceLeaderboardCard({
               fontSize="21"
               fontWeight="700"
               fontStyle="italic"
-              fill={NAVY_DEEP}
+              fill={GOLD_HIGHLIGHT}
               letterSpacing="1"
               fontFamily="var(--font-oswald), sans-serif"
             >
@@ -233,7 +247,7 @@ export default function RaceLeaderboardCard({
               y="46"
               fontSize="26"
               fontWeight="800"
-              fill={NAVY_DEEP}
+              fill="#f8fafc"
               textAnchor="end"
               fontFamily="var(--font-oswald), sans-serif"
             >
@@ -244,7 +258,7 @@ export default function RaceLeaderboardCard({
               y="66"
               fontSize="13"
               fontWeight="700"
-              fill={GOLD_CHROME}
+              fill={GOLD_BRIGHT}
               textAnchor="end"
               letterSpacing="1.5"
               fontFamily="var(--font-oswald), sans-serif"
@@ -255,20 +269,18 @@ export default function RaceLeaderboardCard({
               x={CONTENT_RIGHT}
               y="84"
               fontSize="11.5"
-              fill={MUTED_TEXT}
+              fill={MUTED_SILVER}
               textAnchor="end"
               fontFamily="var(--font-geist-sans), sans-serif"
             >
               {monthLabel} · Generated {generatedDateLabel}
             </text>
-            <line
-              x1={CONTENT_LEFT}
-              y1={HEADER_HEIGHT - 1}
-              x2={CONTENT_RIGHT}
-              y2={HEADER_HEIGHT - 1}
-              stroke={GOLD_CHROME}
-              strokeOpacity="0.5"
-              strokeWidth="1.5"
+            <rect
+              x={CONTENT_LEFT}
+              y={HEADER_HEIGHT - 2}
+              width={CONTENT_WIDTH}
+              height="2"
+              fill="url(#raceDivider)"
             />
 
             {rows.map((row, i) => {
@@ -276,28 +288,23 @@ export default function RaceLeaderboardCard({
               const line1Y = rowY + 30;
               const line2Y = rowY + 58;
               const medal = medalFill(row.rank);
-              const medalColor = medalHex(row.rank);
               const tier =
                 row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
               const chip = tier ? THREAT_CHIP[tier.label] : null;
-              const heroColor = tier ? THREAT_CHIP[tier.label].accent : MUTED_TEXT;
+              const heroColor = chip ? chip.color : MUTED_SILVER;
 
               return (
                 <g key={row.rank}>
-                  {medalColor && (
-                    <>
-                      <rect
-                        x={CONTENT_LEFT - 10}
-                        y={rowY}
-                        width={CONTENT_WIDTH + 20}
-                        height={ROW_HEIGHT}
-                        fill={medalColor}
-                        fillOpacity="0.16"
-                      />
-                      <rect x={CONTENT_LEFT - 10} y={rowY} width="5" height={ROW_HEIGHT} fill={medalColor} />
-                    </>
+                  {i > 0 && (
+                    <line
+                      x1={CONTENT_LEFT}
+                      y1={rowY}
+                      x2={CONTENT_RIGHT}
+                      y2={rowY}
+                      stroke="#ffffff"
+                      strokeOpacity="0.08"
+                    />
                   )}
-                  {i > 0 && <line x1={CONTENT_LEFT} y1={rowY} x2={CONTENT_RIGHT} y2={rowY} stroke={BODY_BORDER} />}
 
                   {medal ? (
                     <circle cx={CONTENT_LEFT + 16} cy={line1Y - 6} r="16" fill={medal} />
@@ -307,7 +314,8 @@ export default function RaceLeaderboardCard({
                       cy={line1Y - 6}
                       r="16"
                       fill="none"
-                      stroke="#cbd5e1"
+                      stroke={MUTED_SILVER}
+                      strokeOpacity="0.5"
                       strokeWidth="1.5"
                     />
                   )}
@@ -316,7 +324,7 @@ export default function RaceLeaderboardCard({
                     y={line1Y - 1}
                     fontSize="15"
                     fontWeight="800"
-                    fill={medal ? NAVY_DEEP : '#94a3b8'}
+                    fill={medal ? NAVY_DEEP : MUTED_SILVER}
                     textAnchor="middle"
                     fontFamily="var(--font-oswald), sans-serif"
                   >
@@ -328,7 +336,7 @@ export default function RaceLeaderboardCard({
                     y={line1Y}
                     fontSize="23"
                     fontWeight="800"
-                    fill={NAVY_DEEP}
+                    fill="#f8fafc"
                     fontFamily="var(--font-oswald), sans-serif"
                     {...(row.name.length > 20
                       ? { textLength: CONTENT_WIDTH - 195, lengthAdjust: 'spacingAndGlyphs' }
@@ -345,29 +353,28 @@ export default function RaceLeaderboardCard({
                     textAnchor="end"
                     fontFamily="var(--font-oswald), sans-serif"
                   >
-                    {row.raceScore}
+                    {row.winPercentage}%
                   </text>
 
                   {chip && (
                     <>
                       <rect
                         x={CONTENT_LEFT + 46}
-                        y={line2Y - 15}
+                        y={line2Y - 14}
                         width={chip.width}
-                        height="21"
-                        rx="10.5"
-                        fill={chip.light}
-                        fillOpacity="0.5"
-                        stroke={chip.accent}
-                        strokeWidth="1.25"
-                        strokeOpacity="0.7"
+                        height="19"
+                        rx="9.5"
+                        fill={chip.color}
+                        fillOpacity="0.18"
+                        stroke={chip.color}
+                        strokeOpacity="0.5"
                       />
                       <text
                         x={CONTENT_LEFT + 46 + chip.width / 2}
-                        y={line2Y + 1}
-                        fontSize="13"
+                        y={line2Y}
+                        fontSize="12"
                         fontWeight="800"
-                        fill={chip.accent}
+                        fill={chip.color}
                         textAnchor="middle"
                         letterSpacing="0.5"
                         fontFamily="var(--font-oswald), sans-serif"
@@ -380,11 +387,12 @@ export default function RaceLeaderboardCard({
                     x={CONTENT_LEFT + 46 + (chip ? chip.width + 12 : 0)}
                     y={line2Y}
                     fontSize="15"
-                    fill={MUTED_TEXT}
+                    fill={MUTED_SILVER}
                     fontFamily="var(--font-geist-sans), sans-serif"
                   >
-                    {row.matchWins}W · {row.winPercentage}%
+                    {row.matchWins} wins
                     {row.leagueWins > 0 ? ` · 🏆×${row.leagueWins}` : ''}
+                    {' · '}Race Score {row.raceScore}
                   </text>
                 </g>
               );
@@ -394,7 +402,7 @@ export default function RaceLeaderboardCard({
               x={CARD_WIDTH / 2}
               y={footerY + 20}
               fontSize="11"
-              fill={MUTED_TEXT}
+              fill={MUTED_SILVER}
               textAnchor="middle"
               fontFamily="var(--font-geist-sans), sans-serif"
             >
@@ -404,7 +412,8 @@ export default function RaceLeaderboardCard({
               x={CARD_WIDTH / 2}
               y={footerY + 42}
               fontSize="12"
-              fill={MUTED_TEXT}
+              fill={MUTED_SILVER}
+              fillOpacity="0.8"
               textAnchor="middle"
               letterSpacing="1.5"
               fontFamily="var(--font-oswald), sans-serif"
@@ -419,8 +428,8 @@ export default function RaceLeaderboardCard({
             height={totalHeight - 2}
             rx="19"
             fill="none"
-            stroke={BODY_BORDER}
-            strokeWidth="1.5"
+            stroke={GOLD_BRIGHT}
+            strokeOpacity="0.35"
           />
         </svg>
       </button>
