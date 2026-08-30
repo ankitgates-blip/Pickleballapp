@@ -125,17 +125,62 @@ export default function OrganizerShell({
             backgroundPosition: 'center center',
           }}
         >
-          {/* pl-[170px] clears the overlapping logo: left-[30px] + 140px width below */}
-          <div className="relative max-w-3xl mx-auto px-4 pt-4 pb-2 pl-[170px] min-h-[196px] flex flex-col justify-center">
+          {/* Top-left, in normal block flow -- the circular logo overlaps only the
+              header's bottom portion (it straddles the header/page seam at top-[196px]),
+              so top-aligned text here never competes with it the way center-aligned text
+              would; no left gutter needed. */}
+          <div className="relative max-w-3xl mx-auto px-4 pt-4 pb-2 min-h-[196px]">
             <div className="inline-block">
               <span
-                className="font-heading italic text-2xl sm:text-4xl tracking-wide leading-tight"
-                style={{ textShadow: '0 2px 10px rgba(0,0,0,0.55)' }}
+                className="font-heading italic text-2xl sm:text-4xl leading-tight whitespace-nowrap"
+                style={{
+                  letterSpacing: '0.01em',
+                  color: '#f8fafc',
+                  // Three layers doing three separate jobs: a tight dark shadow for edge
+                  // crispness, a soft dark shadow for contrast against the variable-
+                  // brightness photo behind it, and a gold glow for presence/richness --
+                  // white text reads cleanly against any part of the photo, with the
+                  // glow (plus the underline bar below) still carrying the gold brand
+                  // accent.
+                  textShadow:
+                    '0 1px 3px rgba(0,0,0,0.8), 0 2px 10px rgba(0,0,0,0.55), 0 0 14px rgba(214,175,54,0.5)',
+                }}
               >
                 PICKLERALLY DXB
               </span>
-              <div className="w-12 h-[3px] bg-gold rounded-full mt-2" />
+              <div className="flex items-center gap-1.5 mt-2">
+                <div
+                  className="h-[3px] rounded-full"
+                  style={{ width: '56px', background: 'linear-gradient(90deg, #d6af36, #fde68a 60%, transparent)' }}
+                />
+                <div className="w-[7px] h-[7px] rounded-full" style={{ background: '#d9e021' }} />
+              </div>
             </div>
+          </div>
+          {/* Paddle-impact accent: a contained, edge-bleeding photo cutout (background
+              already removed, color-graded to the header's dusk palette) rather than a
+              second full hero image -- bottom-right, low enough to clear the sign-out
+              row. The wordmark now lives top-left, so this has the whole lower-right
+              quadrant to be a real, visible accent rather than a small corner detail.
+              A soft gold glow behind it echoes the wordmark's own glow instead of a
+              literal cast shadow, since there's no ground plane at this part of the
+              photo for a shadow to fall on. */}
+          <div
+            aria-hidden
+            className="absolute pointer-events-none w-28 sm:w-[145px]"
+            style={{ right: '-10px', bottom: '-10px' }}
+          >
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'radial-gradient(circle at 55% 45%, rgba(214,175,54,0.5), transparent 65%)',
+                filter: 'blur(8px)',
+              }}
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element -- decorative accent, not
+                a content image; avoids next/image's mandatory intrinsic width/height for
+                a purely aesthetic overlay. */}
+            <img src="/header-paddle-action.webp" alt="" className="relative w-full h-auto" />
           </div>
           {organizerName && (
             <form action={signOut} className="absolute top-3 right-4 flex items-center gap-3">
