@@ -109,16 +109,16 @@ export default async function PublicTournamentPage({
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="relative overflow-hidden bg-gradient-to-br from-emerald-800 via-teal-600 to-cyan-600 text-white">
+      <header className="relative overflow-hidden bg-gradient-to-br from-navy-deep via-navy-mid to-navy-light text-white">
         <div
           aria-hidden
           className="ball-texture absolute -top-8 -right-6 h-32 w-32 rounded-full opacity-90"
-          style={{ background: 'radial-gradient(circle at 35% 35%, #eaff00, #c9e800)' }}
+          style={{ background: 'radial-gradient(circle at 35% 35%, #f2942e, #d2621c)' }}
         />
         <div className="relative max-w-2xl mx-auto px-4 py-6 text-center">
           <Image src="/logo.png" alt="PicklerAlly DXB" width={40} height={40} className="mx-auto mb-2 rounded-full object-cover" />
           <h1 className="text-2xl font-bold tracking-tight">{tournament.name}</h1>
-          <p className="text-teal-50 text-sm mt-1 font-medium">
+          <p className="text-[#dbe4f5] text-sm mt-1 font-medium">
             {tournament.date} · 📍 {venueName} · 🕐 {timeslotLabel(tournament.timeslot)}
           </p>
         </div>
