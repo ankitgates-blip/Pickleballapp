@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { computePointsLeaderboard, type PointsTournament } from './points';
 import type { RawMatch, RawTeam } from './types';
 
-// Alice/Bob (team t1) beat Carol/Dave (team t2) 11-5 in a completed round_robin
+// Alice/Bob (team t1) beat Carol/Dave (team t2) 11-5 in a completed league_playoffs
 // league at Pickleturf on 2026-09-05.
 const teams: RawTeam[] = [
   { id: 't1', tournamentId: 'sep1', player1PersonId: 'alice', player2PersonId: 'bob' },
@@ -24,7 +24,10 @@ function sep1Tournament(overrides: Partial<PointsTournament> = {}): PointsTourna
   return {
     id: 'sep1',
     date: '2026-09-05',
-    format: 'round_robin',
+    // league_playoffs (unlike a Final-less 'custom' league) always credits the league
+    // win to both members of the winning team -- the simpler default for tests that
+    // aren't specifically about individual-standings crediting.
+    format: 'league_playoffs',
     completedAt: '2026-09-05T18:00:00Z',
     matches: [
       {
@@ -90,17 +93,33 @@ describe('computePointsLeaderboard', () => {
     });
     const alice = findEntry(entries, 'alice');
     const bob = findEntry(entries, 'bob');
-    expect(alice).toMatchObject({ leagueWins: 1, leagueWinPoints: 25, totalPoints: 35 });
-    expect(bob).toMatchObject({ leagueWins: 1, leagueWinPoints: 25, totalPoints: 35 });
+    expect(alice).toMatchObject({ leagueWins: 1, leagueWinPoints: 50, totalPoints: 60 });
+    expect(bob).toMatchObject({ leagueWins: 1, leagueWinPoints: 50, totalPoints: 60 });
     expect(findEntry(entries, 'carol')?.leagueWins).toBe(0);
     expect(findEntry(entries, 'carol')?.totalPoints).toBe(0);
   });
 
-  it('credits exactly one person for an individual-format league win', () => {
+  it('pays the 50-point league-win bonus under the custom format too', () => {
     const entries = computePointsLeaderboard({
       matches: [completeMatch],
       teams,
-      tournaments: [sep1Tournament({ format: 'popcorn' })],
+      tournaments: [sep1Tournament({ format: 'custom' })],
+      range: SEPTEMBER,
+    });
+    // No Final stage in this fixture's matches -- 'custom' falls back to individual
+    // standings, so only one of the two teammates is credited here (see the dedicated
+    // test below). Assert the bonus VALUE is 50 regardless of who receives it.
+    const winner = entries.find((e) => e.leagueWins > 0);
+    expect(winner).toMatchObject({ leagueWinPoints: 50 });
+  });
+
+  it('credits exactly one person for a Custom League that never generated a Final', () => {
+    // format 'custom' with only a 'league' stage match (no Final) uses individual
+    // standings for the champion credit -- one person, not a team of two.
+    const entries = computePointsLeaderboard({
+      matches: [completeMatch],
+      teams,
+      tournaments: [sep1Tournament({ format: 'custom' })],
       range: SEPTEMBER,
     });
     const winners = entries.filter((e) => e.leagueWins > 0);
@@ -146,7 +165,7 @@ describe('computePointsLeaderboard', () => {
     });
     // Only the September tournament counts -- August is invisible even though the
     // caller asked for it.
-    expect(findEntry(entries, 'alice')?.totalPoints).toBe(35);
+    expect(findEntry(entries, 'alice')?.totalPoints).toBe(60);
   });
 
   it('month-to-date excludes a tournament dated later in the same month', () => {
@@ -160,7 +179,7 @@ describe('computePointsLeaderboard', () => {
       tournaments: [sep1Tournament(), laterTournament],
       range: { start: '2026-09-01', endExclusive: '2026-09-16' },
     });
-    expect(findEntry(entries, 'alice')?.totalPoints).toBe(35);
+    expect(findEntry(entries, 'alice')?.totalPoints).toBe(60);
     expect(findEntry(entries, 'alice')?.matchesPlayed).toBe(1);
   });
 
@@ -171,7 +190,7 @@ describe('computePointsLeaderboard', () => {
       tournaments: [sep1Tournament()], // dated 2026-09-05
       range: { start: '2026-09-01', endExclusive: '2026-09-06' },
     });
-    expect(findEntry(entries, 'alice')?.totalPoints).toBe(35);
+    expect(findEntry(entries, 'alice')?.totalPoints).toBe(60);
   });
 
   it('scores nothing for a pending match', () => {
@@ -232,5 +251,105 @@ describe('computePointsLeaderboard', () => {
     expect(
       computePointsLeaderboard({ matches: [], teams: [], tournaments: [], range: SEPTEMBER })
     ).toEqual([]);
+  });
+
+  describe('shutout bonus', () => {
+    const shutoutMatch: RawMatch = { ...completeMatch, scoreA: 11, scoreB: 0 };
+
+    it('awards a 10-point bonus for an 11-0 win, folded into totalPoints', () => {
+      const tournament = sep1Tournament({ completedAt: null }); // isolate from the league bonus
+      const entries = computePointsLeaderboard({
+        matches: [shutoutMatch],
+        teams,
+        tournaments: [tournament],
+        range: SEPTEMBER,
+      });
+      expect(findEntry(entries, 'alice')).toMatchObject({
+        shutoutWins: 1,
+        shutoutBonusPoints: 10,
+        matchWinPoints: 10,
+        totalPoints: 20,
+      });
+    });
+
+    it('stacks with no per-tournament cap across two 11-0 wins by the same team', () => {
+      const secondShutout: RawMatch = {
+        tournamentId: 'sep1',
+        tournamentDate: '2026-09-05',
+        venueName: 'Pickleturf',
+        teamAId: 't1',
+        teamBId: 't5',
+        scoreA: 11,
+        scoreB: 0,
+        status: 'complete',
+      };
+      const t5Team: RawTeam = { id: 't5', tournamentId: 'sep1', player1PersonId: 'eve', player2PersonId: 'finn' };
+      const tournament = sep1Tournament({
+        completedAt: null,
+        teams: [
+          { id: 't1', person1Id: 'alice', person2Id: 'bob' },
+          { id: 't2', person1Id: 'carol', person2Id: 'dave' },
+          { id: 't5', person1Id: 'eve', person2Id: 'finn' },
+        ],
+        matches: [
+          { stage: 'league', team_a_id: 't1', team_b_id: 't2', score_a: 11, score_b: 0, status: 'complete', round: 1, court: null },
+          { stage: 'league', team_a_id: 't1', team_b_id: 't5', score_a: 11, score_b: 0, status: 'complete', round: 2, court: null },
+        ],
+      });
+      const entries = computePointsLeaderboard({
+        matches: [shutoutMatch, secondShutout],
+        teams: [...teams, t5Team],
+        tournaments: [tournament],
+        range: SEPTEMBER,
+      });
+      expect(findEntry(entries, 'alice')).toMatchObject({ shutoutWins: 2, shutoutBonusPoints: 20 });
+    });
+
+    it('does not award the bonus for an 11-1 win (boundary check on the === 0 loser score)', () => {
+      const closeMatch: RawMatch = { ...completeMatch, scoreA: 11, scoreB: 1 };
+      const tournament = sep1Tournament({ completedAt: null });
+      const entries = computePointsLeaderboard({
+        matches: [closeMatch],
+        teams,
+        tournaments: [tournament],
+        range: SEPTEMBER,
+      });
+      expect(findEntry(entries, 'alice')?.shutoutWins).toBe(0);
+    });
+
+    it('does not award the bonus to the losing side of an 11-0 game', () => {
+      const tournament = sep1Tournament({ completedAt: null });
+      const entries = computePointsLeaderboard({
+        matches: [shutoutMatch],
+        teams,
+        tournaments: [tournament],
+        range: SEPTEMBER,
+      });
+      expect(findEntry(entries, 'carol')?.shutoutWins).toBe(0);
+    });
+  });
+
+  describe('format scoping', () => {
+    it('pays zero points of any kind for a completed round_robin tournament, even with an 11-0 match and a champion', () => {
+      const shutoutMatch: RawMatch = { ...completeMatch, scoreA: 11, scoreB: 0 };
+      const tournament = sep1Tournament({ format: 'round_robin' });
+      const entries = computePointsLeaderboard({
+        matches: [shutoutMatch],
+        teams,
+        tournaments: [tournament],
+        range: SEPTEMBER,
+      });
+      expect(findEntry(entries, 'alice')).toBeUndefined();
+    });
+
+    it('returns an empty array when every in-range tournament is a non-eligible format', () => {
+      const entries = computePointsLeaderboard({
+        matches: [completeMatch],
+        teams,
+        tournaments: [sep1Tournament({ format: 'popcorn' }), sep1Tournament({ id: 'sep2', format: 'gauntlet' })],
+        range: SEPTEMBER,
+      });
+      expect(entries).toEqual([]);
+    });
   });
 });

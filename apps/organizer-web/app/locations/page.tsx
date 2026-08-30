@@ -322,7 +322,9 @@ export default async function LocationsPage({
                     <span className="stat-num text-right">
                       <span className="font-extrabold text-navy-deep">{entry.totalPoints} pts</span>
                       <span className="block text-xs text-muted">
-                        {entry.matchWins}×win{entry.leagueWins > 0 ? ` · ${entry.leagueWins}×league` : ''}
+                        {entry.matchWins}×win
+                        {entry.leagueWins > 0 ? ` · ${entry.leagueWins}×league` : ''}
+                        {entry.shutoutWins > 0 ? ` · ${entry.shutoutWins}×11-0` : ''}
                       </span>
                     </span>
                   </li>

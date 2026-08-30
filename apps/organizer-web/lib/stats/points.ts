@@ -6,7 +6,8 @@ import type { DateRange } from './monthRange';
 import type { RawMatch, RawTeam } from './types';
 
 export const POINTS_PER_MATCH_WIN = 10;
-export const POINTS_PER_LEAGUE_WIN = 25;
+export const POINTS_PER_LEAGUE_WIN = 50;
+export const POINTS_SHUTOUT_BONUS = 10;
 
 /**
  * The points system goes live for tournaments PLAYED on or after this date.
@@ -18,6 +19,16 @@ export const POINTS_PER_LEAGUE_WIN = 25;
  * shared as an image/PDF.
  */
 export const POINTS_SYSTEM_START_DATE = '2026-09-01';
+
+/**
+ * The whole points mechanism -- match-win points, the league-win bonus, and
+ * the shutout bonus alike -- is scoped to these two season-style formats only,
+ * not every format. This was a deliberate organizer decision, not an
+ * oversight: Custom League and League + Playoffs are this app's structured,
+ * multi-round formats where an incentive point system makes sense; Round
+ * Robin/Popcorn/Gauntlet/etc. never earn Total Points under this system.
+ */
+export const POINTS_ELIGIBLE_FORMATS: readonly string[] = ['custom', 'league_playoffs'];
 
 /** One tournament's data, in the shape computeTournamentChampionPersonIds needs. */
 export type PointsTournament = {
@@ -36,6 +47,8 @@ export type PointsEntry = {
   matchWinPoints: number;
   leagueWins: number;
   leagueWinPoints: number;
+  shutoutWins: number;
+  shutoutBonusPoints: number;
   matchesPlayed: number;
 };
 
@@ -65,7 +78,10 @@ export function computePointsLeaderboard(params: {
   if (effectiveStart >= range.endExclusive) return [];
 
   const inRangeTournaments = tournaments.filter(
-    (t) => t.date >= effectiveStart && t.date < range.endExclusive
+    (t) =>
+      t.date >= effectiveStart &&
+      t.date < range.endExclusive &&
+      POINTS_ELIGIBLE_FORMATS.includes(t.format)
   );
   const inRangeIds = new Set(inRangeTournaments.map((t) => t.id));
 
@@ -108,15 +124,24 @@ export function computePointsLeaderboard(params: {
     // can't have a champion without complete matches to derive standings from.
     if (matchesPlayed === 0) continue;
 
+    // A shutout win stacks per qualifying match, with no per-tournament cap -- a team
+    // that wins two matches 11-0 in the same league earns the bonus twice. Checked from
+    // the winner's own oriented scoreFor/scoreAgainst (not the match's raw, unoriented
+    // score_a/score_b), so the losing side of an 11-0 game never qualifies.
+    const shutoutWins = records.filter((r) => r.won && r.scoreFor === 11 && r.scoreAgainst === 0).length;
+
     const matchWinPoints = matchWins * POINTS_PER_MATCH_WIN;
     const leagueWinPoints = leagueWins * POINTS_PER_LEAGUE_WIN;
+    const shutoutBonusPoints = shutoutWins * POINTS_SHUTOUT_BONUS;
     entries.push({
       personId,
       matchWins,
+      shutoutWins,
+      shutoutBonusPoints,
       matchWinPoints,
       leagueWins,
       leagueWinPoints,
-      totalPoints: matchWinPoints + leagueWinPoints,
+      totalPoints: matchWinPoints + leagueWinPoints + shutoutBonusPoints,
       matchesPlayed,
     });
   }
