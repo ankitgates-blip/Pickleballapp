@@ -382,7 +382,7 @@ export default async function BracketPage({
                   <span className="text-muted">vs</span>
                   {teamBLabel}
                 </span>
-                <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">
+                <span className="stat-num text-xs font-semibold text-slate-500 whitespace-nowrap">
                   {isComplete ? `${m.score_a}-${m.score_b}` : isSkipped ? 'Skipped' : 'Not yet played'}
                 </span>
               </summary>
@@ -438,7 +438,7 @@ export default async function BracketPage({
               ) : isSkipped ? (
                 <p className="text-sm font-semibold text-slate-500 mt-2 pl-1">Skipped — not played.</p>
               ) : (
-                <p className="text-sm font-semibold text-slate-700 mt-2 pl-1">
+                <p className="stat-num text-sm font-semibold text-slate-700 mt-2 pl-1">
                   Final: {m.score_a}-{m.score_b}
                 </p>
               )}

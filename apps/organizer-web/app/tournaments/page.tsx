@@ -163,7 +163,7 @@ export default async function TournamentsPage() {
                   <div className={vibrantCardClass}>
                     <span
                       className={`absolute top-0 right-0 ${
-                        isOverdue ? 'bg-red-600' : 'bg-brand-orange'
+                        isOverdue ? 'bg-loss' : 'bg-brand-orange'
                       } text-white text-[10px] font-extrabold px-3 py-1 rounded-bl-xl rounded-tr-2xl tracking-wide`}
                     >
                       {isOverdue

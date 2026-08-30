@@ -1,7 +1,7 @@
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
-import { cardClass, primaryButtonClass, accentButtonClass, pillClass } from '@/app/components/ui';
+import { cardClass, primaryButtonClass, accentButtonClass, pillClass, headingClass } from '@/app/components/ui';
 import { formatLabel, isIndividualFormat } from '@/lib/tournament/formats';
 import { pairTeam, shuffleRemaining, removeTeam } from './actions';
 import ThreatBadge from '@/app/components/ThreatBadge';
@@ -88,7 +88,7 @@ export default async function TeamsPage({
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="teams" />
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Pair Teams</h1>
+        <h1 className={`text-2xl ${headingClass}`}>Pair Teams</h1>
         {isLeaguePlayoffs && (
           <span className="text-sm font-semibold text-navy-mid bg-navy-tint rounded-full px-3 py-1">
             {teamCount}/{LEAGUE_PLAYOFFS_TEAM_CAP} teams

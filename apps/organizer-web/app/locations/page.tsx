@@ -249,7 +249,7 @@ export default async function LocationsPage({
 
   return (
     <OrganizerShell organizerName={organizer.name}>
-      <h1 className={`text-2xl ${headingClass} mb-6`}>Location Stats</h1>
+      <h1 className={`text-2xl ${headingClass} mb-6`}>Leaderboard</h1>
 
       {leaderboardCardRowsByVenue.map(({ venueId, venueName, rows }) =>
         rows.length > 0 ? (
@@ -273,7 +273,8 @@ export default async function LocationsPage({
           <h2 className="text-lg font-bold text-slate-900">Total Points</h2>
         </div>
         <p className="text-xs text-muted mb-3">
-          10 pts per match win · 25 bonus pts per league win · starts September 2026
+          10 pts per match win · 50 bonus pts per league win · +10 for an 11-0 win · Custom
+          League &amp; League + Playoffs only, starting September 2026
         </p>
 
         <div className="flex flex-wrap gap-2 mb-4">
@@ -310,25 +311,49 @@ export default async function LocationsPage({
             <h3 className="text-sm font-bold text-slate-700 mb-2">{venueName}</h3>
             {points.length > 0 ? (
               <ul className="space-y-2 text-sm">
-                {points.map((entry, i) => (
-                  <li key={entry.personId} className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2 last:border-0">
-                    <Link
-                      href={`/people/${entry.personId}`}
-                      className={`flex items-center gap-2 font-semibold hover:underline ${i === 0 ? 'text-navy-deep' : 'text-slate-800'}`}
-                    >
-                      <span className="text-slate-500">{i + 1}.</span>
-                      {personNameById.get(entry.personId) ?? 'Unknown'}
-                    </Link>
-                    <span className="stat-num text-right">
-                      <span className="font-extrabold text-navy-deep">{entry.totalPoints} pts</span>
-                      <span className="block text-xs text-muted">
-                        {entry.matchWins}×win
-                        {entry.leagueWins > 0 ? ` · ${entry.leagueWins}×league` : ''}
-                        {entry.shutoutWins > 0 ? ` · ${entry.shutoutWins}×11-0` : ''}
+                {points.map((entry, i) => {
+                  const rank = i + 1;
+                  // Same medal convention as LocationLeaderboardCard: gold gradient for
+                  // 1st, flat silver/bronze for 2nd/3rd, an outlined circle with the rank
+                  // number for everyone else -- so this list reads as the same kind of
+                  // leaderboard as the card above it, not a plain numbered list.
+                  const medalStyle =
+                    rank === 1
+                      ? { background: 'linear-gradient(135deg, #d6af36, #fde68a, #d6af36)' }
+                      : rank === 2
+                        ? { background: '#a7a7ad' }
+                        : rank === 3
+                          ? { background: '#a77044' }
+                          : undefined;
+                  return (
+                    <li key={entry.personId} className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2 last:border-0">
+                      <Link
+                        href={`/people/${entry.personId}`}
+                        className={`flex items-center gap-2.5 font-semibold hover:underline ${rank === 1 ? 'text-navy-deep' : 'text-slate-800'}`}
+                      >
+                        <span
+                          className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-extrabold"
+                          style={
+                            medalStyle
+                              ? { ...medalStyle, color: rank === 1 ? '#0c1830' : '#ffffff' }
+                              : { border: '1.5px solid #cbd5e1', color: '#64748b' }
+                          }
+                        >
+                          {rank}
+                        </span>
+                        {personNameById.get(entry.personId) ?? 'Unknown'}
+                      </Link>
+                      <span className="stat-num text-right">
+                        <span className="font-extrabold text-navy-deep">{entry.totalPoints} pts</span>
+                        <span className="block text-xs text-muted">
+                          {entry.matchWins}×win
+                          {entry.leagueWins > 0 ? ` · ${entry.leagueWins}×league` : ''}
+                          {entry.shutoutWins > 0 ? ` · ${entry.shutoutWins}×11-0` : ''}
+                        </span>
                       </span>
-                    </span>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <p className="text-xs text-muted">No points yet this period.</p>

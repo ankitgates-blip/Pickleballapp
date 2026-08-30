@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
-import { cardClass, primaryButtonClass, accentButtonClass, pillClass, linkClass } from '@/app/components/ui';
+import { cardClass, primaryButtonClass, accentButtonClass, pillClass, linkClass, headingClass } from '@/app/components/ui';
 import { matchNamesToPeople } from '@/lib/people/matchNames';
 import { TIME_SLOTS, timeslotLabel } from '@/lib/tournament/timeslots';
 import { formatLabel, isIndividualFormat } from '@/lib/tournament/formats';
@@ -124,7 +124,7 @@ export default async function RosterPage({
     return (
       <OrganizerShell organizerName={organizer.name}>
         <TournamentNav tournamentId={id} current="roster" />
-        <h1 className="text-2xl font-bold text-slate-900 mb-6">Review Roster Additions</h1>
+        <h1 className={`text-2xl ${headingClass} mb-6`}>Review Roster Additions</h1>
 
         <div className={`${cardClass} mb-6`}>
           <h2 className="text-lg font-bold text-slate-900 mb-2">
@@ -184,7 +184,7 @@ export default async function RosterPage({
       <MarkRosterSeen tournamentId={id} playerCount={(players ?? []).length} />
       <TournamentNav tournamentId={id} current="roster" />
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Roster</h1>
+        <h1 className={`text-2xl ${headingClass}`}>Roster</h1>
         <CopyLinkButton tournamentId={id} />
       </div>
 

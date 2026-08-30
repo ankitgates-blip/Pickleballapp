@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import EmptyState from '@/app/components/EmptyState';
-import { cardClass, playerCardClass, playerCardAvatarClass, primaryButtonClass, headingClass } from '@/app/components/ui';
+import PersonAvatar from '@/app/components/PersonAvatar';
+import { cardClass, playerCardClass, primaryButtonClass, headingClass } from '@/app/components/ui';
 
 function PeopleIcon() {
   return (
@@ -15,16 +16,12 @@ function PeopleIcon() {
   );
 }
 
-function initial(name: string): string {
-  return name.trim().charAt(0).toUpperCase() || '?';
-}
-
 export default async function PeopleListPage() {
   const { supabase, organizer } = await requireOrganizer();
 
   const { data: people } = await supabase
     .from('people')
-    .select('id, name')
+    .select('id, name, photo_url')
     .eq('organizer_id', organizer.id)
     .order('name', { ascending: true });
 
@@ -51,7 +48,7 @@ export default async function PeopleListPage() {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {(people ?? []).map((person) => (
           <Link key={person.id} href={`/people/${person.id}`} className={playerCardClass}>
-            <span className={playerCardAvatarClass}>{initial(person.name)}</span>
+            <PersonAvatar photoUrl={person.photo_url} name={person.name} size={56} />
             <span className="font-semibold text-white text-sm">{person.name}</span>
           </Link>
         ))}

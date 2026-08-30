@@ -1,7 +1,7 @@
 // apps/organizer-web/app/people/[id]/page.tsx
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
-import { cardClass, pillClass, inputClass, primaryButtonClass } from '@/app/components/ui';
+import { cardClass, pillClass, inputClass, primaryButtonClass, headingClass } from '@/app/components/ui';
 import { HANDEDNESS_OPTIONS, PLAYING_STYLE_OPTIONS, STRENGTH_OPTIONS, PADDLE_BRAND_OPTIONS, SIGNATURE_SHOT_OPTIONS } from '@/lib/people/profileOptions';
 import { updatePersonProfile, uploadPersonPhoto, removePersonPhoto, deletePerson } from './actions';
 import DeletePersonButton from './DeletePersonButton';
@@ -266,7 +266,7 @@ export default async function PersonDetailPage({
       <div className="flex items-center gap-4 mb-1">
         <PersonAvatar photoUrl={person.photo_url} name={person.name} size={80} />
         <div className="flex items-center gap-2 flex-wrap">
-          <h1 className="text-2xl font-bold text-slate-900">{displayName}</h1>
+          <h1 className={`text-2xl ${headingClass}`}>{displayName}</h1>
           <ThreatBadge winPercentage={stats.winPercentage} />
         </div>
       </div>
@@ -277,7 +277,7 @@ export default async function PersonDetailPage({
         {stats.winPercentage !== null ? (
           <>
             Win rate: {stats.winPercentage}%{' '}
-            <span className="text-amber-400">
+            <span className="text-gold-bright">
               {renderStars(starRating(stats.winPercentage))}
             </span>
           </>
@@ -585,7 +585,7 @@ export default async function PersonDetailPage({
                     </span>
                     <span className="block text-xs text-slate-500">
                       {locationWinPercentage}%{' '}
-                      <span className="text-green-600">
+                      <span className="text-gold-bright">
                         {renderStars(starRating(locationWinPercentage))}
                       </span>
                     </span>
@@ -700,7 +700,7 @@ export default async function PersonDetailPage({
                 </span>
                 <span className="flex flex-col items-end gap-1">
                   <span className="flex items-center gap-2">
-                    <span className={`${pillClass} ${m.won ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <span className={`${pillClass} ${m.won ? 'bg-win/10 text-win' : 'bg-loss/10 text-loss'}`}>
                       {m.won ? 'W' : 'L'}
                     </span>
                     <span className={m.won ? 'font-bold text-navy-mid' : 'font-bold text-muted'}>

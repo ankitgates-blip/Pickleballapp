@@ -25,8 +25,29 @@ export default async function LoginPage({
       <div className="relative w-full max-w-md space-y-6">
         <div className="text-center text-white">
           <Image src="/logo.png" alt="PicklerAlly DXB" width={64} height={64} className="mx-auto mb-3 rounded-full object-cover" />
-          <h1 className="text-3xl tracking-wide">PICKLERALLY DXB</h1>
-          <p className="font-heading text-base text-[#c9a865] mt-1">Premier Dubai Pickleball League App</p>
+          <h1
+            className="font-heading italic text-3xl leading-tight"
+            style={{
+              letterSpacing: '0.01em',
+              color: '#f8fafc',
+              // Same three-layer shadow stack as the header wordmark (OrganizerShell.tsx):
+              // a tight dark shadow for edge crispness, a soft dark shadow for contrast,
+              // and a gold glow for presence -- the first screen an organizer sees should
+              // match the header they see on every screen after it.
+              textShadow:
+                '0 1px 3px rgba(0,0,0,0.8), 0 2px 10px rgba(0,0,0,0.55), 0 0 14px rgba(214,175,54,0.5)',
+            }}
+          >
+            PICKLERALLY DXB
+          </h1>
+          <div className="flex items-center justify-center gap-1.5 mt-2">
+            <div
+              className="h-[3px] rounded-full"
+              style={{ width: '56px', background: 'linear-gradient(90deg, transparent, #fde68a 40%, #d6af36 60%, #fde68a 90%, transparent)' }}
+            />
+            <div className="w-[7px] h-[7px] rounded-full" style={{ background: '#d9e021' }} />
+          </div>
+          <p className="font-heading text-base text-[#c9a865] mt-2">Premier Dubai Pickleball League App</p>
           <p className="text-[#dbe4f5] text-sm mt-1 font-medium">Run your leagues, not a spreadsheet.</p>
         </div>
 
