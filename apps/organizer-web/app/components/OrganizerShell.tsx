@@ -127,17 +127,11 @@ export default function OrganizerShell({
         >
           {/* pl-[170px] clears the overlapping logo: left-[30px] + 140px width below */}
           <div className="relative max-w-3xl mx-auto px-4 pt-4 pb-2 pl-[170px] min-h-[196px] flex flex-col justify-center">
-            <div
-              className="rounded-2xl px-4 py-3 -mx-4 inline-block"
-              style={{
-                background: 'rgba(255,255,255,0.10)',
-                backdropFilter: 'blur(14px)',
-                WebkitBackdropFilter: 'blur(14px)',
-                border: '1px solid rgba(255,255,255,0.20)',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-              }}
-            >
-              <span className="font-heading italic text-2xl sm:text-4xl tracking-wide leading-tight">
+            <div className="inline-block">
+              <span
+                className="font-heading italic text-2xl sm:text-4xl tracking-wide leading-tight"
+                style={{ textShadow: '0 2px 10px rgba(0,0,0,0.55)' }}
+              >
                 PICKLERALLY DXB
               </span>
               <div className="w-12 h-[3px] bg-gold rounded-full mt-2" />
