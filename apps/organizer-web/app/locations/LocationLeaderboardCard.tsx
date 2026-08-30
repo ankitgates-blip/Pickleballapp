@@ -30,7 +30,7 @@ const CONTENT_LEFT = PAD_X;
 const CONTENT_RIGHT = CARD_WIDTH - PAD_X;
 const CONTENT_WIDTH = CONTENT_RIGHT - CONTENT_LEFT;
 
-const HEADER_HEIGHT = 148;
+const HEADER_HEIGHT = 180;
 const ROW_HEIGHT = 72;
 const SECTION_GAP = 28;
 const FOOTER_HEIGHT = 40;
@@ -111,11 +111,14 @@ export default function LocationLeaderboardCard({
     try {
       const exportSvg = svgRef.current.cloneNode(true) as SVGSVGElement;
 
-      const imageEl = exportSvg.querySelector('image');
-      if (imageEl) {
-        const logoDataUrl = await loadDataUrl('/logo.png');
-        if (logoDataUrl) {
-          imageEl.setAttribute('href', logoDataUrl);
+      // Two <image> elements now: the skyline banner photo and the circular logo --
+      // inline each by its own original href so neither clobbers the other.
+      for (const imageEl of Array.from(exportSvg.querySelectorAll('image'))) {
+        const href = imageEl.getAttribute('href');
+        if (!href) continue;
+        const dataUrl = await loadDataUrl(href);
+        if (dataUrl) {
+          imageEl.setAttribute('href', dataUrl);
         } else {
           imageEl.remove();
         }
@@ -196,13 +199,29 @@ export default function LocationLeaderboardCard({
             <clipPath id="lbCardClip">
               <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} rx="20" />
             </clipPath>
+            <linearGradient id="lbHeaderWash" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#1c3560" stopOpacity="0.55" />
+              <stop offset="55%" stopColor="#16294e" stopOpacity="0.72" />
+              <stop offset="100%" stopColor="#0c1830" stopOpacity="0.92" />
+            </linearGradient>
           </defs>
 
           <g clipPath="url(#lbCardClip)">
             <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} fill={BODY_BG} />
 
-            {/* Header: logo + wordmark, venue name, kicker, generated-on stamp -- all on
-                the same light ground, navy/gold used only for text and the divider. */}
+            {/* Header: same real Dubai skyline banner as the app's own header, so the
+                shareable card carries the same identity -- logo + wordmark, venue name,
+                kicker, generated-on stamp all sit on the dark photo band; row content
+                below returns to the card's light body. */}
+            <image
+              href="/header-dxb-skyline.webp"
+              x="0"
+              y="0"
+              width={CARD_WIDTH}
+              height={HEADER_HEIGHT}
+              preserveAspectRatio="xMidYMid slice"
+            />
+            <rect x="0" y="0" width={CARD_WIDTH} height={HEADER_HEIGHT} fill="url(#lbHeaderWash)" />
             <image
               href="/logo.png"
               x={CONTENT_LEFT}
@@ -217,7 +236,8 @@ export default function LocationLeaderboardCard({
               cy="46"
               r="21"
               fill="none"
-              stroke={GOLD_CHROME}
+              stroke={GOLD_BRIGHT}
+              strokeOpacity="0.6"
               strokeWidth="1.5"
             />
             <text
@@ -226,7 +246,7 @@ export default function LocationLeaderboardCard({
               fontSize="21"
               fontWeight="700"
               fontStyle="italic"
-              fill={NAVY_DEEP}
+              fill="#fde68a"
               letterSpacing="1"
               fontFamily="var(--font-oswald), sans-serif"
             >
@@ -238,7 +258,7 @@ export default function LocationLeaderboardCard({
               y="46"
               fontSize="26"
               fontWeight="800"
-              fill={NAVY_DEEP}
+              fill="#f8fafc"
               textAnchor="end"
               fontFamily="var(--font-oswald), sans-serif"
             >
@@ -249,7 +269,7 @@ export default function LocationLeaderboardCard({
               y="66"
               fontSize="13"
               fontWeight="700"
-              fill={GOLD_CHROME}
+              fill={GOLD_BRIGHT}
               textAnchor="end"
               letterSpacing="2.5"
               fontFamily="var(--font-oswald), sans-serif"
@@ -260,7 +280,7 @@ export default function LocationLeaderboardCard({
               x={CONTENT_RIGHT}
               y="84"
               fontSize="11.5"
-              fill={MUTED_TEXT}
+              fill="#94a3b8"
               textAnchor="end"
               fontFamily="var(--font-geist-sans), sans-serif"
             >
@@ -271,7 +291,7 @@ export default function LocationLeaderboardCard({
               y1={HEADER_HEIGHT - 1}
               x2={CONTENT_RIGHT}
               y2={HEADER_HEIGHT - 1}
-              stroke={GOLD_CHROME}
+              stroke={GOLD_BRIGHT}
               strokeOpacity="0.5"
               strokeWidth="1.5"
             />

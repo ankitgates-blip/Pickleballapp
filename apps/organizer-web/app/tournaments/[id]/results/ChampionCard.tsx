@@ -137,11 +137,14 @@ export default function ChampionCard({
       // its condensed-vs-not difference from a system sans is minor compared to Oswald's.
       exportSvg.style.setProperty('--font-geist-sans', 'sans-serif');
 
-      const imageEl = exportSvg.querySelector('image');
-      if (imageEl) {
-        const logoDataUrl = await loadDataUrl('/logo.png');
-        if (logoDataUrl) {
-          imageEl.setAttribute('href', logoDataUrl);
+      // Two <image> elements now: the skyline banner photo and the circular logo --
+      // inline each by its own original href so neither clobbers the other.
+      for (const imageEl of Array.from(exportSvg.querySelectorAll('image'))) {
+        const href = imageEl.getAttribute('href');
+        if (!href) continue;
+        const dataUrl = await loadDataUrl(href);
+        if (dataUrl) {
+          imageEl.setAttribute('href', dataUrl);
         } else {
           imageEl.remove();
         }
@@ -230,9 +233,33 @@ export default function ChampionCard({
             <clipPath id="ccLogoClip">
               <circle cx={CONTENT_LEFT + 17} cy="37" r="17" />
             </clipPath>
+            <clipPath id="ccHeaderClip">
+              <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} rx="20" />
+            </clipPath>
+            <linearGradient id="ccHeaderWash" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={NAVY_LIGHT} stopOpacity="0.5" />
+              <stop offset="100%" stopColor={NAVY_LIGHT} stopOpacity="0.92" />
+            </linearGradient>
           </defs>
 
           <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} rx="20" fill="url(#ccBg)" />
+
+          {/* Header: same real Dubai skyline banner as the app's own header, kept to a
+              slim strip behind just the logo + wordmark row -- the trophy/glow moment
+              below stays on the plain navy gradient so the two don't visually compete.
+              The wash's bottom stop matches ccBg's own NAVY_LIGHT start color so the
+              strip blends into the gradient below it instead of a hard seam. */}
+          <image
+            href="/header-dxb-skyline.webp"
+            x="0"
+            y="0"
+            width={CARD_WIDTH}
+            height="150"
+            preserveAspectRatio="xMidYMid slice"
+            clipPath="url(#ccHeaderClip)"
+          />
+          <rect x="0" y="0" width={CARD_WIDTH} height="150" fill="url(#ccHeaderWash)" clipPath="url(#ccHeaderClip)" />
+
           <rect
             x="1"
             y="1"

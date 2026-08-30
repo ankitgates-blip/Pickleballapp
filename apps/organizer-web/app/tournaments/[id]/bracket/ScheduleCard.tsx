@@ -24,7 +24,7 @@ const CONTENT_LEFT = PAD_X;
 const CONTENT_RIGHT = CARD_WIDTH - PAD_X;
 const CONTENT_WIDTH = CONTENT_RIGHT - CONTENT_LEFT;
 
-const HEADER_HEIGHT = 150;
+const HEADER_HEIGHT = 190;
 const ROUND_HEADER_HEIGHT = 26;
 const STAGE_BOX_HEADER_HEIGHT = 26;
 const MATCH_ROW_HEIGHT = 26;
@@ -142,11 +142,14 @@ export default function ScheduleCard({
       // default rather than just skipping to "sans-serif".
       exportSvg.style.setProperty('--font-geist-sans', 'sans-serif');
 
-      const imageEl = exportSvg.querySelector('image');
-      if (imageEl) {
-        const logoDataUrl = await loadDataUrl('/logo.png');
-        if (logoDataUrl) {
-          imageEl.setAttribute('href', logoDataUrl);
+      // Two <image> elements now: the skyline banner photo and the circular logo --
+      // inline each by its own original href so neither clobbers the other.
+      for (const imageEl of Array.from(exportSvg.querySelectorAll('image'))) {
+        const href = imageEl.getAttribute('href');
+        if (!href) continue;
+        const dataUrl = await loadDataUrl(href);
+        if (dataUrl) {
+          imageEl.setAttribute('href', dataUrl);
         } else {
           imageEl.remove();
         }
@@ -218,9 +221,39 @@ export default function ScheduleCard({
             <clipPath id="scLogoClip">
               <circle cx={CONTENT_LEFT + 17} cy="37" r="17" />
             </clipPath>
+            <clipPath id="scHeaderClip">
+              <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} rx="20" />
+            </clipPath>
+            <linearGradient id="scHeaderWash" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={NAVY_LIGHT} stopOpacity="0.55" />
+              <stop offset="55%" stopColor={NAVY_MID} stopOpacity="0.7" />
+              <stop offset="100%" stopColor={NAVY_DEEP} stopOpacity="0.9" />
+            </linearGradient>
           </defs>
 
           <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} rx="20" fill="url(#scBg)" />
+
+          {/* Header: same real Dubai skyline banner as the app's own header, so the
+              shareable card carries the same identity. Clipped to the card's own
+              rounded-rect shape since this card (unlike LocationLeaderboardCard/
+              RaceLeaderboardCard) doesn't wrap its body in a clip group. */}
+          <image
+            href="/header-dxb-skyline.webp"
+            x="0"
+            y="0"
+            width={CARD_WIDTH}
+            height={HEADER_HEIGHT}
+            preserveAspectRatio="xMidYMid slice"
+            clipPath="url(#scHeaderClip)"
+          />
+          <rect
+            x="0"
+            y="0"
+            width={CARD_WIDTH}
+            height={HEADER_HEIGHT}
+            fill="url(#scHeaderWash)"
+            clipPath="url(#scHeaderClip)"
+          />
           <rect
             x="1"
             y="1"

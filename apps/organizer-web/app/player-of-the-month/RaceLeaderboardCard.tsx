@@ -34,7 +34,7 @@ const CONTENT_LEFT = PAD_X;
 const CONTENT_RIGHT = CARD_WIDTH - PAD_X;
 const CONTENT_WIDTH = CONTENT_RIGHT - CONTENT_LEFT;
 
-const HEADER_HEIGHT = 148;
+const HEADER_HEIGHT = 188;
 const ROW_HEIGHT = 72;
 const SECTION_GAP = 28;
 const FOOTER_HEIGHT = 58;
@@ -101,11 +101,14 @@ export default function RaceLeaderboardCard({
     try {
       const exportSvg = svgRef.current.cloneNode(true) as SVGSVGElement;
 
-      const imageEl = exportSvg.querySelector('image');
-      if (imageEl) {
-        const logoDataUrl = await loadDataUrl('/logo.png');
-        if (logoDataUrl) {
-          imageEl.setAttribute('href', logoDataUrl);
+      // Two <image> elements now: the skyline banner photo and the circular logo --
+      // inline each by its own original href so neither clobbers the other.
+      for (const imageEl of Array.from(exportSvg.querySelectorAll('image'))) {
+        const href = imageEl.getAttribute('href');
+        if (!href) continue;
+        const dataUrl = await loadDataUrl(href);
+        if (dataUrl) {
+          imageEl.setAttribute('href', dataUrl);
         } else {
           imageEl.remove();
         }
@@ -197,6 +200,11 @@ export default function RaceLeaderboardCard({
             <pattern id="raceTexture" width="14" height="14" patternUnits="userSpaceOnUse">
               <circle cx="1.5" cy="1.5" r="1.5" fill="#ffffff" fillOpacity="0.05" />
             </pattern>
+            <linearGradient id="raceHeaderWash" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={NAVY_LIGHT} stopOpacity="0.55" />
+              <stop offset="55%" stopColor={NAVY_MID} stopOpacity="0.7" />
+              <stop offset="100%" stopColor={NAVY_DEEP} stopOpacity="0.9" />
+            </linearGradient>
             <clipPath id="raceLogoClip">
               <circle cx={CONTENT_LEFT + 21} cy="46" r="21" />
             </clipPath>
@@ -208,6 +216,19 @@ export default function RaceLeaderboardCard({
           <g clipPath="url(#raceCardClip)">
             <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} fill="url(#raceBg)" />
             <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} fill="url(#raceTexture)" />
+
+            {/* Header: same real Dubai skyline banner as the app's own header and the
+                Locations leaderboard card, so every shareable card carries the same
+                identity -- the gold glow still sits on top of it for richness. */}
+            <image
+              href="/header-dxb-skyline.webp"
+              x="0"
+              y="0"
+              width={CARD_WIDTH}
+              height={HEADER_HEIGHT}
+              preserveAspectRatio="xMidYMid slice"
+            />
+            <rect x="0" y="0" width={CARD_WIDTH} height={HEADER_HEIGHT} fill="url(#raceHeaderWash)" />
             <rect x="0" y="0" width={CARD_WIDTH} height={HEADER_HEIGHT + 30} fill="url(#raceGlow)" />
 
             {/* Header: logo + wordmark, venue name, kicker, month + generated-on stamp */}

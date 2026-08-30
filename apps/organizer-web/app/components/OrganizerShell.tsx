@@ -117,8 +117,12 @@ export default function OrganizerShell({
             // the wordmark.
             backgroundImage:
               "linear-gradient(105deg, rgba(28,53,96,0.4), rgba(22,41,78,0.62) 55%, rgba(12,24,48,0.9)), url('/header-dxb-skyline.webp')",
+            // 'center center' (was 'center bottom'): the current skyline photo has the
+            // buildings centered with open water below them, not sitting flush at the
+            // photo's own bottom edge like the previous asset -- bottom-anchoring this
+            // one would crop in mostly water instead of the skyline.
             backgroundSize: 'cover',
-            backgroundPosition: 'center bottom',
+            backgroundPosition: 'center center',
           }}
         >
           {/* pl-[170px] clears the overlapping logo: left-[30px] + 140px width below */}
