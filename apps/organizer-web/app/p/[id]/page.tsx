@@ -9,11 +9,16 @@ import { winPercentageFromRecords } from '@/lib/stats/winRate';
 import { buildMatchImpacts } from '@/lib/stats/matchImpact';
 import { longestWinStreak } from '@/lib/stats/winStreak';
 import { winsVsHigherRated } from '@/lib/stats/winsVsHigherRated';
-import { computeAchievements } from '@/lib/stats/achievements';
+import { computeAchievements, type AchievementInputs } from '@/lib/stats/achievements';
+import { computePointsLeaderboard, type PointsTournament } from '@/lib/stats/points';
+import { monthDateRange } from '@/lib/stats/monthRange';
 import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
 import type { RawMatch, RawTeam, TournamentWon } from '@/lib/stats/types';
 import { cardClass, pillClass } from '@/app/components/ui';
 import PersonAvatar from '@/app/components/PersonAvatar';
+import AchievementsGrid from '@/app/components/AchievementsGrid';
+
+const MENTOR_GAP = 15; // percentage points a partner's overall win% must trail yours by to count as "carrying" them
 
 export default async function PublicPersonPage({
   params,
@@ -39,7 +44,7 @@ export default async function PublicPersonPage({
 
   const { data: tournaments } = await supabase
     .from('tournaments')
-    .select('id, name, date, format, completed_at, venues(name)')
+    .select('id, name, date, format, timeslot, completed_at, venues(name)')
     .eq('organizer_id', person.organizer_id);
 
   const tournamentIds = (tournaments ?? []).map((t) => t.id);
@@ -156,12 +161,125 @@ export default async function PublicPersonPage({
   const stats = computePersonStats(records, tournamentsWon);
   const nameFor = (personId: string) => personNameById.get(personId) ?? 'Unknown';
   const matchImpacts = buildMatchImpacts(stats.matchHistory, stats.winPercentage ?? 0, winPercentageByPersonId);
-  const achievements = computeAchievements({
-    longestWinStreak: longestWinStreak(stats.matchHistory),
-    winsVsHigherRated: winsVsHigherRated(stats.matchHistory, stats.winPercentage ?? 0, winPercentageByPersonId),
-    totalMatches: stats.matchHistory.length,
-    careerLeaguesWon: tournamentsWon.length,
+
+  // --- Achievement inputs that need data beyond this person's own match/tournament
+  // rows (every tournament's format/venue/timeslot, the organizer's full people list,
+  // every past month's points leaderboard, the real Player of the Month record) ---
+
+  const myTeamIds = new Set(
+    teams.filter((t) => t.player1PersonId === person.id || t.player2PersonId === person.id).map((t) => t.id)
+  );
+  const reachedFinalCount = (matchesRaw ?? []).filter(
+    (m) =>
+      m.status === 'complete' &&
+      m.stage === 'final' &&
+      (myTeamIds.has(m.team_a_id ?? '') || myTeamIds.has(m.team_b_id ?? ''))
+  ).length;
+
+  const wonFormats = new Set(
+    tournamentsWon
+      .map((t) => tournamentById.get(t.tournamentId)?.format)
+      .filter((f): f is string => Boolean(f))
+  );
+  const playedFormats = new Set(
+    Array.from(new Set(records.map((r) => r.tournamentId)))
+      .map((tid) => tournamentById.get(tid)?.format)
+      .filter((f): f is string => Boolean(f))
+  );
+  const wonVenues = new Set(
+    tournamentsWon
+      .map((t) => venueNameByTournamentId.get(t.tournamentId))
+      .filter((v): v is string => Boolean(v))
+  );
+  const eveningMatches = records.filter((r) => tournamentById.get(r.tournamentId)?.timeslot === 'evening').length;
+  const morningMatches = records.filter((r) => tournamentById.get(r.tournamentId)?.timeslot === 'morning').length;
+
+  const wonWithLowerRatedPartner = records.some((r) => {
+    if (!r.won || stats.winPercentage === null) return false;
+    const partnerPercentage = winPercentageByPersonId.get(r.partnerId);
+    return partnerPercentage !== null && partnerPercentage !== undefined && partnerPercentage < stats.winPercentage - MENTOR_GAP;
   });
+
+  const { data: allPeopleOrdered } = await supabase
+    .from('people')
+    .select('id')
+    .eq('organizer_id', person.organizer_id)
+    .order('created_at', { ascending: true });
+  const signupRankIndex = (allPeopleOrdered ?? []).findIndex((p) => p.id === person.id);
+  const signupRank = signupRankIndex === -1 ? null : signupRankIndex + 1;
+
+  const { data: potmRows } = await supabase
+    .from('player_of_the_month')
+    .select('id')
+    .eq('person_id', person.id)
+    .limit(1);
+  const wasEverPlayerOfTheMonth = (potmRows ?? []).length > 0;
+
+  // Total Points (lib/stats/points.ts) is scoped to Custom League/League + Playoffs and
+  // dated from 2026-09-01 -- computePointsLeaderboard already enforces both, so this
+  // reuses the exact same eligibility rules the Locations leaderboard shows, not a
+  // parallel reimplementation.
+  const pointsTournaments: PointsTournament[] = tournamentIds.map((tid) => {
+    const t = tournamentById.get(tid)!;
+    return {
+      id: tid,
+      date: t.date,
+      format: t.format,
+      completedAt: t.completed_at,
+      matches: (matchesRaw ?? []).filter((m) => m.tournament_id === tid),
+      teams: teams
+        .filter((tm) => tm.tournamentId === tid)
+        .map((tm) => ({ id: tm.id, person1Id: tm.player1PersonId, person2Id: tm.player2PersonId })),
+    };
+  });
+  const lifetimePoints = computePointsLeaderboard({
+    matches: completeMatches,
+    teams,
+    tournaments: pointsTournaments,
+    range: { start: '2026-01-01', endExclusive: '9999-01-01' },
+  });
+  const totalPoints = lifetimePoints.find((e) => e.personId === person.id)?.totalPoints ?? 0;
+
+  let wasEverMonthlyPointsLeader = false;
+  for (const period of stats.monthly.map((m) => m.period)) {
+    const [y, mo] = period.split('-').map(Number);
+    const monthEntries = computePointsLeaderboard({
+      matches: completeMatches,
+      teams,
+      tournaments: pointsTournaments,
+      range: monthDateRange(y, mo),
+    });
+    if (monthEntries[0]?.personId === person.id) {
+      wasEverMonthlyPointsLeader = true;
+      break;
+    }
+  }
+
+  const achievementInputs: AchievementInputs = {
+    matchHistory: stats.matchHistory,
+    weekly: stats.weekly,
+    monthly: stats.monthly,
+    yearly: stats.yearly,
+    tournamentsWon,
+    matchesByLocation: stats.matchesByLocation,
+    toughestOpponent: stats.toughestOpponent,
+    bestPartner: stats.bestPartner,
+    winPercentage: stats.winPercentage,
+    winsVsHigherRated: winsVsHigherRated(stats.matchHistory, stats.winPercentage ?? 0, winPercentageByPersonId),
+    longestWinStreak: longestWinStreak(stats.matchHistory),
+    totalPoints,
+    wonFormats,
+    playedFormats,
+    wonVenues,
+    reachedFinalCount,
+    eveningMatches,
+    morningMatches,
+    signupRank,
+    wasEverPlayerOfTheMonth,
+    wasEverMonthlyPointsLeader,
+    wonWithLowerRatedPartner,
+  };
+  const achievements = computeAchievements(achievementInputs);
 
   const currentMonthKey = new Date().toISOString().slice(0, 7);
   const thisMonthFull = stats.monthly.find((m) => m.period === currentMonthKey) ?? null;
@@ -246,24 +364,7 @@ export default async function PublicPersonPage({
 
         <div className={cardClass}>
           <h2 className="text-lg font-bold text-slate-900 mb-3">Achievements</h2>
-          <div className="grid grid-cols-4 gap-2 text-center">
-            {achievements.map((a) => (
-              <div
-                key={a.key}
-                className={
-                  a.earned
-                    ? 'rounded-xl bg-gradient-to-br from-[#fdf6e8] to-white border-2 border-gold/50 p-2'
-                    : 'rounded-xl bg-slate-50 border-2 border-slate-200 p-2 opacity-50'
-                }
-              >
-                <div className="text-xl mb-0.5">{a.emoji}</div>
-                <div className={`text-[10px] font-bold leading-tight ${a.earned ? 'text-navy-deep' : 'text-slate-500'}`}>
-                  {a.label}
-                </div>
-                <div className="text-[9px] text-muted leading-tight">{a.description}</div>
-              </div>
-            ))}
-          </div>
+          <AchievementsGrid achievements={achievements} />
         </div>
 
         <div className={cardClass}>

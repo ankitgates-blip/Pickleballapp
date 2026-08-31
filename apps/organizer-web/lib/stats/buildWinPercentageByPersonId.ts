@@ -2,6 +2,15 @@ import { buildPersonMatchRecords } from './buildPersonMatchRecords';
 import { winPercentageFromRecords } from './winRate';
 import type { RawMatch, RawTeam } from './types';
 
+// Matches this codebase's own MIN_MATCHES_PLAYED convention (lib/stats/playerOfTheMonth.ts).
+// Without this floor, a brand-new player who has won their only match shows as "100%" here,
+// which winsVsHigherRated.ts then reads as genuinely higher-rated -- so beating a new player
+// with a tiny sample size incorrectly counted as an upset over a strong opponent. Returning
+// null below MIN_SAMPLE (the same signal winPercentageFromRecords already uses for zero
+// matches) lets every existing consumer's `?? 0`/null-handling treat an unrated player as
+// unrated, not as either "very good" or "very bad."
+const MIN_SAMPLE = 3;
+
 type SupabaseLike = {
   from: (table: string) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
 };
@@ -83,9 +92,10 @@ export async function buildWinPercentageByPersonId(
   const winPercentageByPersonId = new Map<string, number | null>();
   for (const personId of personIds) {
     if (!personId || winPercentageByPersonId.has(personId)) continue;
+    const records = buildPersonMatchRecords(personId, allCompleteMatches, allTeams);
     winPercentageByPersonId.set(
       personId,
-      winPercentageFromRecords(buildPersonMatchRecords(personId, allCompleteMatches, allTeams))
+      records.length >= MIN_SAMPLE ? winPercentageFromRecords(records) : null
     );
   }
 
