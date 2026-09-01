@@ -45,7 +45,7 @@ export default async function PersonDetailPage({
 
   const { data: person } = await supabase
     .from('people')
-    .select('id, name, nickname, handedness, age, playing_style, paddle_brand, signature_shot, photo_url, strengths, player_number')
+    .select('id, name, nickname, handedness, age, playing_style, paddle_brand, signature_shot, photo_url, strengths, player_number, dupr_id')
     .eq('id', id)
     .eq('organizer_id', organizer.id)
     .single();
@@ -386,6 +386,9 @@ export default async function PersonDetailPage({
         <div className="flex items-center gap-2 flex-wrap">
           <h1 className={`text-2xl ${headingClass}`}>{displayName}</h1>
           <ThreatBadge winPercentage={stats.winPercentage} />
+          {person.dupr_id && (
+            <span className={`${pillClass} bg-navy-tint text-navy-deep`}>DUPR {person.dupr_id}</span>
+          )}
         </div>
       </div>
       <p className="text-sm text-slate-500">
@@ -544,6 +547,21 @@ export default async function PersonDetailPage({
                   </option>
                 ))}
               </select>
+            </label>
+            <label className="text-sm font-semibold text-slate-700">
+              DUPR ID
+              <input
+                type="text"
+                name="duprId"
+                defaultValue={person.dupr_id ?? ''}
+                placeholder="e.g. ABCD1234"
+                maxLength={32}
+                className={`${inputClass} mt-1`}
+              />
+              <span className="block text-xs text-muted font-normal mt-1">
+                Find yours in the DUPR app under Profile. Stored for reference only — not
+                synced automatically.
+              </span>
             </label>
             <fieldset>
               <legend className="text-sm font-semibold text-slate-700 mb-1">
