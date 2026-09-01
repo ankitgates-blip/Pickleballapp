@@ -15,6 +15,7 @@ import PlayerOfTheMonthCard from './PlayerOfTheMonthCard';
 import RaceLeaderboardCard from './RaceLeaderboardCard';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, headingClass, sectionKickerClass } from '@/app/components/ui';
+import { SIGNATURE_SHOT_OPTIONS } from '@/lib/people/profileOptions';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
 
 const MONTH_NAMES = [
@@ -52,9 +53,18 @@ export default async function PlayerOfTheMonthPage() {
 
   const { data: people } = await supabase
     .from('people')
-    .select('id, name, nickname, photo_url')
+    .select('id, name, nickname, photo_url, signature_shot')
     .eq('organizer_id', organizer.id);
   const personById = new Map((people ?? []).map((p) => [p.id, p]));
+
+  // Same emoji+skillName lookup the Player Stats Card on the profile page uses --
+  // reused here so the postcard shown for the actual Player of the Month winner
+  // carries the same signature-shot badges instead of always showing none.
+  const signatureShotsForPerson = (signatureShot: string[] | null) =>
+    (signatureShot ?? [])
+      .map((v) => SIGNATURE_SHOT_OPTIONS.find((o) => o.value === v))
+      .filter((b): b is (typeof SIGNATURE_SHOT_OPTIONS)[number] => Boolean(b))
+      .map((b) => ({ emoji: b.emoji, skillName: b.skillName }));
 
   // All-time win percentage per person, for winsVsHigherRated -- deliberately global
   // (not month-scoped), matching how the all-time Player Stats Card already judges
@@ -217,7 +227,7 @@ export default async function PlayerOfTheMonthPage() {
                 winsVsHigherRated={winsVsHigherRated(winnerMatches, lastMonthRow?.win_percentage ?? 0, winPercentageByPersonId)}
                 totalMatches={lastMonthRow?.matches_played ?? 0}
                 winsInLast10={winsInLastN(winnerMatches, 10)}
-                signatureShots={[]}
+                signatureShots={signatureShotsForPerson(winnerPerson.signature_shot)}
               />
             ) : (
               <p className="text-sm text-slate-500">
