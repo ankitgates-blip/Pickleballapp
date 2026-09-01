@@ -20,6 +20,10 @@ export type LeaderboardCardRow = {
 
 export type LocationLeaderboardCardProps = {
   venueName: string;
+  // e.g. "MONTH TO DATE" or "AUGUST 2026" -- which period this ranking covers, so a
+  // downloaded/shared card is self-explanatory about its scope on its own, not just
+  // in the app's own UI around it.
+  periodLabel: string;
   generatedDateLabel: string;
   rows: LeaderboardCardRow[];
 };
@@ -96,6 +100,7 @@ async function loadDataUrl(url: string): Promise<string | null> {
 
 export default function LocationLeaderboardCard({
   venueName,
+  periodLabel,
   generatedDateLabel,
   rows,
 }: LocationLeaderboardCardProps) {
@@ -274,7 +279,7 @@ export default function LocationLeaderboardCard({
               letterSpacing="2.5"
               fontFamily="var(--font-oswald), sans-serif"
             >
-              LEADERBOARD
+              {`LEADERBOARD · ${periodLabel}`}
             </text>
             <text
               x={CONTENT_RIGHT}

@@ -7,7 +7,7 @@ import { computeLocationLeaderboard } from '@/lib/stats/locationLeaderboard';
 import { winPercentageFromRecords } from '@/lib/stats/winRate';
 import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
-import { computePointsLeaderboard, POINTS_SYSTEM_START_DATE, type PointsTournament } from '@/lib/stats/points';
+import { computePointsLeaderboard, type PointsTournament } from '@/lib/stats/points';
 import { monthDateRange, monthToDateRange, monthsToCheck } from '@/lib/stats/monthRange';
 import LocationLeaderboardCard from './LocationLeaderboardCard';
 import Link from 'next/link';
@@ -15,6 +15,11 @@ import Link from 'next/link';
 const MONTH_ABBR = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
 function PaddleIcon() {
@@ -110,10 +115,16 @@ export default async function LocationsPage({
     ])
   );
 
-  // Points system: month-to-date by default; ?month=YYYY-MM selects a specific
-  // completed month from September 2026 onward. Anything unparseable, before the
-  // points system started, or not yet a completed month falls back to month-to-date
-  // silently rather than throwing.
+  // One shared period selector drives both the win/loss Leaderboard cards and the
+  // Total Points list below -- month-to-date by default; ?month=YYYY-MM selects a
+  // specific completed month. Unlike the old points-only version of this, month
+  // options aren't clamped to when the points system began: real match/tournament
+  // history exists before that, and this selector now also scopes the win/loss
+  // ranking, which has always covered every format. computePointsLeaderboard still
+  // does its own internal clamp to POINTS_SYSTEM_START_DATE, so picking a pre-launch
+  // month just shows "No points yet this period" there while the win/loss cards
+  // above show that month's real ranking. Anything unparseable or not yet a
+  // completed month falls back to month-to-date silently rather than throwing.
   const today = new Date();
   const currentYear = today.getUTCFullYear();
   const currentMonth = today.getUTCMonth() + 1;
@@ -122,18 +133,28 @@ export default async function LocationsPage({
     : null;
   const isSelectableCompletedMonth =
     parsedMonth !== null &&
-    `${month}-01` >= POINTS_SYSTEM_START_DATE &&
     (parsedMonth.year < currentYear ||
       (parsedMonth.year === currentYear && parsedMonth.month < currentMonth));
-  const pointsRange = isSelectableCompletedMonth
+  const periodRange = isSelectableCompletedMonth
     ? monthDateRange(parsedMonth!.year, parsedMonth!.month)
     : monthToDateRange(today);
   const selectedMonthParam = isSelectableCompletedMonth ? month! : null;
+  const periodLabel = isSelectableCompletedMonth
+    ? `${MONTH_NAMES[parsedMonth!.month - 1].toUpperCase()} ${parsedMonth!.year}`
+    : 'MONTH TO DATE';
 
-  // September 2026 through last month — every completed month the points system has
-  // been live for, i.e. every month worth offering as a chip alongside "Month to date".
-  const [startYear, startMonthNum] = POINTS_SYSTEM_START_DATE.split('-').map(Number);
-  const pointsMonthOptions = monthsToCheck(startYear, startMonthNum, currentYear, currentMonth);
+  // Earliest tournament date this organizer has, through last month -- every
+  // completed month with any real data, i.e. every month worth offering as a chip
+  // alongside "Month to date". Falls back to no chips (just month-to-date) when
+  // there's no tournament history yet.
+  const earliestTournamentDate = (tournaments ?? []).reduce<string | null>(
+    (min, t) => (min === null || t.date < min ? t.date : min),
+    null
+  );
+  const [startYear, startMonthNum] = earliestTournamentDate
+    ? earliestTournamentDate.slice(0, 7).split('-').map(Number)
+    : [currentYear, currentMonth];
+  const monthOptions = monthsToCheck(startYear, startMonthNum, currentYear, currentMonth);
 
   // Pre-formatted server-side (pinned to UTC) and passed to the leaderboard card as a
   // plain string -- the card is a client component that's also server-rendered on
@@ -147,8 +168,19 @@ export default async function LocationsPage({
   });
 
   const leaderboardsByVenue = (venues ?? []).map((venue) => {
+    // Scoped to the selected period (month-to-date or a chosen past month) -- this is
+    // what makes the win/loss Leaderboard reset each month instead of running as an
+    // all-time aggregate: a tournament played outside the window simply isn't counted
+    // toward this render's ranking, matches or league wins alike.
     const venueTournamentIds = new Set(
-      (tournaments ?? []).filter((t) => t.venue_id === venue.id).map((t) => t.id)
+      (tournaments ?? [])
+        .filter(
+          (t) =>
+            t.venue_id === venue.id &&
+            t.date >= periodRange.start &&
+            t.date < periodRange.endExclusive
+        )
+        .map((t) => t.id)
     );
 
     const venueCompleteMatches: RawMatch[] = (matchesRaw ?? [])
@@ -221,7 +253,7 @@ export default async function LocationsPage({
       matches: venueCompleteMatches,
       teams,
       tournaments: pointsTournaments,
-      range: pointsRange,
+      range: periodRange,
     });
 
     return {
@@ -249,13 +281,48 @@ export default async function LocationsPage({
 
   return (
     <OrganizerShell organizerName={organizer.name}>
-      <h1 className={`text-2xl ${headingClass} mb-6`}>Leaderboard</h1>
+      <h1 className={`text-2xl ${headingClass} mb-3`}>Leaderboard</h1>
+
+      {/* One shared period selector -- governs both the win/loss ranking cards below
+          and the Total Points list further down, so there's a single answer to "which
+          period am I looking at" for the whole page. Month-to-date is live and resets
+          automatically at rollover; each past month stays browsable afterward as its
+          own frozen ranking (e.g. "AUGUST 2026") rather than disappearing. */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        <Link
+          href="/locations"
+          className={`stat-num inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
+            selectedMonthParam === null
+              ? 'bg-navy-deep text-white'
+              : 'bg-navy-tint text-navy-deep hover:bg-navy-mid/20'
+          }`}
+        >
+          Month to date
+        </Link>
+        {monthOptions.map(({ year, month: m }) => {
+          const value = `${year}-${String(m).padStart(2, '0')}`;
+          return (
+            <Link
+              key={value}
+              href={`/locations?month=${value}`}
+              className={`stat-num inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
+                selectedMonthParam === value
+                  ? 'bg-navy-deep text-white'
+                  : 'bg-navy-tint text-navy-deep hover:bg-navy-mid/20'
+              }`}
+            >
+              {MONTH_ABBR[m - 1]} {year}
+            </Link>
+          );
+        })}
+      </div>
 
       {leaderboardCardRowsByVenue.map(({ venueId, venueName, rows }) =>
         rows.length > 0 ? (
           <div key={venueId} className="mb-6">
             <LocationLeaderboardCard
               venueName={venueName}
+              periodLabel={periodLabel}
               generatedDateLabel={generatedDateLabel}
               rows={rows}
             />
@@ -263,7 +330,7 @@ export default async function LocationsPage({
         ) : (
           <div key={venueId} className={`${cardClass} mb-6`}>
             <h2 className="text-lg font-bold text-slate-900 mb-3">{venueName}</h2>
-            <EmptyState icon={<PaddleIcon />}>No matches played here yet.</EmptyState>
+            <EmptyState icon={<PaddleIcon />}>No matches played here yet {selectedMonthParam ? `in ${periodLabel.toLowerCase()}` : 'this month'}.</EmptyState>
           </div>
         )
       )}
@@ -276,35 +343,6 @@ export default async function LocationsPage({
           10 pts per match win · 50 bonus pts per league win · +10 for an 11-0 win · Custom
           League &amp; League + Playoffs only, starting September 2026
         </p>
-
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Link
-            href="/locations"
-            className={`stat-num inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
-              selectedMonthParam === null
-                ? 'bg-navy-deep text-white'
-                : 'bg-navy-tint text-navy-deep hover:bg-navy-mid/20'
-            }`}
-          >
-            Month to date
-          </Link>
-          {pointsMonthOptions.map(({ year, month: m }) => {
-            const value = `${year}-${String(m).padStart(2, '0')}`;
-            return (
-              <Link
-                key={value}
-                href={`/locations?month=${value}`}
-                className={`stat-num inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${
-                  selectedMonthParam === value
-                    ? 'bg-navy-deep text-white'
-                    : 'bg-navy-tint text-navy-deep hover:bg-navy-mid/20'
-                }`}
-              >
-                {MONTH_ABBR[m - 1]} {year}
-              </Link>
-            );
-          })}
-        </div>
 
         {leaderboardsByVenue.map(({ venueId, venueName, points }) => (
           <div key={venueId} className="mb-4 last:mb-0">
