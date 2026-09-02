@@ -11,6 +11,7 @@ import { winsVsHigherRated } from '@/lib/stats/winsVsHigherRated';
 import { starRating } from '@/lib/stats/starRating';
 import { buildWinPercentageByPersonId } from '@/lib/stats/buildWinPercentageByPersonId';
 import { computePointsLeaderboard, POINTS_SYSTEM_START_DATE, type PointsTournament } from '@/lib/stats/points';
+import { assignRanksWithTies } from '@/lib/stats/rankWithTies';
 import { monthDateRange } from '@/lib/stats/monthRange';
 import PlayerOfTheMonthCard from './PlayerOfTheMonthCard';
 import RaceLeaderboardCard from './RaceLeaderboardCard';
@@ -278,29 +279,37 @@ export default async function PlayerOfTheMonthPage() {
             )}
           </div>
 
+          <h3 className={sectionKickerClass}>
+            <span className="inline-block w-[3px] h-4 rounded-full bg-gold-bright" />
+            🏁 Race to Player of the Month — {MONTH_NAMES[currentMonth - 1]} {currentYear}
+          </h3>
           <div className={race.length > 0 ? '' : cardClass}>
             {race.length === 0 ? (
-              <>
-                <h3 className={sectionKickerClass}>
-                  <span className="inline-block w-[3px] h-4 rounded-full bg-gold-bright" />
-                  🏁 Race to Player of the Month — {MONTH_NAMES[currentMonth - 1]} {currentYear}
-                </h3>
-                <p className="text-sm text-slate-500">No qualifying players yet this month.</p>
-              </>
+              <p className="text-sm text-slate-500">No qualifying players yet this month.</p>
             ) : (
               <RaceLeaderboardCard
                 venueName={venue.name}
                 monthLabel={`${MONTH_NAMES[currentMonth - 1].toUpperCase()} ${currentYear}`}
                 generatedDateLabel={generatedDateLabel}
-                rows={race.map((entry, i) => ({
-                  rank: i + 1,
-                  name: personById.get(entry.personId)?.name ?? 'Unknown',
-                  raceScore: Math.round(entry.score * 100),
-                  matchWins: entry.matchWins,
-                  leagueWins: entry.leagueWins,
-                  winPercentage: entry.winPercentage,
-                  overallWinPercentage: winPercentageByPersonId.get(entry.personId) ?? null,
-                }))}
+                rows={assignRanksWithTies(
+                  race.map((entry) => ({
+                    name: personById.get(entry.personId)?.name ?? 'Unknown',
+                    matchWins: entry.matchWins,
+                    losses: entry.matchesPlayed - entry.matchWins,
+                    leagueWins: entry.leagueWins,
+                    winPercentage: entry.winPercentage,
+                    // rankMonthlyCandidates (legacy, pre-September) has no real points
+                    // concept -- 0 there is correct, not a fallback masking a bug,
+                    // since the points system didn't exist yet for any month it
+                    // still governs.
+                    totalPoints: (entry as { totalPoints?: number }).totalPoints ?? 0,
+                    overallWinPercentage: winPercentageByPersonId.get(entry.personId) ?? null,
+                  })),
+                  // Same tie criteria as the Locations Leaderboard: two people
+                  // identical on wins, losses, league wins, and Total Points share a
+                  // rank instead of an arbitrary 1st/2nd from array order.
+                  (r) => `${r.matchWins}|${r.losses}|${r.leagueWins}|${r.totalPoints}`
+                )}
               />
             )}
           </div>

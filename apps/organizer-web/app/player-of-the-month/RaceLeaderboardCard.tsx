@@ -7,15 +7,16 @@ import { threatTierFor } from '@/lib/stats/threatLevel';
 export type RaceCardRow = {
   rank: number;
   name: string;
-  // The hero number -- rankMonthlyCandidates' weighted composite (50% league wins +
-  // 30% match wins + 20% win%), scaled to 0-100. Deliberately not raw win% or match
-  // wins: the row order is driven by this score, so it has to be the number shown
-  // biggest, or the rank order would visibly contradict the displayed stat.
-  raceScore: number;
   matchWins: number;
+  losses: number;
   leagueWins: number;
-  // Month-scoped, byline only (see raceScore above for why this isn't the hero stat).
+  // Month-scoped win% -- shown as an equal-weight hero stat next to totalPoints, same
+  // pattern as LocationLeaderboardCard (same size/weight/color, each with its own
+  // unit label, so neither number reads as "the real one" over the other).
   winPercentage: number;
+  // Total Points for this month (lib/stats/points.ts) -- 0 for a pre-September month
+  // still ranked by the legacy formula, which has no real points concept yet.
+  totalPoints: number;
   // Drives the tier chip -- the player's overall, cross-venue win%, same convention
   // as LocationLeaderboardCard's chip (a different lens than the month-local stats).
   overallWinPercentage: number | null;
@@ -315,7 +316,9 @@ export default function RaceLeaderboardCard({
               const heroColor = chip ? chip.color : MUTED_SILVER;
 
               return (
-                <g key={row.rank}>
+                // Index, not row.rank -- tied players now legitimately share a rank
+                // number (see assignRanksWithTies), so rank alone is no longer unique.
+                <g key={i}>
                   {i > 0 && (
                     <line
                       x1={CONTENT_LEFT}
@@ -365,16 +368,29 @@ export default function RaceLeaderboardCard({
                   >
                     {row.name}
                   </text>
+                  {/* Two equal-weight hero stats -- same size/weight/color for Win% and
+                      Total Points, each with its own unit label, same pattern as
+                      LocationLeaderboardCard -- not one big number the row order
+                      doesn't actually match (this ranking is driven by points, not
+                      raw win%). */}
                   <text
                     x={CONTENT_RIGHT}
                     y={line1Y + 3}
-                    fontSize="32"
-                    fontWeight="900"
-                    fill={heroColor}
                     textAnchor="end"
                     fontFamily="var(--font-oswald), sans-serif"
                   >
-                    {row.winPercentage}%
+                    <tspan fontSize="24" fontWeight="900" fill={heroColor}>
+                      {row.winPercentage}
+                    </tspan>
+                    <tspan fontSize="11" fontWeight="800" fill={MUTED_SILVER} letterSpacing="0.5">
+                      {' '}WIN%{'   '}
+                    </tspan>
+                    <tspan fontSize="24" fontWeight="900" fill={heroColor}>
+                      {row.totalPoints}
+                    </tspan>
+                    <tspan fontSize="11" fontWeight="800" fill={MUTED_SILVER} letterSpacing="0.5">
+                      {' '}PTS
+                    </tspan>
                   </text>
 
                   {chip && (
@@ -411,9 +427,8 @@ export default function RaceLeaderboardCard({
                     fill={MUTED_SILVER}
                     fontFamily="var(--font-geist-sans), sans-serif"
                   >
-                    {row.matchWins} wins
+                    {row.matchWins}W–{row.losses}L
                     {row.leagueWins > 0 ? ` · 🏆×${row.leagueWins}` : ''}
-                    {' · '}Race Score {row.raceScore}
                   </text>
                 </g>
               );
@@ -427,7 +442,7 @@ export default function RaceLeaderboardCard({
               textAnchor="middle"
               fontFamily="var(--font-geist-sans), sans-serif"
             >
-              Ranked by 50% league wins · 30% match wins · 20% win rate · 3+ matches to qualify
+              Ranked by 85% Total Points · 15% appearance · 60% of the busiest player&apos;s matches to qualify
             </text>
             <text
               x={CARD_WIDTH / 2}
