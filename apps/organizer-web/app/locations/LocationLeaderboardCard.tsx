@@ -390,26 +390,28 @@ export default function LocationLeaderboardCard({
                   >
                     {row.name}
                   </text>
-                  {/* One combined hero: Total Points is the primary number (this card is
-                      now the single leaderboard -- no separate Total Points section),
-                      with this venue's win% right beside it as context. Both runs sit in
-                      one right-anchored <text> so they stay glued together as the name
-                      grows/shrinks, rather than two independently-positioned elements
-                      that could drift apart. */}
+                  {/* Two equal-weight hero stats, not one primary + one caption: same
+                      number size/weight/color for both Win% and Total Points, each with
+                      its own small unit label immediately after it so neither number is
+                      ambiguous at a glance. Both runs sit in one right-anchored <text> so
+                      they stay glued together as the name grows/shrinks. */}
                   <text
                     x={CONTENT_RIGHT}
                     y={line1Y + 3}
                     textAnchor="end"
                     fontFamily="var(--font-oswald), sans-serif"
                   >
-                    <tspan fontSize="15" fontWeight="700" fill={MUTED_TEXT}>
-                      {row.venueWinPercentage !== null ? `${row.venueWinPercentage}% · ` : '— · '}
+                    <tspan fontSize="24" fontWeight="900" fill={heroColor}>
+                      {row.venueWinPercentage !== null ? row.venueWinPercentage : '—'}
                     </tspan>
-                    <tspan fontSize="30" fontWeight="900" fill={heroColor}>
+                    <tspan fontSize="11" fontWeight="800" fill={MUTED_TEXT} letterSpacing="0.5">
+                      {' '}WIN%{'   '}
+                    </tspan>
+                    <tspan fontSize="24" fontWeight="900" fill={heroColor}>
                       {row.totalPoints}
                     </tspan>
-                    <tspan fontSize="15" fontWeight="700" fill={heroColor}>
-                      {' '}pts
+                    <tspan fontSize="11" fontWeight="800" fill={MUTED_TEXT} letterSpacing="0.5">
+                      {' '}PTS
                     </tspan>
                   </text>
 
