@@ -7,7 +7,8 @@ import { threatTierFor } from '@/lib/stats/threatLevel';
 export type LeaderboardCardRow = {
   rank: number;
   name: string;
-  // Hero number on line 1 -- this venue's own win% (not cross-venue).
+  // Hero number on line 1 -- this venue's own win% (not cross-venue), shown next to
+  // totalPoints rather than as the sole hero stat (see totalPoints below).
   venueWinPercentage: number | null;
   // Drives the tier chip on line 2 -- the player's overall, cross-venue win%,
   // matching how ThreatBadge is driven elsewhere in the app.
@@ -16,6 +17,12 @@ export type LeaderboardCardRow = {
   matchWins: number;
   losses: number;
   tournamentWins: number;
+  // Total Points for this same period/venue (lib/stats/points.ts) -- 0 for anyone who
+  // didn't play a points-eligible format (Custom League/League + Playoffs) this
+  // period, not hidden. This card is now the single leaderboard (no separate Total
+  // Points section), so this is the primary hero number, with venueWinPercentage
+  // shown right beside it as context.
+  totalPoints: number;
 };
 
 export type LocationLeaderboardCardProps = {
@@ -380,16 +387,27 @@ export default function LocationLeaderboardCard({
                   >
                     {row.name}
                   </text>
+                  {/* One combined hero: Total Points is the primary number (this card is
+                      now the single leaderboard -- no separate Total Points section),
+                      with this venue's win% right beside it as context. Both runs sit in
+                      one right-anchored <text> so they stay glued together as the name
+                      grows/shrinks, rather than two independently-positioned elements
+                      that could drift apart. */}
                   <text
                     x={CONTENT_RIGHT}
                     y={line1Y + 3}
-                    fontSize="32"
-                    fontWeight="900"
-                    fill={heroColor}
                     textAnchor="end"
                     fontFamily="var(--font-oswald), sans-serif"
                   >
-                    {row.venueWinPercentage !== null ? `${row.venueWinPercentage}%` : '—'}
+                    <tspan fontSize="15" fontWeight="700" fill={MUTED_TEXT}>
+                      {row.venueWinPercentage !== null ? `${row.venueWinPercentage}% · ` : '— · '}
+                    </tspan>
+                    <tspan fontSize="30" fontWeight="900" fill={heroColor}>
+                      {row.totalPoints}
+                    </tspan>
+                    <tspan fontSize="15" fontWeight="700" fill={heroColor}>
+                      {' '}pts
+                    </tspan>
                   </text>
 
                   {chip && (

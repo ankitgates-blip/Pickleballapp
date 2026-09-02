@@ -264,30 +264,45 @@ export default async function LocationsPage({
     };
   });
 
-  const leaderboardCardRowsByVenue = leaderboardsByVenue.map(({ venueId, venueName, leaderboard }) => ({
-    venueId,
-    venueName,
-    rows: leaderboard.map((entry, i) => ({
-      rank: i + 1,
-      name: personNameById.get(entry.personId) ?? 'Unknown',
-      venueWinPercentage: entry.winPercentage,
-      overallWinPercentage: overallWinPercentageByPersonId.get(entry.personId) ?? null,
-      matchesPlayed: entry.matchesPlayed,
-      matchWins: entry.matchWins,
-      losses: entry.losses,
-      tournamentWins: entry.tournamentWins,
-    })),
-  }));
+  // One leaderboard, not two -- Total Points no longer gets its own section below;
+  // each venue's points entries are merged into its ranking rows by personId so the
+  // single LocationLeaderboardCard can show both the win/loss ranking and Total
+  // Points together. The ranking ORDER stays driven by computeLocationLeaderboard's
+  // existing tournament-wins/match-wins composite (spans every format), not points
+  // (which only covers Custom League/League + Playoffs) -- ranking by points would
+  // bury anyone who's active in other formats behind a 0, which isn't what "the
+  // leaderboard" means at a venue that runs mixed formats.
+  const leaderboardCardRowsByVenue = leaderboardsByVenue.map(({ venueId, venueName, leaderboard, points }) => {
+    const totalPointsByPersonId = new Map(points.map((p) => [p.personId, p.totalPoints]));
+    return {
+      venueId,
+      venueName,
+      rows: leaderboard.map((entry, i) => ({
+        rank: i + 1,
+        name: personNameById.get(entry.personId) ?? 'Unknown',
+        venueWinPercentage: entry.winPercentage,
+        overallWinPercentage: overallWinPercentageByPersonId.get(entry.personId) ?? null,
+        matchesPlayed: entry.matchesPlayed,
+        matchWins: entry.matchWins,
+        losses: entry.losses,
+        tournamentWins: entry.tournamentWins,
+        totalPoints: totalPointsByPersonId.get(entry.personId) ?? 0,
+      })),
+    };
+  });
 
   return (
     <OrganizerShell organizerName={organizer.name}>
-      <h1 className={`text-2xl ${headingClass} mb-3`}>Leaderboard</h1>
+      <h1 className={`text-2xl ${headingClass} mb-1`}>Leaderboard</h1>
+      <p className="text-xs text-muted mb-3">
+        10 pts per match win · 5 pts for a loss reaching 10–10 · +25 for a league win
+        (+10 more for an undefeated one) · +10 for league runner-up · +10 for an 11-0
+        win · Custom League &amp; League + Playoffs only, starting September 2026
+      </p>
 
-      {/* One shared period selector -- governs both the win/loss ranking cards below
-          and the Total Points list further down, so there's a single answer to "which
-          period am I looking at" for the whole page. Month-to-date is live and resets
-          automatically at rollover; each past month stays browsable afterward as its
-          own frozen ranking (e.g. "AUGUST 2026") rather than disappearing. */}
+      {/* One shared period selector -- month-to-date is live and resets automatically
+          at rollover; each past month stays browsable afterward as its own frozen
+          ranking (e.g. "AUGUST 2026") rather than disappearing. */}
       <div className="flex flex-wrap gap-2 mb-6">
         <Link
           href="/locations"
@@ -334,75 +349,6 @@ export default async function LocationsPage({
           </div>
         )
       )}
-
-      <div className={`${cardClass} mb-6`}>
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="text-lg font-bold text-slate-900">Total Points</h2>
-        </div>
-        <p className="text-xs text-muted mb-3">
-          10 pts per match win · 5 pts for a loss reaching 10–10 · +25 for a league win
-          (+10 more for an undefeated one) · +10 for league runner-up · +10 for an 11-0
-          win · Custom League &amp; League + Playoffs only, starting September 2026
-        </p>
-
-        {leaderboardsByVenue.map(({ venueId, venueName, points }) => (
-          <div key={venueId} className="mb-4 last:mb-0">
-            <h3 className="text-sm font-bold text-slate-700 mb-2">{venueName}</h3>
-            {points.length > 0 ? (
-              <ul className="space-y-2 text-sm">
-                {points.map((entry, i) => {
-                  const rank = i + 1;
-                  // Same medal convention as LocationLeaderboardCard: gold gradient for
-                  // 1st, flat silver/bronze for 2nd/3rd, an outlined circle with the rank
-                  // number for everyone else -- so this list reads as the same kind of
-                  // leaderboard as the card above it, not a plain numbered list.
-                  const medalStyle =
-                    rank === 1
-                      ? { background: 'linear-gradient(135deg, #d6af36, #fde68a, #d6af36)' }
-                      : rank === 2
-                        ? { background: '#a7a7ad' }
-                        : rank === 3
-                          ? { background: '#a77044' }
-                          : undefined;
-                  return (
-                    <li key={entry.personId} className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2 last:border-0">
-                      <Link
-                        href={`/people/${entry.personId}`}
-                        className={`flex items-center gap-2.5 font-semibold hover:underline ${rank === 1 ? 'text-navy-deep' : 'text-slate-800'}`}
-                      >
-                        <span
-                          className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-extrabold"
-                          style={
-                            medalStyle
-                              ? { ...medalStyle, color: rank === 1 ? '#0c1830' : '#ffffff' }
-                              : { border: '1.5px solid #cbd5e1', color: '#64748b' }
-                          }
-                        >
-                          {rank}
-                        </span>
-                        {personNameById.get(entry.personId) ?? 'Unknown'}
-                      </Link>
-                      <span className="stat-num text-right">
-                        <span className="font-extrabold text-navy-deep">{entry.totalPoints} pts</span>
-                        <span className="block text-xs text-muted">
-                          {entry.matchWins}×win
-                          {entry.closeLosses > 0 ? ` · ${entry.closeLosses}×close loss` : ''}
-                          {entry.leagueWins > 0 ? ` · ${entry.leagueWins}×league` : ''}
-                          {entry.cleanSweepBonuses > 0 ? ` · ${entry.cleanSweepBonuses}×sweep` : ''}
-                          {entry.leagueRunnerUps > 0 ? ` · ${entry.leagueRunnerUps}×runner-up` : ''}
-                          {entry.shutoutWins > 0 ? ` · ${entry.shutoutWins}×11-0` : ''}
-                        </span>
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="text-xs text-muted">No points yet this period.</p>
-            )}
-          </div>
-        ))}
-      </div>
     </OrganizerShell>
   );
 }
