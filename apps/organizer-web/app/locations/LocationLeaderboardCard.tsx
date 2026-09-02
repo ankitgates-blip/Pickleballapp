@@ -7,11 +7,11 @@ import { threatTierFor } from '@/lib/stats/threatLevel';
 export type LeaderboardCardRow = {
   rank: number;
   name: string;
-  // Hero number on line 1 -- this venue's own win% (not cross-venue), shown next to
-  // totalPoints rather than as the sole hero stat (see totalPoints below).
-  venueWinPercentage: number | null;
   // Drives the tier chip on line 2 -- the player's overall, cross-venue win%,
-  // matching how ThreatBadge is driven elsewhere in the app.
+  // matching how ThreatBadge is driven elsewhere in the app. Win% itself is no
+  // longer shown as a number anywhere on this card -- Total Points is the sole hero
+  // stat -- but the tier chip (a category label like "DANGER", not a raw percentage)
+  // still needs this to pick its color/word.
   overallWinPercentage: number | null;
   matchesPlayed: number;
   matchWins: number;
@@ -20,8 +20,7 @@ export type LeaderboardCardRow = {
   // Total Points for this same period/venue (lib/stats/points.ts) -- 0 for anyone who
   // didn't play a points-eligible format (Custom League/League + Playoffs) this
   // period, not hidden. This card is now the single leaderboard (no separate Total
-  // Points section), so this is the primary hero number, with venueWinPercentage
-  // shown right beside it as context.
+  // Points section), so this is the sole hero number.
   totalPoints: number;
 };
 
@@ -317,8 +316,7 @@ export default function LocationLeaderboardCard({
               const tier =
                 row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
               const chip = tier ? THREAT_CHIP[tier.label] : null;
-              const heroColor =
-                row.venueWinPercentage !== null && tier ? THREAT_CHIP[tier.label].accent : MUTED_TEXT;
+              const heroColor = tier ? THREAT_CHIP[tier.label].accent : MUTED_TEXT;
 
               return (
                 // Index, not row.rank -- tied players now legitimately share a rank
@@ -390,27 +388,20 @@ export default function LocationLeaderboardCard({
                   >
                     {row.name}
                   </text>
-                  {/* Two equal-weight hero stats, not one primary + one caption: same
-                      number size/weight/color for both Win% and Total Points, each with
-                      its own small unit label immediately after it so neither number is
-                      ambiguous at a glance. Both runs sit in one right-anchored <text> so
-                      they stay glued together as the name grows/shrinks. */}
+                  {/* Total Points is the sole hero stat -- Win% no longer shown as a
+                      number anywhere on this card. Kept as one right-anchored <text>
+                      (number + unit label) so it stays glued together as the name
+                      grows/shrinks. */}
                   <text
                     x={CONTENT_RIGHT}
                     y={line1Y + 3}
                     textAnchor="end"
                     fontFamily="var(--font-oswald), sans-serif"
                   >
-                    <tspan fontSize="24" fontWeight="900" fill={heroColor}>
-                      {row.venueWinPercentage !== null ? row.venueWinPercentage : '—'}
-                    </tspan>
-                    <tspan fontSize="11" fontWeight="800" fill={MUTED_TEXT} letterSpacing="0.5">
-                      {' '}WIN%{'   '}
-                    </tspan>
-                    <tspan fontSize="24" fontWeight="900" fill={heroColor}>
+                    <tspan fontSize="30" fontWeight="900" fill={heroColor}>
                       {row.totalPoints}
                     </tspan>
-                    <tspan fontSize="11" fontWeight="800" fill={MUTED_TEXT} letterSpacing="0.5">
+                    <tspan fontSize="13" fontWeight="800" fill={MUTED_TEXT} letterSpacing="0.5">
                       {' '}PTS
                     </tspan>
                   </text>

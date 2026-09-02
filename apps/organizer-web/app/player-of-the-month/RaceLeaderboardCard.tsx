@@ -10,15 +10,12 @@ export type RaceCardRow = {
   matchWins: number;
   losses: number;
   leagueWins: number;
-  // Month-scoped win% -- shown as an equal-weight hero stat next to totalPoints, same
-  // pattern as LocationLeaderboardCard (same size/weight/color, each with its own
-  // unit label, so neither number reads as "the real one" over the other).
-  winPercentage: number;
-  // Total Points for this month (lib/stats/points.ts) -- 0 for a pre-September month
-  // still ranked by the legacy formula, which has no real points concept yet.
+  // Total Points for this month (lib/stats/points.ts) -- the sole hero stat. 0 for a
+  // pre-September month still ranked by the legacy formula, which has no real points
+  // concept yet. Win% is no longer shown as a number anywhere on this card.
   totalPoints: number;
   // Drives the tier chip -- the player's overall, cross-venue win%, same convention
-  // as LocationLeaderboardCard's chip (a different lens than the month-local stats).
+  // as LocationLeaderboardCard's chip (a category label, not a raw percentage).
   overallWinPercentage: number | null;
 };
 
@@ -368,27 +365,19 @@ export default function RaceLeaderboardCard({
                   >
                     {row.name}
                   </text>
-                  {/* Two equal-weight hero stats -- same size/weight/color for Win% and
-                      Total Points, each with its own unit label, same pattern as
-                      LocationLeaderboardCard -- not one big number the row order
-                      doesn't actually match (this ranking is driven by points, not
-                      raw win%). */}
+                  {/* Total Points is the sole hero stat -- Win% no longer shown as a
+                      number anywhere on this card, matching the ranking it's actually
+                      driven by. */}
                   <text
                     x={CONTENT_RIGHT}
                     y={line1Y + 3}
                     textAnchor="end"
                     fontFamily="var(--font-oswald), sans-serif"
                   >
-                    <tspan fontSize="24" fontWeight="900" fill={heroColor}>
-                      {row.winPercentage}
-                    </tspan>
-                    <tspan fontSize="11" fontWeight="800" fill={MUTED_SILVER} letterSpacing="0.5">
-                      {' '}WIN%{'   '}
-                    </tspan>
-                    <tspan fontSize="24" fontWeight="900" fill={heroColor}>
+                    <tspan fontSize="30" fontWeight="900" fill={heroColor}>
                       {row.totalPoints}
                     </tspan>
-                    <tspan fontSize="11" fontWeight="800" fill={MUTED_SILVER} letterSpacing="0.5">
+                    <tspan fontSize="13" fontWeight="800" fill={MUTED_SILVER} letterSpacing="0.5">
                       {' '}PTS
                     </tspan>
                   </text>

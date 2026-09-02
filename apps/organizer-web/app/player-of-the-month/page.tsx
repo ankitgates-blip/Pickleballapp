@@ -297,7 +297,6 @@ export default async function PlayerOfTheMonthPage() {
                     matchWins: entry.matchWins,
                     losses: entry.matchesPlayed - entry.matchWins,
                     leagueWins: entry.leagueWins,
-                    winPercentage: entry.winPercentage,
                     // rankMonthlyCandidates (legacy, pre-September) has no real points
                     // concept -- 0 there is correct, not a fallback masking a bug,
                     // since the points system didn't exist yet for any month it

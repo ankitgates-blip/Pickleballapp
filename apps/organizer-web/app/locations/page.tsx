@@ -277,7 +277,6 @@ export default async function LocationsPage({
     const totalPointsByPersonId = new Map(points.map((p) => [p.personId, p.totalPoints]));
     const rowsWithoutRank = leaderboard.map((entry) => ({
       name: personNameById.get(entry.personId) ?? 'Unknown',
-      venueWinPercentage: entry.winPercentage,
       overallWinPercentage: overallWinPercentageByPersonId.get(entry.personId) ?? null,
       matchesPlayed: entry.matchesPlayed,
       matchWins: entry.matchWins,
