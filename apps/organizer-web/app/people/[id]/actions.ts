@@ -36,17 +36,6 @@ export async function updatePersonProfile(personId: string, formData: FormData) 
   }
   const strengths = formData.getAll('strengths') as string[];
 
-  // DUPR (Dynamic Universal Pickleball Rating) IDs are a short alphanumeric code, no
-  // spaces or punctuation beyond a hyphen -- this is a plain reference field (not
-  // validated against DUPR itself, since there's no public API to check it against;
-  // see the DUPR integration research this was scoped from), so the only goal here is
-  // rejecting obvious garbage, not enforcing DUPR's exact internal ID format.
-  const duprIdRaw = (formData.get('duprId') as string)?.trim() || '';
-  if (duprIdRaw && !/^[A-Za-z0-9-]{1,32}$/.test(duprIdRaw)) {
-    throw new Error('DUPR ID can only contain letters, numbers, and hyphens');
-  }
-  const duprId = duprIdRaw || null;
-
   const { error } = await supabase
     .from('people')
     .update({
@@ -59,7 +48,6 @@ export async function updatePersonProfile(personId: string, formData: FormData) 
       paddle_brand: paddleBrand,
       signature_shot: signatureShot,
       strengths,
-      dupr_id: duprId,
     })
     .eq('id', personId);
 
@@ -78,7 +66,6 @@ export async function updatePersonProfile(personId: string, formData: FormData) 
 
   revalidatePath(`/people/${personId}`);
   revalidatePath('/people');
-  revalidatePath(`/p/${personId}`);
 }
 
 export async function uploadPersonPhoto(personId: string, formData: FormData) {

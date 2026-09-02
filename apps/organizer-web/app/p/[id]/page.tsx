@@ -30,7 +30,7 @@ export default async function PublicPersonPage({
 
   const { data: person } = await supabase
     .from('people')
-    .select('id, name, nickname, organizer_id, photo_url, dupr_id')
+    .select('id, name, nickname, organizer_id, photo_url')
     .eq('id', id)
     .single();
 
@@ -322,11 +322,6 @@ export default async function PublicPersonPage({
               'No matches played yet'
             )}
           </p>
-          {person.dupr_id && (
-            <p className="text-[#dbe4f5] text-sm font-medium">
-              DUPR ID: <span className="text-white font-semibold">{person.dupr_id}</span>
-            </p>
-          )}
         </div>
       </header>
 
