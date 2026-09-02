@@ -12,10 +12,10 @@ export type RaceCardRow = {
   leagueWins: number;
   // Total Points for this month (lib/stats/points.ts) -- the sole hero stat. 0 for a
   // pre-September month still ranked by the legacy formula, which has no real points
-  // concept yet. Win% is no longer shown as a number anywhere on this card.
+  // concept yet.
   totalPoints: number;
-  // Drives the tier chip -- the player's overall, cross-venue win%, same convention
-  // as LocationLeaderboardCard's chip (a category label, not a raw percentage).
+  // Drives the tier meter (pip dots + word) -- the player's overall, cross-venue
+  // win%, same convention as LocationLeaderboardCard.
   overallWinPercentage: number | null;
 };
 
@@ -32,38 +32,121 @@ const CONTENT_LEFT = PAD_X;
 const CONTENT_RIGHT = CARD_WIDTH - PAD_X;
 const CONTENT_WIDTH = CONTENT_RIGHT - CONTENT_LEFT;
 
-const HEADER_HEIGHT = 188;
-const ROW_HEIGHT = 72;
-const SECTION_GAP = 28;
-const FOOTER_HEIGHT = 58;
+const HEADER_HEIGHT = 156; // taller than the Leaderboard twin's 140 -- room for the LIVE pill
+const PODIUM_ROW_HEIGHT = 104;
+const CUT_LINE_HEIGHT = 3;
+const COL_HEADER_HEIGHT = 32;
+const BODY_ROW_HEIGHT = 80;
+const FOOTER_HEIGHT = 56;
 
-const GOLD_BRIGHT = '#d6af36';
-const GOLD_HIGHLIGHT = '#fde68a';
-const GOLD_CHROME = '#a8874f';
-const SILVER = '#a7a7ad';
-const BRONZE = '#a77044';
-const NAVY_DEEP = '#0c1830';
+// Same "Podium Split" palette as LocationLeaderboardCard -- these two cards are a
+// twin family and must not visually diverge without a stated reason. The only
+// intentional differences from the Leaderboard card are: the LIVE pill (this ranking
+// is a live snapshot of an in-progress month, not a frozen period), the kicker text,
+// and the footer's ranking-basis caption (a different formula).
 const NAVY_MID = '#16294e';
-const NAVY_LIGHT = '#1c3560';
-const MUTED_SILVER = '#94a3b8';
+const NAVY_DEEP = '#0c1830';
+const NAVY_RULE = '#24406f';
+const PLATE = '#0a1730';
+const PLATE_STROKE = '#2c4a7d';
+const ON_NAVY_PRIMARY = '#ffffff';
+const ON_NAVY_SECOND = '#b8c8de';
+const ON_NAVY_MUTED = '#8ea6c8';
 
-function medalFill(rank: number): string | null {
-  if (rank === 1) return 'url(#raceGoldMedal)';
-  if (rank === 2) return SILVER;
-  if (rank === 3) return BRONZE;
+const IVORY = '#fbfaf7';
+const IVORY_ALT = '#f4f1ea';
+const IVORY_HEAD = '#f0ece2';
+const HAIRLINE = '#e6e1d6';
+const INK = '#0c1830';
+const INK_SOFT = '#4a5a74';
+const INK_MUTED = '#64748b';
+const BORDER = '#d9d2c2';
+
+const GOLD_DEEP = '#a8874f';
+const GOLD_CORE = '#d6af36';
+const GOLD_LIGHT = '#f7e6a8';
+const SILVER_DEEP = '#7e8288';
+const SILVER_CORE = '#a7a7ad';
+const SILVER_LIGHT = '#e8eaed';
+const BRONZE_DEEP = '#7a4b23';
+const BRONZE_CORE = '#a77044';
+const BRONZE_LIGHT = '#e0aa72';
+
+const WIN_ON_NAVY = '#34d8bd';
+const LOSS_ON_NAVY = '#ff8a80';
+const WIN_ON_IVORY = '#0f766e';
+const LOSS_ON_IVORY = '#b3261e';
+const LIVE_COLOR = '#d1601f';
+
+const TIER_PIPS: Record<string, { pips: number; word: string }> = {
+  'LOW THREAT': { pips: 1, word: 'LOW' },
+  'WATCH OUT': { pips: 2, word: 'WATCH' },
+  DANGEROUS: { pips: 3, word: 'DANGER' },
+  'HIGH THREAT': { pips: 4, word: 'HIGH' },
+  'DO NOT PLAY': { pips: 5, word: 'AVOID' },
+};
+
+function medalStops(rank: number): { deep: string; core: string; light: string } | null {
+  if (rank === 1) return { deep: GOLD_DEEP, core: GOLD_CORE, light: GOLD_LIGHT };
+  if (rank === 2) return { deep: SILVER_DEEP, core: SILVER_CORE, light: SILVER_LIGHT };
+  if (rank === 3) return { deep: BRONZE_DEEP, core: BRONZE_CORE, light: BRONZE_LIGHT };
   return null;
 }
 
-// Pastel tones tuned for text/chips on a dark ground (as opposed to
-// LocationLeaderboardCard's saturated "accent" tones, which are tuned for text on a
-// light ground) -- same 5 tiers as ThreatBadge/threatTierFor.
-const THREAT_CHIP: Record<string, { short: string; color: string; width: number }> = {
-  'LOW THREAT': { short: 'LOW', color: '#86efac', width: 68 },
-  'WATCH OUT': { short: 'WATCH', color: '#fde047', width: 84 },
-  DANGEROUS: { short: 'DANGER', color: '#fdba74', width: 96 },
-  'HIGH THREAT': { short: 'HIGH', color: '#fca5a5', width: 74 },
-  'DO NOT PLAY': { short: 'AVOID', color: '#f0abfc', width: 84 },
-};
+const AVG_CHAR_WIDTH_RATIO = 0.54;
+
+function fitName(name: string, maxWidth: number, baseSize: number, minSize: number): { size: number; text: string } {
+  let size = baseSize;
+  while (size > minSize && name.length * size * AVG_CHAR_WIDTH_RATIO > maxWidth) {
+    size -= 2;
+  }
+  const maxChars = Math.floor(maxWidth / (size * AVG_CHAR_WIDTH_RATIO));
+  const text = name.length > maxChars ? `${name.slice(0, Math.max(1, maxChars - 1))}…` : name;
+  return { size, text };
+}
+
+function TierMeter({
+  tier,
+  x,
+  y,
+  onNavy,
+}: {
+  tier: { pips: number; word: string } | null;
+  x: number;
+  y: number;
+  onNavy: boolean;
+}) {
+  if (!tier) return null;
+  const onColor = onNavy ? '#cbd8ea' : '#4a5a74';
+  const offColor = onNavy ? '#3a5583' : '#c8d0dc';
+  const wordColor = onNavy ? ON_NAVY_SECOND : INK_SOFT;
+  const pipGap = 10;
+  return (
+    <>
+      {Array.from({ length: 5 }).map((_, p) => (
+        <circle
+          key={p}
+          cx={x + p * pipGap}
+          cy={y - 4}
+          r="3"
+          fill={p < tier.pips ? onColor : 'none'}
+          stroke={p < tier.pips ? 'none' : offColor}
+          strokeWidth="1"
+        />
+      ))}
+      <text
+        x={x + 5 * pipGap + 8}
+        y={y}
+        fontSize={onNavy ? '14' : '13'}
+        fontWeight="700"
+        fill={wordColor}
+        fontFamily="var(--font-oswald), sans-serif"
+      >
+        {tier.word}
+      </text>
+    </>
+  );
+}
 
 async function loadDataUrl(url: string): Promise<string | null> {
   try {
@@ -90,8 +173,18 @@ export default function RaceLeaderboardCard({
   const svgRef = useRef<SVGSVGElement>(null);
   const [status, setStatus] = useState<'idle' | 'generating' | 'error'>('idle');
 
-  const totalHeight = HEADER_HEIGHT + rows.length * ROW_HEIGHT + SECTION_GAP + FOOTER_HEIGHT;
-  const footerY = HEADER_HEIGHT + rows.length * ROW_HEIGHT + SECTION_GAP;
+  const podiumRows = rows.slice(0, Math.min(3, rows.length));
+  const bodyRows = rows.slice(podiumRows.length);
+  const podiumHeight = podiumRows.length * PODIUM_ROW_HEIGHT;
+  const hasColumnHeader = bodyRows.length > 0;
+  const listHeight =
+    podiumHeight +
+    (podiumRows.length > 0 ? CUT_LINE_HEIGHT : 0) +
+    (hasColumnHeader ? COL_HEADER_HEIGHT : 0) +
+    bodyRows.length * BODY_ROW_HEIGHT;
+  const totalHeight = HEADER_HEIGHT + listHeight + FOOTER_HEIGHT;
+  const footerY = HEADER_HEIGHT + listHeight;
+  const top3Names = rows.slice(0, 3).map((r) => r.name).join(', ');
 
   const handleDownload = async () => {
     if (!svgRef.current) return;
@@ -99,8 +192,6 @@ export default function RaceLeaderboardCard({
     try {
       const exportSvg = svgRef.current.cloneNode(true) as SVGSVGElement;
 
-      // Two <image> elements now: the skyline banner photo and the circular logo --
-      // inline each by its own original href so neither clobbers the other.
       for (const imageEl of Array.from(exportSvg.querySelectorAll('image'))) {
         const href = imageEl.getAttribute('href');
         if (!href) continue;
@@ -112,11 +203,9 @@ export default function RaceLeaderboardCard({
         }
       }
 
-      // See ChampionCard.tsx / LocationLeaderboardCard.tsx for why both of these are
-      // necessary: an isolated standalone-SVG render never sees the page's next/font
-      // stylesheet, so an unresolved var(--font-oswald)/var(--font-geist-sans) would
-      // invalidate the whole font-family declaration and silently fall back to the
-      // browser's serif default rather than just skipping to "sans-serif".
+      // Every text element on this card uses Oswald now -- see
+      // LocationLeaderboardCard.tsx for why embedding just this one font is enough
+      // to make the exported PNG match what's shown on screen.
       const fontDataUrl = await loadDataUrl('/fonts/oswald-variable.ttf');
       if (fontDataUrl) {
         const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
@@ -125,7 +214,6 @@ export default function RaceLeaderboardCard({
         if (defs) defs.insertBefore(styleEl, defs.firstChild);
         exportSvg.style.setProperty('--font-oswald', "'Oswald Export'");
       }
-      exportSvg.style.setProperty('--font-geist-sans', 'sans-serif');
 
       const svgString = new XMLSerializer().serializeToString(exportSvg);
       const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
@@ -174,35 +262,39 @@ export default function RaceLeaderboardCard({
           viewBox={`0 0 ${CARD_WIDTH} ${totalHeight}`}
           xmlns="http://www.w3.org/2000/svg"
           className="w-full h-auto max-w-[760px] rounded-2xl"
+          role="img"
         >
+          <title>{`${venueName} Race to Player of the Month, ${monthLabel}`}</title>
+          {top3Names && <desc>{`Currently leading: ${top3Names}`}</desc>}
           <defs>
-            <linearGradient id="raceBg" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={NAVY_LIGHT} />
-              <stop offset="45%" stopColor={NAVY_MID} />
+            <linearGradient id="raceGold" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor={GOLD_DEEP} />
+              <stop offset="50%" stopColor={GOLD_LIGHT} />
+              <stop offset="100%" stopColor={GOLD_CORE} />
+            </linearGradient>
+            <linearGradient id="raceSilver" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor={SILVER_DEEP} />
+              <stop offset="50%" stopColor={SILVER_LIGHT} />
+              <stop offset="100%" stopColor={SILVER_CORE} />
+            </linearGradient>
+            <linearGradient id="raceBronze" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor={BRONZE_DEEP} />
+              <stop offset="50%" stopColor={BRONZE_LIGHT} />
+              <stop offset="100%" stopColor={BRONZE_CORE} />
+            </linearGradient>
+            <linearGradient id="raceNavy" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={NAVY_MID} />
               <stop offset="100%" stopColor={NAVY_DEEP} />
             </linearGradient>
-            <linearGradient id="raceGoldMedal" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor={GOLD_BRIGHT} />
-              <stop offset="50%" stopColor={GOLD_HIGHLIGHT} />
-              <stop offset="100%" stopColor={GOLD_BRIGHT} />
+            <linearGradient id="raceGoldRule" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor={GOLD_DEEP} stopOpacity="0.3" />
+              <stop offset="50%" stopColor={GOLD_LIGHT} />
+              <stop offset="100%" stopColor={GOLD_DEEP} stopOpacity="0.3" />
             </linearGradient>
-            <linearGradient id="raceDivider" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor={GOLD_CHROME} stopOpacity="0" />
-              <stop offset="50%" stopColor={GOLD_BRIGHT} stopOpacity="0.9" />
-              <stop offset="100%" stopColor={GOLD_CHROME} stopOpacity="0" />
-            </linearGradient>
-            <radialGradient id="raceGlow" cx="50%" cy="0%" r="70%">
-              <stop offset="0%" stopColor={GOLD_HIGHLIGHT} stopOpacity="0.22" />
-              <stop offset="100%" stopColor={GOLD_HIGHLIGHT} stopOpacity="0" />
+            <radialGradient id="raceGlow" cx="50%" cy="0%" r="80%">
+              <stop offset="0%" stopColor={GOLD_LIGHT} stopOpacity="0.14" />
+              <stop offset="100%" stopColor={GOLD_LIGHT} stopOpacity="0" />
             </radialGradient>
-            <pattern id="raceTexture" width="14" height="14" patternUnits="userSpaceOnUse">
-              <circle cx="1.5" cy="1.5" r="1.5" fill="#ffffff" fillOpacity="0.05" />
-            </pattern>
-            <linearGradient id="raceHeaderWash" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={NAVY_LIGHT} stopOpacity="0.55" />
-              <stop offset="55%" stopColor={NAVY_MID} stopOpacity="0.7" />
-              <stop offset="100%" stopColor={NAVY_DEEP} stopOpacity="0.9" />
-            </linearGradient>
             <clipPath id="raceLogoClip">
               <circle cx={CONTENT_LEFT + 21} cy="46" r="21" />
             </clipPath>
@@ -212,12 +304,8 @@ export default function RaceLeaderboardCard({
           </defs>
 
           <g clipPath="url(#raceCardClip)">
-            <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} fill="url(#raceBg)" />
-            <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} fill="url(#raceTexture)" />
+            <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} fill={IVORY} />
 
-            {/* Header: same real Dubai skyline banner as the app's own header and the
-                Locations leaderboard card, so every shareable card carries the same
-                identity -- the gold glow still sits on top of it for richness. */}
             <image
               href="/header-dxb-skyline.webp"
               x="0"
@@ -225,36 +313,28 @@ export default function RaceLeaderboardCard({
               width={CARD_WIDTH}
               height={HEADER_HEIGHT}
               preserveAspectRatio="xMidYMid slice"
+              opacity="0.55"
             />
-            <rect x="0" y="0" width={CARD_WIDTH} height={HEADER_HEIGHT} fill="url(#raceHeaderWash)" />
-            <rect x="0" y="0" width={CARD_WIDTH} height={HEADER_HEIGHT + 30} fill="url(#raceGlow)" />
+            <rect x="0" y="0" width={CARD_WIDTH} height={HEADER_HEIGHT} fill="url(#raceNavy)" opacity="0.72" />
+            <rect x="0" y="0" width={CARD_WIDTH} height={HEADER_HEIGHT + 20} fill="url(#raceGlow)" />
 
-            {/* Header: logo + wordmark, venue name, kicker, month + generated-on stamp */}
             <image
               href="/logo.png"
               x={CONTENT_LEFT}
-              y="25"
+              y="24"
               width="42"
               height="42"
               preserveAspectRatio="xMidYMid slice"
               clipPath="url(#raceLogoClip)"
             />
-            <circle
-              cx={CONTENT_LEFT + 21}
-              cy="46"
-              r="21"
-              fill="none"
-              stroke={GOLD_BRIGHT}
-              strokeOpacity="0.6"
-              strokeWidth="1.5"
-            />
+            <circle cx={CONTENT_LEFT + 21} cy="45" r="21" fill="none" stroke={GOLD_CORE} strokeOpacity="0.6" strokeWidth="1.5" />
             <text
               x={CONTENT_LEFT + 56}
-              y="54"
-              fontSize="21"
+              y="52"
+              fontSize="20"
               fontWeight="700"
               fontStyle="italic"
-              fill={GOLD_HIGHLIGHT}
+              fill={GOLD_LIGHT}
               letterSpacing="1"
               fontFamily="var(--font-oswald), sans-serif"
             >
@@ -264,88 +344,98 @@ export default function RaceLeaderboardCard({
             <text
               x={CONTENT_RIGHT}
               y="46"
-              fontSize="26"
-              fontWeight="800"
-              fill="#f8fafc"
-              textAnchor="end"
-              fontFamily="var(--font-oswald), sans-serif"
-            >
-              {venueName}
-            </text>
-            <text
-              x={CONTENT_RIGHT}
-              y="66"
-              fontSize="13"
+              fontSize="16"
               fontWeight="700"
-              fill={GOLD_BRIGHT}
+              fill={GOLD_CORE}
               textAnchor="end"
-              letterSpacing="1.5"
+              letterSpacing="2"
               fontFamily="var(--font-oswald), sans-serif"
             >
               RACE TO PLAYER OF THE MONTH
             </text>
             <text
               x={CONTENT_RIGHT}
-              y="84"
-              fontSize="11.5"
-              fill={MUTED_SILVER}
+              y="65"
+              fontSize="12.5"
+              fill={ON_NAVY_MUTED}
               textAnchor="end"
-              fontFamily="var(--font-geist-sans), sans-serif"
+              fontFamily="var(--font-oswald), sans-serif"
             >
-              {monthLabel} · Generated {generatedDateLabel}
+              Generated {generatedDateLabel}
             </text>
-            <rect
+
+            {/* LIVE pill -- the one deliberate divergence from the Leaderboard twin:
+                this ranking is a live snapshot of an in-progress month, not a frozen
+                period. */}
+            <rect x={CONTENT_LEFT} y="80" width="60" height="24" rx="12" fill={LIVE_COLOR} />
+            <text
+              x={CONTENT_LEFT + 30}
+              y="96"
+              fontSize="12"
+              fontWeight="800"
+              fill="#ffffff"
+              textAnchor="middle"
+              letterSpacing="1"
+              fontFamily="var(--font-oswald), sans-serif"
+            >
+              LIVE
+            </text>
+
+            <text
               x={CONTENT_LEFT}
-              y={HEADER_HEIGHT - 2}
-              width={CONTENT_WIDTH}
-              height="2"
-              fill="url(#raceDivider)"
-            />
+              y="138"
+              fontSize="36"
+              fontWeight="800"
+              fill={ON_NAVY_PRIMARY}
+              fontFamily="var(--font-oswald), sans-serif"
+            >
+              {venueName}
+            </text>
+            <text
+              x={CONTENT_RIGHT}
+              y="138"
+              fontSize="15"
+              fontWeight="700"
+              fill={ON_NAVY_SECOND}
+              textAnchor="end"
+              letterSpacing="1.5"
+              fontFamily="var(--font-oswald), sans-serif"
+            >
+              {monthLabel}
+            </text>
+            <rect x={CONTENT_LEFT} y={HEADER_HEIGHT - 2} width={CONTENT_WIDTH} height="2" fill="url(#raceGoldRule)" />
 
-            {rows.map((row, i) => {
-              const rowY = HEADER_HEIGHT + i * ROW_HEIGHT;
-              const line1Y = rowY + 30;
-              const line2Y = rowY + 58;
-              const medal = medalFill(row.rank);
-              const tier =
-                row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
-              const chip = tier ? THREAT_CHIP[tier.label] : null;
-              const heroColor = chip ? chip.color : MUTED_SILVER;
-
+            {podiumRows.map((row, i) => {
+              const y = HEADER_HEIGHT + i * PODIUM_ROW_HEIGHT;
+              const medal = medalStops(row.rank);
+              const tier = row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
+              const tierMeter = tier ? TIER_PIPS[tier.label] ?? null : null;
+              const { size: nameSize, text: nameText } = fitName(row.name, 380, 30, 20);
               return (
-                // Index, not row.rank -- tied players now legitimately share a rank
-                // number (see assignRanksWithTies), so rank alone is no longer unique.
                 <g key={i}>
-                  {i > 0 && (
-                    <line
-                      x1={CONTENT_LEFT}
-                      y1={rowY}
-                      x2={CONTENT_RIGHT}
-                      y2={rowY}
-                      stroke="#ffffff"
-                      strokeOpacity="0.08"
+                  <rect x="0" y={y} width={CARD_WIDTH} height={PODIUM_ROW_HEIGHT} fill="#17284c" />
+                  {medal && <rect x="0" y={y} width="6" height={PODIUM_ROW_HEIGHT} fill={medal.core} />}
+                  {i > 0 && <line x1={CONTENT_LEFT} y1={y} x2={CONTENT_RIGHT} y2={y} stroke={NAVY_RULE} />}
+
+                  {medal && (
+                    <circle
+                      cx={CONTENT_LEFT + 30}
+                      cy={y + 52}
+                      r="28"
+                      fill={`url(#race${row.rank === 1 ? 'Gold' : row.rank === 2 ? 'Silver' : 'Bronze'})`}
+                      stroke={medal.deep}
+                      strokeWidth="2"
                     />
                   )}
-
-                  {medal ? (
-                    <circle cx={CONTENT_LEFT + 16} cy={line1Y - 6} r="16" fill={medal} />
-                  ) : (
-                    <circle
-                      cx={CONTENT_LEFT + 16}
-                      cy={line1Y - 6}
-                      r="16"
-                      fill="none"
-                      stroke={MUTED_SILVER}
-                      strokeOpacity="0.5"
-                      strokeWidth="1.5"
-                    />
+                  {row.rank === 1 && (
+                    <text x={CONTENT_LEFT + 30} y={y + 16} fontSize="15" textAnchor="middle">★</text>
                   )}
                   <text
-                    x={CONTENT_LEFT + 16}
-                    y={line1Y - 1}
-                    fontSize="15"
+                    x={CONTENT_LEFT + 30}
+                    y={y + 61}
+                    fontSize="26"
                     fontWeight="800"
-                    fill={medal ? NAVY_DEEP : MUTED_SILVER}
+                    fill={NAVY_DEEP}
                     textAnchor="middle"
                     fontFamily="var(--font-oswald), sans-serif"
                   >
@@ -353,109 +443,193 @@ export default function RaceLeaderboardCard({
                   </text>
 
                   <text
-                    x={CONTENT_LEFT + 46}
-                    y={line1Y}
-                    fontSize="23"
-                    fontWeight="800"
-                    fill="#f8fafc"
-                    fontFamily="var(--font-oswald), sans-serif"
-                    {...(row.name.length > 20
-                      ? { textLength: CONTENT_WIDTH - 195, lengthAdjust: 'spacingAndGlyphs' }
-                      : {})}
-                  >
-                    {row.name}
-                  </text>
-                  {/* Total Points is the sole hero stat -- Win% no longer shown as a
-                      number anywhere on this card, matching the ranking it's actually
-                      driven by. */}
-                  <text
-                    x={CONTENT_RIGHT}
-                    y={line1Y + 3}
-                    textAnchor="end"
+                    x={CONTENT_LEFT + 74}
+                    y={y + 46}
+                    fontSize={nameSize}
+                    fontWeight="700"
+                    fill={ON_NAVY_PRIMARY}
                     fontFamily="var(--font-oswald), sans-serif"
                   >
-                    <tspan fontSize="30" fontWeight="900" fill={heroColor}>
-                      {row.totalPoints}
-                    </tspan>
-                    <tspan fontSize="13" fontWeight="800" fill={MUTED_SILVER} letterSpacing="0.5">
-                      {' '}PTS
-                    </tspan>
+                    {nameText}
                   </text>
-
-                  {chip && (
-                    <>
-                      <rect
-                        x={CONTENT_LEFT + 46}
-                        y={line2Y - 14}
-                        width={chip.width}
-                        height="19"
-                        rx="9.5"
-                        fill={chip.color}
-                        fillOpacity="0.18"
-                        stroke={chip.color}
-                        strokeOpacity="0.5"
-                      />
-                      <text
-                        x={CONTENT_LEFT + 46 + chip.width / 2}
-                        y={line2Y}
-                        fontSize="12"
-                        fontWeight="800"
-                        fill={chip.color}
-                        textAnchor="middle"
-                        letterSpacing="0.5"
-                        fontFamily="var(--font-oswald), sans-serif"
-                      >
-                        {chip.short}
-                      </text>
-                    </>
+                  <text x={CONTENT_LEFT + 74} y={y + 76} fontSize="15" fontFamily="var(--font-oswald), sans-serif">
+                    <tspan fill={WIN_ON_NAVY} fontWeight="700">{row.matchWins}W</tspan>
+                    <tspan fill={ON_NAVY_SECOND}>–</tspan>
+                    <tspan fill={LOSS_ON_NAVY} fontWeight="700">{row.losses}L</tspan>
+                  </text>
+                  <TierMeter tier={tierMeter} x={CONTENT_LEFT + 74 + 68} y={y + 76} onNavy />
+                  {row.leagueWins > 0 && (
+                    <text
+                      x={CONTENT_LEFT + 74 + 68 + 5 * 10 + 8 + (tierMeter?.word.length ?? 4) * 9 + 16}
+                      y={y + 76}
+                      fontSize="14"
+                      fontWeight="700"
+                      fill={GOLD_LIGHT}
+                      fontFamily="var(--font-oswald), sans-serif"
+                    >
+                      {`★ ${row.leagueWins}`}
+                    </text>
                   )}
+
+                  <rect x={CONTENT_RIGHT - 172} y={y + 20} width="172" height="64" rx="10" fill={PLATE} stroke={PLATE_STROKE} />
                   <text
-                    x={CONTENT_LEFT + 46 + (chip ? chip.width + 12 : 0)}
-                    y={line2Y}
-                    fontSize="15"
-                    fill={MUTED_SILVER}
-                    fontFamily="var(--font-geist-sans), sans-serif"
+                    x={CONTENT_RIGHT - 86}
+                    y={y + 38}
+                    fontSize="11"
+                    fontWeight="700"
+                    fill={ON_NAVY_MUTED}
+                    textAnchor="middle"
+                    letterSpacing="2"
+                    fontFamily="var(--font-oswald), sans-serif"
                   >
-                    {row.matchWins}W–{row.losses}L
-                    {row.leagueWins > 0 ? ` · 🏆×${row.leagueWins}` : ''}
+                    TOTAL POINTS
+                  </text>
+                  <text
+                    x={CONTENT_RIGHT - 86}
+                    y={y + 72}
+                    fontSize="34"
+                    fontWeight="900"
+                    fill={ON_NAVY_PRIMARY}
+                    textAnchor="middle"
+                    fontFamily="var(--font-oswald), sans-serif"
+                  >
+                    {row.totalPoints}
                   </text>
                 </g>
               );
             })}
 
+            {podiumRows.length > 0 && (
+              <rect x="0" y={HEADER_HEIGHT + podiumHeight} width={CARD_WIDTH} height={CUT_LINE_HEIGHT} fill="url(#raceGoldRule)" />
+            )}
+
+            {hasColumnHeader && (
+              <>
+                <rect
+                  x="0"
+                  y={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT}
+                  width={CARD_WIDTH}
+                  height={COL_HEADER_HEIGHT}
+                  fill={IVORY_HEAD}
+                />
+                <line
+                  x1="0"
+                  y1={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + COL_HEADER_HEIGHT}
+                  x2={CARD_WIDTH}
+                  y2={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + COL_HEADER_HEIGHT}
+                  stroke={HAIRLINE}
+                />
+                <text
+                  x={CONTENT_LEFT}
+                  y={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + 21}
+                  fontSize="10.5"
+                  fontWeight="700"
+                  fill={INK_MUTED}
+                  letterSpacing="2"
+                  fontFamily="var(--font-oswald), sans-serif"
+                >
+                  POS
+                </text>
+                <text
+                  x={CONTENT_LEFT + 64}
+                  y={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + 21}
+                  fontSize="10.5"
+                  fontWeight="700"
+                  fill={INK_MUTED}
+                  letterSpacing="2"
+                  fontFamily="var(--font-oswald), sans-serif"
+                >
+                  PLAYER
+                </text>
+                <text
+                  x={CONTENT_RIGHT}
+                  y={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + 21}
+                  fontSize="10.5"
+                  fontWeight="700"
+                  fill={INK_MUTED}
+                  textAnchor="end"
+                  letterSpacing="2"
+                  fontFamily="var(--font-oswald), sans-serif"
+                >
+                  PTS
+                </text>
+              </>
+            )}
+
+            {bodyRows.map((row, i) => {
+              const y = HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + COL_HEADER_HEIGHT + i * BODY_ROW_HEIGHT;
+              const tier = row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
+              const tierMeter = tier ? TIER_PIPS[tier.label] ?? null : null;
+              const { size: nameSize, text: nameText } = fitName(row.name, 400, 26, 18);
+              return (
+                <g key={i}>
+                  <rect x="0" y={y} width={CARD_WIDTH} height={BODY_ROW_HEIGHT} fill={i % 2 === 0 ? IVORY : IVORY_ALT} />
+                  <text
+                    x={CONTENT_LEFT + 20}
+                    y={y + 50}
+                    fontSize="26"
+                    fontWeight="800"
+                    fill="#94a3b8"
+                    textAnchor="middle"
+                    fontFamily="var(--font-oswald), sans-serif"
+                  >
+                    {row.rank}
+                  </text>
+                  <text
+                    x={CONTENT_LEFT + 64}
+                    y={y + 38}
+                    fontSize={nameSize}
+                    fontWeight="700"
+                    fill={INK}
+                    fontFamily="var(--font-oswald), sans-serif"
+                  >
+                    {nameText}
+                  </text>
+                  <text x={CONTENT_LEFT + 64} y={y + 64} fontSize="13.5" fontFamily="var(--font-oswald), sans-serif">
+                    <tspan fill={WIN_ON_IVORY} fontWeight="700">{row.matchWins}W</tspan>
+                    <tspan fill={INK_MUTED}>–</tspan>
+                    <tspan fill={LOSS_ON_IVORY} fontWeight="700">{row.losses}L</tspan>
+                  </text>
+                  <TierMeter tier={tierMeter} x={CONTENT_LEFT + 64 + 60} y={y + 64} onNavy={false} />
+                  <text
+                    x={CONTENT_RIGHT}
+                    y={y + 50}
+                    fontSize="30"
+                    fontWeight="900"
+                    fill={row.totalPoints > 0 ? INK : '#94a3b8'}
+                    textAnchor="end"
+                    fontFamily="var(--font-oswald), sans-serif"
+                  >
+                    {row.totalPoints}
+                  </text>
+                </g>
+              );
+            })}
+
+            <line x1="0" y1={footerY} x2={CARD_WIDTH} y2={footerY} stroke={HAIRLINE} />
             <text
               x={CARD_WIDTH / 2}
-              y={footerY + 20}
-              fontSize="11"
-              fill={MUTED_SILVER}
+              y={footerY + 24}
+              fontSize="12.5"
+              fill={INK_SOFT}
               textAnchor="middle"
-              fontFamily="var(--font-geist-sans), sans-serif"
+              fontFamily="var(--font-oswald), sans-serif"
             >
               Ranked by 85% Total Points · 15% appearance · 60% of the busiest player&apos;s matches to qualify
             </text>
             <text
               x={CARD_WIDTH / 2}
-              y={footerY + 42}
+              y={footerY + 44}
               fontSize="12"
-              fill={MUTED_SILVER}
-              fillOpacity="0.8"
+              fill={INK_MUTED}
               textAnchor="middle"
-              letterSpacing="1.5"
+              letterSpacing="2"
               fontFamily="var(--font-oswald), sans-serif"
             >
               PICKLERALLY DXB
             </text>
           </g>
-          <rect
-            x="1"
-            y="1"
-            width={CARD_WIDTH - 2}
-            height={totalHeight - 2}
-            rx="19"
-            fill="none"
-            stroke={GOLD_BRIGHT}
-            strokeOpacity="0.35"
-          />
+          <rect x="1" y="1" width={CARD_WIDTH - 2} height={totalHeight - 2} rx="19" fill="none" stroke={BORDER} strokeWidth="1.5" />
         </svg>
       </button>
       <p className="text-xs text-muted mt-1.5">Click the card to share or download it as an image.</p>
