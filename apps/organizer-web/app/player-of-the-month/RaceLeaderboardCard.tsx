@@ -39,28 +39,24 @@ const COL_HEADER_HEIGHT = 32;
 const BODY_ROW_HEIGHT = 80;
 const FOOTER_HEIGHT = 56;
 
-// Same "Podium Split" palette as LocationLeaderboardCard -- these two cards are a
-// twin family and must not visually diverge without a stated reason. The only
-// intentional differences from the Leaderboard card are: the LIVE pill (this ranking
-// is a live snapshot of an in-progress month, not a frozen period), the kicker text,
-// and the footer's ranking-basis caption (a different formula).
+// All-navy throughout -- see LocationLeaderboardCard.tsx for the full rationale
+// (the organizer's explicit request, after the earlier two-tone "podium split"
+// version, to make the whole card one consistent color instead of dark-top/
+// light-bottom). These two cards are a twin family and must not visually diverge
+// without a stated reason. The only intentional differences from the Leaderboard
+// card are: the LIVE pill (this ranking is a live snapshot of an in-progress month,
+// not a frozen period), the kicker text, and the footer's ranking-basis caption (a
+// different formula).
 const NAVY_MID = '#16294e';
 const NAVY_DEEP = '#0c1830';
+const NAVY_DARKER = '#0a1730';
 const NAVY_RULE = '#24406f';
-const PLATE = '#0a1730';
+const PLATE = '#081328';
 const PLATE_STROKE = '#2c4a7d';
 const ON_NAVY_PRIMARY = '#ffffff';
 const ON_NAVY_SECOND = '#b8c8de';
 const ON_NAVY_MUTED = '#8ea6c8';
-
-const IVORY = '#fbfaf7';
-const IVORY_ALT = '#f4f1ea';
-const IVORY_HEAD = '#f0ece2';
-const HAIRLINE = '#e6e1d6';
-const INK = '#0c1830';
-const INK_SOFT = '#4a5a74';
-const INK_MUTED = '#64748b';
-const BORDER = '#d9d2c2';
+const ON_NAVY_FAINT = '#5b7196';
 
 const GOLD_DEEP = '#a8874f';
 const GOLD_CORE = '#d6af36';
@@ -74,8 +70,6 @@ const BRONZE_LIGHT = '#e0aa72';
 
 const WIN_ON_NAVY = '#34d8bd';
 const LOSS_ON_NAVY = '#ff8a80';
-const WIN_ON_IVORY = '#0f766e';
-const LOSS_ON_IVORY = '#b3261e';
 const LIVE_COLOR = '#d1601f';
 
 const TIER_PIPS: Record<string, { pips: number; word: string }> = {
@@ -105,21 +99,8 @@ function fitName(name: string, maxWidth: number, baseSize: number, minSize: numb
   return { size, text };
 }
 
-function TierMeter({
-  tier,
-  x,
-  y,
-  onNavy,
-}: {
-  tier: { pips: number; word: string } | null;
-  x: number;
-  y: number;
-  onNavy: boolean;
-}) {
+function TierMeter({ tier, x, y }: { tier: { pips: number; word: string } | null; x: number; y: number }) {
   if (!tier) return null;
-  const onColor = onNavy ? '#cbd8ea' : '#4a5a74';
-  const offColor = onNavy ? '#3a5583' : '#c8d0dc';
-  const wordColor = onNavy ? ON_NAVY_SECOND : INK_SOFT;
   const pipGap = 10;
   return (
     <>
@@ -129,17 +110,17 @@ function TierMeter({
           cx={x + p * pipGap}
           cy={y - 4}
           r="3"
-          fill={p < tier.pips ? onColor : 'none'}
-          stroke={p < tier.pips ? 'none' : offColor}
+          fill={p < tier.pips ? ON_NAVY_SECOND : 'none'}
+          stroke={p < tier.pips ? 'none' : NAVY_RULE}
           strokeWidth="1"
         />
       ))}
       <text
         x={x + 5 * pipGap + 8}
         y={y}
-        fontSize={onNavy ? '14' : '13'}
+        fontSize="14"
         fontWeight="700"
-        fill={wordColor}
+        fill={ON_NAVY_SECOND}
         fontFamily="var(--font-oswald), sans-serif"
       >
         {tier.word}
@@ -304,7 +285,7 @@ export default function RaceLeaderboardCard({
           </defs>
 
           <g clipPath="url(#raceCardClip)">
-            <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} fill={IVORY} />
+            <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} fill={NAVY_DEEP} />
 
             <image
               href="/header-dxb-skyline.webp"
@@ -457,7 +438,7 @@ export default function RaceLeaderboardCard({
                     <tspan fill={ON_NAVY_SECOND}>–</tspan>
                     <tspan fill={LOSS_ON_NAVY} fontWeight="700">{row.losses}L</tspan>
                   </text>
-                  <TierMeter tier={tierMeter} x={CONTENT_LEFT + 74 + 68} y={y + 76} onNavy />
+                  <TierMeter tier={tierMeter} x={CONTENT_LEFT + 74 + 68} y={y + 76} />
                   {row.leagueWins > 0 && (
                     <text
                       x={CONTENT_LEFT + 74 + 68 + 5 * 10 + 8 + (tierMeter?.word.length ?? 4) * 9 + 16}
@@ -510,21 +491,21 @@ export default function RaceLeaderboardCard({
                   y={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT}
                   width={CARD_WIDTH}
                   height={COL_HEADER_HEIGHT}
-                  fill={IVORY_HEAD}
+                  fill={NAVY_DARKER}
                 />
                 <line
                   x1="0"
                   y1={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + COL_HEADER_HEIGHT}
                   x2={CARD_WIDTH}
                   y2={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + COL_HEADER_HEIGHT}
-                  stroke={HAIRLINE}
+                  stroke={NAVY_RULE}
                 />
                 <text
                   x={CONTENT_LEFT}
                   y={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + 21}
                   fontSize="10.5"
                   fontWeight="700"
-                  fill={INK_MUTED}
+                  fill={ON_NAVY_MUTED}
                   letterSpacing="2"
                   fontFamily="var(--font-oswald), sans-serif"
                 >
@@ -535,7 +516,7 @@ export default function RaceLeaderboardCard({
                   y={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + 21}
                   fontSize="10.5"
                   fontWeight="700"
-                  fill={INK_MUTED}
+                  fill={ON_NAVY_MUTED}
                   letterSpacing="2"
                   fontFamily="var(--font-oswald), sans-serif"
                 >
@@ -546,7 +527,7 @@ export default function RaceLeaderboardCard({
                   y={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + 21}
                   fontSize="10.5"
                   fontWeight="700"
-                  fill={INK_MUTED}
+                  fill={ON_NAVY_MUTED}
                   textAnchor="end"
                   letterSpacing="2"
                   fontFamily="var(--font-oswald), sans-serif"
@@ -563,13 +544,13 @@ export default function RaceLeaderboardCard({
               const { size: nameSize, text: nameText } = fitName(row.name, 400, 26, 18);
               return (
                 <g key={i}>
-                  <rect x="0" y={y} width={CARD_WIDTH} height={BODY_ROW_HEIGHT} fill={i % 2 === 0 ? IVORY : IVORY_ALT} />
+                  <rect x="0" y={y} width={CARD_WIDTH} height={BODY_ROW_HEIGHT} fill={i % 2 === 0 ? NAVY_DEEP : NAVY_DARKER} />
                   <text
                     x={CONTENT_LEFT + 20}
                     y={y + 50}
                     fontSize="26"
                     fontWeight="800"
-                    fill="#94a3b8"
+                    fill={ON_NAVY_FAINT}
                     textAnchor="middle"
                     fontFamily="var(--font-oswald), sans-serif"
                   >
@@ -580,24 +561,40 @@ export default function RaceLeaderboardCard({
                     y={y + 38}
                     fontSize={nameSize}
                     fontWeight="700"
-                    fill={INK}
+                    fill={ON_NAVY_PRIMARY}
                     fontFamily="var(--font-oswald), sans-serif"
                   >
                     {nameText}
                   </text>
                   <text x={CONTENT_LEFT + 64} y={y + 64} fontSize="13.5" fontFamily="var(--font-oswald), sans-serif">
-                    <tspan fill={WIN_ON_IVORY} fontWeight="700">{row.matchWins}W</tspan>
-                    <tspan fill={INK_MUTED}>–</tspan>
-                    <tspan fill={LOSS_ON_IVORY} fontWeight="700">{row.losses}L</tspan>
+                    <tspan fill={WIN_ON_NAVY} fontWeight="700">{row.matchWins}W</tspan>
+                    <tspan fill={ON_NAVY_SECOND}>–</tspan>
+                    <tspan fill={LOSS_ON_NAVY} fontWeight="700">{row.losses}L</tspan>
                   </text>
-                  <TierMeter tier={tierMeter} x={CONTENT_LEFT + 64 + 60} y={y + 64} onNavy={false} />
+                  <TierMeter tier={tierMeter} x={CONTENT_LEFT + 64 + 60} y={y + 64} />
+                  {/* Same boxed "TOTAL POINTS" treatment as the podium rows, just
+                      sized for the shorter body row height -- every rank gets the
+                      identical plate style, not just the top 3. */}
+                  <rect x={CONTENT_RIGHT - 150} y={y + 15} width="150" height="50" rx="8" fill={PLATE} stroke={PLATE_STROKE} />
                   <text
-                    x={CONTENT_RIGHT}
-                    y={y + 50}
-                    fontSize="30"
+                    x={CONTENT_RIGHT - 75}
+                    y={y + 30}
+                    fontSize="9.5"
+                    fontWeight="700"
+                    fill={ON_NAVY_MUTED}
+                    textAnchor="middle"
+                    letterSpacing="1.5"
+                    fontFamily="var(--font-oswald), sans-serif"
+                  >
+                    TOTAL POINTS
+                  </text>
+                  <text
+                    x={CONTENT_RIGHT - 75}
+                    y={y + 57}
+                    fontSize="26"
                     fontWeight="900"
-                    fill={row.totalPoints > 0 ? INK : '#94a3b8'}
-                    textAnchor="end"
+                    fill={row.totalPoints > 0 ? ON_NAVY_PRIMARY : ON_NAVY_FAINT}
+                    textAnchor="middle"
                     fontFamily="var(--font-oswald), sans-serif"
                   >
                     {row.totalPoints}
@@ -606,12 +603,12 @@ export default function RaceLeaderboardCard({
               );
             })}
 
-            <line x1="0" y1={footerY} x2={CARD_WIDTH} y2={footerY} stroke={HAIRLINE} />
+            <line x1="0" y1={footerY} x2={CARD_WIDTH} y2={footerY} stroke={NAVY_RULE} />
             <text
               x={CARD_WIDTH / 2}
               y={footerY + 24}
               fontSize="12.5"
-              fill={INK_SOFT}
+              fill={ON_NAVY_SECOND}
               textAnchor="middle"
               fontFamily="var(--font-oswald), sans-serif"
             >
@@ -621,7 +618,7 @@ export default function RaceLeaderboardCard({
               x={CARD_WIDTH / 2}
               y={footerY + 44}
               fontSize="12"
-              fill={INK_MUTED}
+              fill={ON_NAVY_MUTED}
               textAnchor="middle"
               letterSpacing="2"
               fontFamily="var(--font-oswald), sans-serif"
@@ -629,7 +626,7 @@ export default function RaceLeaderboardCard({
               PICKLERALLY DXB
             </text>
           </g>
-          <rect x="1" y="1" width={CARD_WIDTH - 2} height={totalHeight - 2} rx="19" fill="none" stroke={BORDER} strokeWidth="1.5" />
+          <rect x="1" y="1" width={CARD_WIDTH - 2} height={totalHeight - 2} rx="19" fill="none" stroke={GOLD_CORE} strokeOpacity="0.35" strokeWidth="1.5" />
         </svg>
       </button>
       <p className="text-xs text-muted mt-1.5">Click the card to share or download it as an image.</p>

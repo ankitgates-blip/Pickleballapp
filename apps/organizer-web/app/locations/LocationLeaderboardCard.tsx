@@ -48,28 +48,22 @@ const FOOTER_HEIGHT = 56;
 // produce a multi-thousand-pixel-tall PNG that thumbnails to nothing in a WhatsApp chat.
 const MAX_ROWS = 12;
 
-// "Podium Split" palette: a navy block behind the top-3 medals (metals read as light
-// against a dark ground) sitting on an ivory body for the ranked list (denser tabular
-// content reads better light, and this app's organizer already said a fully-navy
-// version of this exact card felt "too dark"). See the design research this was built
-// from (dispatched via the sports-ux-designer agent) for the full rationale.
+// All-navy throughout, on the organizer's explicit request after seeing the earlier
+// two-tone "podium split" version (navy top, ivory body) -- this reverses that
+// version's light body back to the same navy ground as the podium, all the way down
+// the card. Medals/foils, tier meter, and the other structural fixes from that pass
+// (stepped name sizing, capped rows, Oswald-only text, ★ instead of an emoji, hero
+// not tier-colored) are unchanged -- only the body's ground and text colors flip.
 const NAVY_MID = '#16294e';
 const NAVY_DEEP = '#0c1830';
+const NAVY_DARKER = '#0a1730';
 const NAVY_RULE = '#24406f';
-const PLATE = '#0a1730';
+const PLATE = '#081328';
 const PLATE_STROKE = '#2c4a7d';
 const ON_NAVY_PRIMARY = '#ffffff';
 const ON_NAVY_SECOND = '#b8c8de';
 const ON_NAVY_MUTED = '#8ea6c8';
-
-const IVORY = '#fbfaf7';
-const IVORY_ALT = '#f4f1ea';
-const IVORY_HEAD = '#f0ece2';
-const HAIRLINE = '#e6e1d6';
-const INK = '#0c1830';
-const INK_SOFT = '#4a5a74';
-const INK_MUTED = '#64748b';
-const BORDER = '#d9d2c2';
+const ON_NAVY_FAINT = '#5b7196';
 
 const GOLD_DEEP = '#a8874f';
 const GOLD_CORE = '#d6af36';
@@ -83,8 +77,6 @@ const BRONZE_LIGHT = '#e0aa72';
 
 const WIN_ON_NAVY = '#34d8bd';
 const LOSS_ON_NAVY = '#ff8a80';
-const WIN_ON_IVORY = '#0f766e';
-const LOSS_ON_IVORY = '#b3261e';
 
 // Same 5 tiers as ThreatBadge/threatTierFor, expressed as a pip count (1-5) rather
 // than 5 separate saturated hues -- tier becomes a countable meter instead of a
@@ -120,21 +112,8 @@ function fitName(name: string, maxWidth: number, baseSize: number, minSize: numb
   return { size, text };
 }
 
-function TierMeter({
-  tier,
-  x,
-  y,
-  onNavy,
-}: {
-  tier: { pips: number; word: string } | null;
-  x: number;
-  y: number;
-  onNavy: boolean;
-}) {
+function TierMeter({ tier, x, y }: { tier: { pips: number; word: string } | null; x: number; y: number }) {
   if (!tier) return null;
-  const onColor = onNavy ? '#cbd8ea' : '#4a5a74';
-  const offColor = onNavy ? '#3a5583' : '#c8d0dc';
-  const wordColor = onNavy ? ON_NAVY_SECOND : INK_SOFT;
   const pipGap = 10;
   return (
     <>
@@ -144,17 +123,17 @@ function TierMeter({
           cx={x + p * pipGap}
           cy={y - 4}
           r="3"
-          fill={p < tier.pips ? onColor : 'none'}
-          stroke={p < tier.pips ? 'none' : offColor}
+          fill={p < tier.pips ? ON_NAVY_SECOND : 'none'}
+          stroke={p < tier.pips ? 'none' : NAVY_RULE}
           strokeWidth="1"
         />
       ))}
       <text
         x={x + 5 * pipGap + 8}
         y={y}
-        fontSize={onNavy ? '14' : '13'}
+        fontSize="14"
         fontWeight="700"
-        fill={wordColor}
+        fill={ON_NAVY_SECOND}
         fontFamily="var(--font-oswald), sans-serif"
       >
         {tier.word}
@@ -322,7 +301,7 @@ export default function LocationLeaderboardCard({
           </defs>
 
           <g clipPath="url(#lbCardClip)">
-            <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} fill={IVORY} />
+            <rect x="0" y="0" width={CARD_WIDTH} height={totalHeight} fill={NAVY_DEEP} />
 
             {/* Header: skyline photo cropped shorter with a lighter wash than before,
                 so it's actually visible instead of reading as near-black. */}
@@ -408,8 +387,9 @@ export default function LocationLeaderboardCard({
             </text>
             <rect x={CONTENT_LEFT} y={HEADER_HEIGHT - 2} width={CONTENT_WIDTH} height="2" fill="url(#lbGoldRule)" />
 
-            {/* Podium block -- top 3 array positions, on a navy ground so the metal
-                foils read as light against dark (see design notes above). */}
+            {/* Podium block -- top 3 array positions, on a slightly lighter navy than
+                the body rows below so it still reads as its own "stage" even though
+                the whole card is now one tone. */}
             {podiumRows.map((row, i) => {
               const y = HEADER_HEIGHT + i * PODIUM_ROW_HEIGHT;
               const medal = medalStops(row.rank);
@@ -462,7 +442,7 @@ export default function LocationLeaderboardCard({
                     <tspan fill={ON_NAVY_SECOND}>–</tspan>
                     <tspan fill={LOSS_ON_NAVY} fontWeight="700">{row.losses}L</tspan>
                   </text>
-                  <TierMeter tier={tierMeter} x={CONTENT_LEFT + 74 + 68} y={y + 76} onNavy />
+                  <TierMeter tier={tierMeter} x={CONTENT_LEFT + 74 + 68} y={y + 76} />
                   {row.tournamentWins > 0 && (
                     <text
                       x={CONTENT_LEFT + 74 + 68 + 5 * 10 + 8 + (tierMeter?.word.length ?? 4) * 9 + 16}
@@ -516,21 +496,21 @@ export default function LocationLeaderboardCard({
                   y={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT}
                   width={CARD_WIDTH}
                   height={COL_HEADER_HEIGHT}
-                  fill={IVORY_HEAD}
+                  fill={NAVY_DARKER}
                 />
                 <line
                   x1="0"
                   y1={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + COL_HEADER_HEIGHT}
                   x2={CARD_WIDTH}
                   y2={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + COL_HEADER_HEIGHT}
-                  stroke={HAIRLINE}
+                  stroke={NAVY_RULE}
                 />
                 <text
                   x={CONTENT_LEFT}
                   y={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + 21}
                   fontSize="10.5"
                   fontWeight="700"
-                  fill={INK_MUTED}
+                  fill={ON_NAVY_MUTED}
                   letterSpacing="2"
                   fontFamily="var(--font-oswald), sans-serif"
                 >
@@ -541,7 +521,7 @@ export default function LocationLeaderboardCard({
                   y={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + 21}
                   fontSize="10.5"
                   fontWeight="700"
-                  fill={INK_MUTED}
+                  fill={ON_NAVY_MUTED}
                   letterSpacing="2"
                   fontFamily="var(--font-oswald), sans-serif"
                 >
@@ -552,7 +532,7 @@ export default function LocationLeaderboardCard({
                   y={HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + 21}
                   fontSize="10.5"
                   fontWeight="700"
-                  fill={INK_MUTED}
+                  fill={ON_NAVY_MUTED}
                   textAnchor="end"
                   letterSpacing="2"
                   fontFamily="var(--font-oswald), sans-serif"
@@ -563,8 +543,8 @@ export default function LocationLeaderboardCard({
             )}
 
             {/* Body rows (rank 4+, or beyond) -- bare rank numeral, no medal circle,
-                so the podium discs stay the special thing. Zebra striping does the
-                visual separation instead of a hairline per row. */}
+                so the podium discs stay the special thing. Zebra striping (two navy
+                shades) does the visual separation instead of a hairline per row. */}
             {bodyRows.map((row, i) => {
               const y = HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + COL_HEADER_HEIGHT + i * BODY_ROW_HEIGHT;
               const tier = row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
@@ -572,13 +552,13 @@ export default function LocationLeaderboardCard({
               const { size: nameSize, text: nameText } = fitName(row.name, 400, 26, 18);
               return (
                 <g key={i}>
-                  <rect x="0" y={y} width={CARD_WIDTH} height={BODY_ROW_HEIGHT} fill={i % 2 === 0 ? IVORY : IVORY_ALT} />
+                  <rect x="0" y={y} width={CARD_WIDTH} height={BODY_ROW_HEIGHT} fill={i % 2 === 0 ? NAVY_DEEP : NAVY_DARKER} />
                   <text
                     x={CONTENT_LEFT + 20}
                     y={y + 50}
                     fontSize="26"
                     fontWeight="800"
-                    fill="#94a3b8"
+                    fill={ON_NAVY_FAINT}
                     textAnchor="middle"
                     fontFamily="var(--font-oswald), sans-serif"
                   >
@@ -589,26 +569,41 @@ export default function LocationLeaderboardCard({
                     y={y + 38}
                     fontSize={nameSize}
                     fontWeight="700"
-                    fill={INK}
+                    fill={ON_NAVY_PRIMARY}
                     fontFamily="var(--font-oswald), sans-serif"
                   >
                     {nameText}
                   </text>
                   <text x={CONTENT_LEFT + 64} y={y + 64} fontSize="13.5" fontFamily="var(--font-oswald), sans-serif">
-                    <tspan fill={WIN_ON_IVORY} fontWeight="700">{row.matchWins}W</tspan>
-                    <tspan fill={INK_MUTED}>–</tspan>
-                    <tspan fill={LOSS_ON_IVORY} fontWeight="700">{row.losses}L</tspan>
+                    <tspan fill={WIN_ON_NAVY} fontWeight="700">{row.matchWins}W</tspan>
+                    <tspan fill={ON_NAVY_SECOND}>–</tspan>
+                    <tspan fill={LOSS_ON_NAVY} fontWeight="700">{row.losses}L</tspan>
                   </text>
-                  <TierMeter tier={tierMeter} x={CONTENT_LEFT + 64 + 60} y={y + 64} onNavy={false} />
-                  {/* No per-row PTS label -- stated once in the column header. Muted
-                      when zero so a legitimate zero doesn't shout, never hidden. */}
+                  <TierMeter tier={tierMeter} x={CONTENT_LEFT + 64 + 60} y={y + 64} />
+                  {/* Same boxed "TOTAL POINTS" treatment as the podium rows, just
+                      sized for the shorter body row height -- every rank gets the
+                      identical plate style, not just the top 3. Muted when zero so a
+                      legitimate zero doesn't shout, never hidden. */}
+                  <rect x={CONTENT_RIGHT - 150} y={y + 15} width="150" height="50" rx="8" fill={PLATE} stroke={PLATE_STROKE} />
                   <text
-                    x={CONTENT_RIGHT}
-                    y={y + 50}
-                    fontSize="30"
+                    x={CONTENT_RIGHT - 75}
+                    y={y + 30}
+                    fontSize="9.5"
+                    fontWeight="700"
+                    fill={ON_NAVY_MUTED}
+                    textAnchor="middle"
+                    letterSpacing="1.5"
+                    fontFamily="var(--font-oswald), sans-serif"
+                  >
+                    TOTAL POINTS
+                  </text>
+                  <text
+                    x={CONTENT_RIGHT - 75}
+                    y={y + 57}
+                    fontSize="26"
                     fontWeight="900"
-                    fill={row.totalPoints > 0 ? INK : '#94a3b8'}
-                    textAnchor="end"
+                    fill={row.totalPoints > 0 ? ON_NAVY_PRIMARY : ON_NAVY_FAINT}
+                    textAnchor="middle"
                     fontFamily="var(--font-oswald), sans-serif"
                   >
                     {row.totalPoints}
@@ -617,12 +612,12 @@ export default function LocationLeaderboardCard({
               );
             })}
 
-            <line x1="0" y1={footerY} x2={CARD_WIDTH} y2={footerY} stroke={HAIRLINE} />
+            <line x1="0" y1={footerY} x2={CARD_WIDTH} y2={footerY} stroke={NAVY_RULE} />
             <text
               x={CARD_WIDTH / 2}
               y={footerY + 22}
               fontSize="12.5"
-              fill={INK_SOFT}
+              fill={ON_NAVY_SECOND}
               textAnchor="middle"
               fontFamily="var(--font-oswald), sans-serif"
             >
@@ -633,7 +628,7 @@ export default function LocationLeaderboardCard({
                 x={CARD_WIDTH / 2}
                 y={footerY + 40}
                 fontSize="12"
-                fill={INK_MUTED}
+                fill={ON_NAVY_MUTED}
                 textAnchor="middle"
                 fontFamily="var(--font-oswald), sans-serif"
               >
@@ -641,7 +636,7 @@ export default function LocationLeaderboardCard({
               </text>
             )}
           </g>
-          <rect x="1" y="1" width={CARD_WIDTH - 2} height={totalHeight - 2} rx="19" fill="none" stroke={BORDER} strokeWidth="1.5" />
+          <rect x="1" y="1" width={CARD_WIDTH - 2} height={totalHeight - 2} rx="19" fill="none" stroke={GOLD_CORE} strokeOpacity="0.35" strokeWidth="1.5" />
         </svg>
       </button>
       <p className="text-xs text-muted mt-1.5">Click the card to share or download it as an image.</p>
