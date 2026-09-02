@@ -84,7 +84,7 @@ describe('computePointsLeaderboard', () => {
     expect(carolEntry?.matchWins).toBe(0);
   });
 
-  it('pays the league-win bonus to both teammates via the real champion function', () => {
+  it('pays the league-win bonus (plus the clean-sweep bonus, since a 1-match league is trivially undefeated) to both teammates via the real champion function', () => {
     const entries = computePointsLeaderboard({
       matches: [completeMatch],
       teams,
@@ -93,13 +93,27 @@ describe('computePointsLeaderboard', () => {
     });
     const alice = findEntry(entries, 'alice');
     const bob = findEntry(entries, 'bob');
-    expect(alice).toMatchObject({ leagueWins: 1, leagueWinPoints: 50, totalPoints: 60 });
-    expect(bob).toMatchObject({ leagueWins: 1, leagueWinPoints: 50, totalPoints: 60 });
-    expect(findEntry(entries, 'carol')?.leagueWins).toBe(0);
-    expect(findEntry(entries, 'carol')?.totalPoints).toBe(0);
+    // 10 (match win) + 25 (league win) + 10 (clean sweep: their only match was a win)
+    expect(alice).toMatchObject({
+      leagueWins: 1,
+      leagueWinPoints: 25,
+      cleanSweepBonuses: 1,
+      cleanSweepBonusPoints: 10,
+      totalPoints: 45,
+    });
+    expect(bob).toMatchObject({ leagueWins: 1, leagueWinPoints: 25, totalPoints: 45 });
+    // carol/dave are the only other team in this 2-team, 1-match league, so they're
+    // also its runner-up -- +10 each, with no match-win or close-loss points (they
+    // lost 5-11, well below the close-loss threshold).
+    expect(findEntry(entries, 'carol')).toMatchObject({
+      leagueWins: 0,
+      leagueRunnerUps: 1,
+      leagueRunnerUpPoints: 10,
+      totalPoints: 10,
+    });
   });
 
-  it('pays the 50-point league-win bonus under the custom format too', () => {
+  it('pays the 25-point league-win bonus under the custom format too', () => {
     const entries = computePointsLeaderboard({
       matches: [completeMatch],
       teams,
@@ -108,9 +122,9 @@ describe('computePointsLeaderboard', () => {
     });
     // No Final stage in this fixture's matches -- 'custom' falls back to individual
     // standings, so only one of the two teammates is credited here (see the dedicated
-    // test below). Assert the bonus VALUE is 50 regardless of who receives it.
+    // test below). Assert the bonus VALUE is 25 regardless of who receives it.
     const winner = entries.find((e) => e.leagueWins > 0);
-    expect(winner).toMatchObject({ leagueWinPoints: 50 });
+    expect(winner).toMatchObject({ leagueWinPoints: 25 });
   });
 
   it('credits exactly one person for a Custom League that never generated a Final', () => {
@@ -164,8 +178,8 @@ describe('computePointsLeaderboard', () => {
       range: { start: '2026-08-01', endExclusive: '2026-10-01' },
     });
     // Only the September tournament counts -- August is invisible even though the
-    // caller asked for it.
-    expect(findEntry(entries, 'alice')?.totalPoints).toBe(60);
+    // caller asked for it. 10 (match win) + 25 (league win) + 10 (clean sweep).
+    expect(findEntry(entries, 'alice')?.totalPoints).toBe(45);
   });
 
   it('month-to-date excludes a tournament dated later in the same month', () => {
@@ -179,7 +193,7 @@ describe('computePointsLeaderboard', () => {
       tournaments: [sep1Tournament(), laterTournament],
       range: { start: '2026-09-01', endExclusive: '2026-09-16' },
     });
-    expect(findEntry(entries, 'alice')?.totalPoints).toBe(60);
+    expect(findEntry(entries, 'alice')?.totalPoints).toBe(45);
     expect(findEntry(entries, 'alice')?.matchesPlayed).toBe(1);
   });
 
@@ -190,7 +204,7 @@ describe('computePointsLeaderboard', () => {
       tournaments: [sep1Tournament()], // dated 2026-09-05
       range: { start: '2026-09-01', endExclusive: '2026-09-06' },
     });
-    expect(findEntry(entries, 'alice')?.totalPoints).toBe(60);
+    expect(findEntry(entries, 'alice')?.totalPoints).toBe(45);
   });
 
   it('scores nothing for a pending match', () => {
@@ -326,6 +340,168 @@ describe('computePointsLeaderboard', () => {
         range: SEPTEMBER,
       });
       expect(findEntry(entries, 'carol')?.shutoutWins).toBe(0);
+    });
+  });
+
+  describe('close loss bonus', () => {
+    it('awards 5 points for a losing score of 10 or higher', () => {
+      const closeLossMatch: RawMatch = { ...completeMatch, scoreA: 10, scoreB: 12 };
+      const tournament = sep1Tournament({ completedAt: null }); // isolate from league bonus
+      const entries = computePointsLeaderboard({
+        matches: [closeLossMatch],
+        teams,
+        tournaments: [tournament],
+        range: SEPTEMBER,
+      });
+      expect(findEntry(entries, 'alice')).toMatchObject({
+        closeLosses: 1,
+        closeLossPoints: 5,
+        matchWinPoints: 0,
+        totalPoints: 5,
+      });
+    });
+
+    it('does not award the bonus for a loss below 10 (11-9 boundary check)', () => {
+      const notCloseMatch: RawMatch = { ...completeMatch, scoreA: 9, scoreB: 11 };
+      const tournament = sep1Tournament({ completedAt: null });
+      const entries = computePointsLeaderboard({
+        matches: [notCloseMatch],
+        teams,
+        tournaments: [tournament],
+        range: SEPTEMBER,
+      });
+      expect(findEntry(entries, 'alice')?.closeLosses).toBe(0);
+      expect(findEntry(entries, 'alice')?.totalPoints).toBe(0);
+    });
+
+    it('does not award the close-loss bonus to the winning side', () => {
+      const closeMatch: RawMatch = { ...completeMatch, scoreA: 10, scoreB: 12 };
+      const tournament = sep1Tournament({ completedAt: null });
+      const entries = computePointsLeaderboard({
+        matches: [closeMatch],
+        teams,
+        tournaments: [tournament],
+        range: SEPTEMBER,
+      });
+      // carol/dave won 12-10 -- a win, never a "close loss" regardless of score.
+      expect(findEntry(entries, 'carol')?.closeLosses).toBe(0);
+    });
+  });
+
+  describe('league runner-up bonus', () => {
+    const leagueMatch: RawMatch = completeMatch; // alice/bob (t1) beat carol/dave (t2) 11-5 in the league stage
+    const finalMatch: RawMatch = {
+      tournamentId: 'sep1',
+      tournamentDate: '2026-09-05',
+      venueName: 'Pickleturf',
+      teamAId: 't1',
+      teamBId: 't2',
+      scoreA: 8,
+      scoreB: 11,
+      status: 'complete',
+    }; // t2 (carol/dave) wins the Final -- t1 (alice/bob) is the runner-up
+    const tournament = sep1Tournament({
+      matches: [
+        { stage: 'league', team_a_id: 't1', team_b_id: 't2', score_a: 11, score_b: 5, status: 'complete', round: 1, court: null },
+        { stage: 'final', team_a_id: 't1', team_b_id: 't2', score_a: 8, score_b: 11, status: 'complete', round: 1, court: null },
+      ],
+    });
+
+    it('pays the 10-point runner-up bonus to both members of the losing Final team', () => {
+      const entries = computePointsLeaderboard({
+        matches: [leagueMatch, finalMatch],
+        teams,
+        tournaments: [tournament],
+        range: SEPTEMBER,
+      });
+      expect(findEntry(entries, 'alice')).toMatchObject({
+        leagueWins: 0,
+        leagueRunnerUps: 1,
+        leagueRunnerUpPoints: 10,
+        totalPoints: 20, // 10 match win (league stage) + 10 runner-up, no close loss (final lost 8-11)
+      });
+      expect(findEntry(entries, 'bob')).toMatchObject({ leagueRunnerUps: 1, leagueRunnerUpPoints: 10 });
+    });
+
+    it('does not award the runner-up bonus to the champion', () => {
+      const entries = computePointsLeaderboard({
+        matches: [leagueMatch, finalMatch],
+        teams,
+        tournaments: [tournament],
+        range: SEPTEMBER,
+      });
+      // carol/dave won the Final (champion) but lost the league stage -- not
+      // undefeated, so no clean-sweep bonus either.
+      expect(findEntry(entries, 'carol')).toMatchObject({
+        leagueWins: 1,
+        leagueWinPoints: 25,
+        leagueRunnerUps: 0,
+        cleanSweepBonuses: 0,
+      });
+    });
+  });
+
+  describe('clean sweep bonus', () => {
+    it('awards a 10-point bonus when the champion went undefeated through the whole tournament', () => {
+      // t1 (alice/bob) beats t3 (erin/frank) in round 1, then beats t2 (carol/dave) in
+      // round 2 -- two wins, zero losses, crowned champion via team standings (no Final).
+      const round1: RawMatch = {
+        tournamentId: 'sep1', tournamentDate: '2026-09-05', venueName: 'Pickleturf',
+        teamAId: 't1', teamBId: 't3', scoreA: 11, scoreB: 5, status: 'complete',
+      };
+      const round2: RawMatch = {
+        tournamentId: 'sep1', tournamentDate: '2026-09-06', venueName: 'Pickleturf',
+        teamAId: 't1', teamBId: 't2', scoreA: 11, scoreB: 5, status: 'complete',
+      };
+      const t3Team: RawTeam = { id: 't3', tournamentId: 'sep1', player1PersonId: 'erin', player2PersonId: 'frank' };
+      const tournament = sep1Tournament({
+        teams: [
+          { id: 't1', person1Id: 'alice', person2Id: 'bob' },
+          { id: 't2', person1Id: 'carol', person2Id: 'dave' },
+          { id: 't3', person1Id: 'erin', person2Id: 'frank' },
+        ],
+        matches: [
+          { stage: 'league', team_a_id: 't1', team_b_id: 't3', score_a: 11, score_b: 5, status: 'complete', round: 1, court: null },
+          { stage: 'league', team_a_id: 't1', team_b_id: 't2', score_a: 11, score_b: 5, status: 'complete', round: 2, court: null },
+        ],
+      });
+      const entries = computePointsLeaderboard({
+        matches: [round1, round2],
+        teams: [...teams, t3Team],
+        tournaments: [tournament],
+        range: SEPTEMBER,
+      });
+      expect(findEntry(entries, 'alice')).toMatchObject({
+        leagueWins: 1,
+        cleanSweepBonuses: 1,
+        cleanSweepBonusPoints: 10,
+      });
+    });
+
+    it('does not award the bonus when the champion lost a league match before winning the Final', () => {
+      const leagueMatch: RawMatch = { ...completeMatch, scoreA: 5, scoreB: 11 }; // t1 (alice/bob) LOSES the league stage
+      const finalMatch: RawMatch = {
+        tournamentId: 'sep1', tournamentDate: '2026-09-05', venueName: 'Pickleturf',
+        teamAId: 't1', teamBId: 't2', scoreA: 11, scoreB: 8, status: 'complete',
+      };
+      const tournament = sep1Tournament({
+        matches: [
+          { stage: 'league', team_a_id: 't1', team_b_id: 't2', score_a: 5, score_b: 11, status: 'complete', round: 1, court: null },
+          { stage: 'final', team_a_id: 't1', team_b_id: 't2', score_a: 11, score_b: 8, status: 'complete', round: 1, court: null },
+        ],
+      });
+      const entries = computePointsLeaderboard({
+        matches: [leagueMatch, finalMatch],
+        teams,
+        tournaments: [tournament],
+        range: SEPTEMBER,
+      });
+      // alice/bob won the Final (champion) but lost the league stage -- not undefeated.
+      expect(findEntry(entries, 'alice')).toMatchObject({
+        leagueWins: 1,
+        cleanSweepBonuses: 0,
+        cleanSweepBonusPoints: 0,
+      });
     });
   });
 

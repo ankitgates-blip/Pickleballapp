@@ -1,8 +1,9 @@
 // apps/organizer-web/app/player-of-the-month/lockMissingWinners.ts
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
-import { rankMonthlyCandidates } from '@/lib/stats/playerOfTheMonth';
+import { rankMonthlyCandidates, rankMonthlyCandidatesByPoints } from '@/lib/stats/playerOfTheMonth';
 import { buildMonthlyCandidates } from '@/lib/stats/monthlyCandidates';
+import { computePointsLeaderboard, POINTS_SYSTEM_START_DATE, type PointsTournament } from '@/lib/stats/points';
 import { monthsToCheck } from '@/lib/stats/monthRange';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
 
@@ -142,6 +143,7 @@ export async function lockMissingPlayerOfTheMonthWinners(
         }));
 
       const leagueWinsByPersonId = new Map<string, number>();
+      const pointsTournaments: PointsTournament[] = [];
       for (const tournament of tournaments) {
         const tournamentTeams = (teamsRaw ?? [])
           .filter((t) => t.tournament_id === tournament.id)
@@ -162,10 +164,35 @@ export async function lockMissingPlayerOfTheMonthWinners(
         for (const personId of championPersonIds ?? []) {
           leagueWinsByPersonId.set(personId, (leagueWinsByPersonId.get(personId) ?? 0) + 1);
         }
+
+        pointsTournaments.push({
+          id: tournament.id,
+          date: tournament.date,
+          format: tournament.format,
+          completedAt: tournament.completed_at,
+          matches: tournamentMatches,
+          teams: tournamentTeams,
+        });
       }
 
-      const candidates = buildMonthlyCandidates(matches, teams, leagueWinsByPersonId);
-      const ranked = rankMonthlyCandidates(candidates);
+      // computePointsLeaderboard itself clamps to POINTS_SYSTEM_START_DATE, so this is
+      // a no-op (empty leaderboard) for any pre-September month -- cheap to always
+      // compute rather than branch around.
+      const totalPoints = computePointsLeaderboard({
+        matches,
+        teams,
+        tournaments: pointsTournaments,
+        range: { start, endExclusive: end },
+      });
+      const totalPointsByPersonId = new Map(totalPoints.map((e) => [e.personId, e.totalPoints]));
+
+      const candidates = buildMonthlyCandidates(matches, teams, leagueWinsByPersonId, totalPointsByPersonId);
+      // The 85%-points/15%-appearance formula only makes sense once the points system
+      // is actually live -- any not-yet-locked month before that keeps using the
+      // original league-wins/match-wins/win% formula, which has no real point totals
+      // to weight by.
+      const isPointsEra = `${year}-${String(month).padStart(2, '0')}-01` >= POINTS_SYSTEM_START_DATE;
+      const ranked = isPointsEra ? rankMonthlyCandidatesByPoints(candidates) : rankMonthlyCandidates(candidates);
       const winner = ranked[0] ?? null;
 
       const { error } = await supabase.rpc('lock_player_of_the_month', {

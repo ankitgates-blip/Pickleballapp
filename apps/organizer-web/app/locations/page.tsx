@@ -340,8 +340,9 @@ export default async function LocationsPage({
           <h2 className="text-lg font-bold text-slate-900">Total Points</h2>
         </div>
         <p className="text-xs text-muted mb-3">
-          10 pts per match win · 50 bonus pts per league win · +10 for an 11-0 win · Custom
-          League &amp; League + Playoffs only, starting September 2026
+          10 pts per match win · 5 pts for a loss reaching 10–10 · +25 for a league win
+          (+10 more for an undefeated one) · +10 for league runner-up · +10 for an 11-0
+          win · Custom League &amp; League + Playoffs only, starting September 2026
         </p>
 
         {leaderboardsByVenue.map(({ venueId, venueName, points }) => (
@@ -385,7 +386,10 @@ export default async function LocationsPage({
                         <span className="font-extrabold text-navy-deep">{entry.totalPoints} pts</span>
                         <span className="block text-xs text-muted">
                           {entry.matchWins}×win
+                          {entry.closeLosses > 0 ? ` · ${entry.closeLosses}×close loss` : ''}
                           {entry.leagueWins > 0 ? ` · ${entry.leagueWins}×league` : ''}
+                          {entry.cleanSweepBonuses > 0 ? ` · ${entry.cleanSweepBonuses}×sweep` : ''}
+                          {entry.leagueRunnerUps > 0 ? ` · ${entry.leagueRunnerUps}×runner-up` : ''}
                           {entry.shutoutWins > 0 ? ` · ${entry.shutoutWins}×11-0` : ''}
                         </span>
                       </span>

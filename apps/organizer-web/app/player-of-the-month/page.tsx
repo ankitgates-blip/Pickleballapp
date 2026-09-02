@@ -1,7 +1,7 @@
 // apps/organizer-web/app/player-of-the-month/page.tsx
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import { lockMissingPlayerOfTheMonthWinners } from './lockMissingWinners';
-import { rankMonthlyCandidates } from '@/lib/stats/playerOfTheMonth';
+import { rankMonthlyCandidates, rankMonthlyCandidatesByPoints } from '@/lib/stats/playerOfTheMonth';
 import { buildMonthlyCandidates } from '@/lib/stats/monthlyCandidates';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
@@ -10,6 +10,7 @@ import { winsInLastN } from '@/lib/stats/winsInLastN';
 import { winsVsHigherRated } from '@/lib/stats/winsVsHigherRated';
 import { starRating } from '@/lib/stats/starRating';
 import { buildWinPercentageByPersonId } from '@/lib/stats/buildWinPercentageByPersonId';
+import { computePointsLeaderboard, POINTS_SYSTEM_START_DATE, type PointsTournament } from '@/lib/stats/points';
 import { monthDateRange } from '@/lib/stats/monthRange';
 import PlayerOfTheMonthCard from './PlayerOfTheMonthCard';
 import RaceLeaderboardCard from './RaceLeaderboardCard';
@@ -92,7 +93,12 @@ export default async function PlayerOfTheMonthPage() {
       .gte('date', start)
       .lt('date', end);
     if (!tournaments || tournaments.length === 0) {
-      return { matches: [] as RawMatch[], teams: [] as RawTeam[], leagueWinsByPersonId: new Map<string, number>() };
+      return {
+        matches: [] as RawMatch[],
+        teams: [] as RawTeam[],
+        leagueWinsByPersonId: new Map<string, number>(),
+        pointsTournaments: [] as PointsTournament[],
+      };
     }
 
     const tournamentIds = tournaments.map((t) => t.id);
@@ -136,6 +142,7 @@ export default async function PlayerOfTheMonthPage() {
       }));
 
     const leagueWinsByPersonId = new Map<string, number>();
+    const pointsTournaments: PointsTournament[] = [];
     for (const tournament of tournaments) {
       const tournamentTeams = (teamsRaw ?? [])
         .filter((t) => t.tournament_id === tournament.id)
@@ -155,9 +162,18 @@ export default async function PlayerOfTheMonthPage() {
       for (const personId of championPersonIds ?? []) {
         leagueWinsByPersonId.set(personId, (leagueWinsByPersonId.get(personId) ?? 0) + 1);
       }
+
+      pointsTournaments.push({
+        id: tournament.id,
+        date: tournament.date,
+        format: tournament.format,
+        completedAt: tournament.completed_at,
+        matches: tournamentMatches,
+        teams: tournamentTeams,
+      });
     }
 
-    return { matches, teams, leagueWinsByPersonId };
+    return { matches, teams, leagueWinsByPersonId, pointsTournaments };
   }
 
   const venueSections = await Promise.all(
@@ -187,10 +203,36 @@ export default async function PlayerOfTheMonthPage() {
           ? Math.round((lastMonthRow.win_percentage / 100) * 5 * 100) / 100
           : 0;
 
-      const { matches: currentMatches, teams: currentTeams, leagueWinsByPersonId: currentLeagueWins } =
-        await fetchMonthData(venue.id, venue.name, currentYear, currentMonth);
-      const currentCandidates = buildMonthlyCandidates(currentMatches, currentTeams, currentLeagueWins);
-      const race = rankMonthlyCandidates(currentCandidates).slice(0, 5);
+      const {
+        matches: currentMatches,
+        teams: currentTeams,
+        leagueWinsByPersonId: currentLeagueWins,
+        pointsTournaments: currentPointsTournaments,
+      } = await fetchMonthData(venue.id, venue.name, currentYear, currentMonth);
+      // computePointsLeaderboard itself clamps to POINTS_SYSTEM_START_DATE, so this is
+      // a no-op (empty leaderboard) if the current month is somehow before that.
+      const currentPoints = computePointsLeaderboard({
+        matches: currentMatches,
+        teams: currentTeams,
+        tournaments: currentPointsTournaments,
+        range: monthDateRange(currentYear, currentMonth),
+      });
+      const currentTotalPointsByPersonId = new Map(currentPoints.map((e) => [e.personId, e.totalPoints]));
+      const currentCandidates = buildMonthlyCandidates(
+        currentMatches,
+        currentTeams,
+        currentLeagueWins,
+        currentTotalPointsByPersonId
+      );
+      // Same September-2026 cutover as lockMissingPlayerOfTheMonthWinners -- the
+      // points-weighted formula only makes sense once the points system is live.
+      const isCurrentMonthPointsEra =
+        `${currentYear}-${String(currentMonth).padStart(2, '0')}-01` >= POINTS_SYSTEM_START_DATE;
+      const race = (
+        isCurrentMonthPointsEra
+          ? rankMonthlyCandidatesByPoints(currentCandidates)
+          : rankMonthlyCandidates(currentCandidates)
+      ).slice(0, 5);
 
       return { venue, lastMonthRow, winnerPerson, winnerMatches, winnerWins, winnerLosses, winnerRating, race };
     })

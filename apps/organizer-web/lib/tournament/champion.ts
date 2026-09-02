@@ -23,22 +23,31 @@ export type ChampionMatch = {
 // math never inspects what the ids mean.
 type CoreTeam = { id: string; member1Id: string; member2Id: string };
 
-/**
- * Single source of truth for "who actually won this tournament" — shared by
- * computeTournamentChampionName (players.id space, for display) and
- * computeTournamentChampionPersonIds (people.id space, for cross-tournament
- * stats like League Wins). Do not reimplement this logic elsewhere.
- */
-function computeChampionCore(params: {
+type StandingsInfo = {
+  useTeamChampion: boolean;
+  finalMatch: ChampionMatch | undefined;
+  standings: ReturnType<typeof computeStandings>;
+  individualStandings: ReturnType<typeof computeIndividualStandings>;
+  isLadderFormat: boolean;
+  ladderStandings: ReturnType<typeof computeClaimTheThroneStandings>;
+  teams: CoreTeam[];
+};
+
+// Computes every standings view a tournament might need its result read from, without
+// picking a rank yet -- shared by computeChampionCore (rank 0) and
+// computeRunnerUpCore (rank 1) so "who finished 2nd" reuses the exact same
+// final-match/individual-standings/ladder-standings branching as "who won", not a
+// parallel reimplementation that could quietly disagree with it.
+function computeStandingsInfo(params: {
   format: string;
   completedAt: string | null;
   matches: ChampionMatch[];
   teams: CoreTeam[];
-}): { teamId?: string; playerId?: string } {
+}): StandingsInfo | null {
   const { format, completedAt, matches, teams } = params;
 
   if (!completedAt) {
-    return {};
+    return null;
   }
 
   const isLadderFormat = isLadderFormatCheck(format);
@@ -106,23 +115,78 @@ function computeChampionCore(params: {
   // pre-playoffs individual standings. A Custom League that never generated a Final
   // keeps its existing individual-standings-based champion, unchanged.
   const useTeamChampion = !isIndividual || (format === 'custom' && Boolean(finalMatch));
-  const championTeamId = useTeamChampion
-    ? finalMatch
-      ? (finalMatch.score_a ?? 0) > (finalMatch.score_b ?? 0)
-        ? finalMatch.team_a_id
-        : finalMatch.team_b_id
-      : standings[0]?.teamId
-    : undefined;
-  const championPlayerId = isLadderFormat
-    ? ladderStandings[0]?.playerId
-    : isIndividual && !useTeamChampion
-      ? individualStandings[0]?.playerId
-      : undefined;
 
-  return {
-    teamId: championTeamId ?? undefined,
-    playerId: championPlayerId ?? undefined,
-  };
+  return { useTeamChampion, finalMatch, standings, individualStandings, isLadderFormat, ladderStandings, teams };
+}
+
+// Picks the team/player at a given 0-based rank (0 = winner, 1 = runner-up) from an
+// already-computed StandingsInfo. A Final match only ever distinguishes rank 0 (its
+// winner) and rank 1 (its loser) -- there's no "3rd place" to read off a single match,
+// so any rank beyond 1 in a Final-decided tournament returns nothing.
+function pickAtRank(info: StandingsInfo, rank: 0 | 1): { teamId?: string; playerId?: string } {
+  if (info.isLadderFormat) {
+    return { playerId: info.ladderStandings[rank]?.playerId ?? undefined };
+  }
+
+  if (info.useTeamChampion) {
+    if (info.finalMatch) {
+      const aWon = (info.finalMatch.score_a ?? 0) > (info.finalMatch.score_b ?? 0);
+      const winnerId = aWon ? info.finalMatch.team_a_id : info.finalMatch.team_b_id;
+      const loserId = aWon ? info.finalMatch.team_b_id : info.finalMatch.team_a_id;
+      return { teamId: (rank === 0 ? winnerId : loserId) ?? undefined };
+    }
+    return { teamId: info.standings[rank]?.teamId ?? undefined };
+  }
+
+  if (rank === 0) {
+    return { playerId: info.individualStandings[0]?.playerId ?? undefined };
+  }
+
+  // Individual standings with no Final (Custom League's default mode): a fixed
+  // doubles pair shares an identical record all season, so the very next row in
+  // individualStandings is often the CHAMPION'S OWN teammate, not a distinct 2nd
+  // place. Skip anyone who was ever teamed with the champion before picking the
+  // runner-up, so the bonus goes to a genuinely different result.
+  const championId = info.individualStandings[0]?.playerId;
+  if (!championId) return {};
+  const championPartnerIds = new Set(
+    info.teams
+      .filter((t) => t.member1Id === championId || t.member2Id === championId)
+      .flatMap((t) => [t.member1Id, t.member2Id])
+  );
+  const runnerUp = info.individualStandings.find(
+    (s) => s.playerId !== championId && !championPartnerIds.has(s.playerId)
+  );
+  return { playerId: runnerUp?.playerId ?? undefined };
+}
+
+/**
+ * Single source of truth for "who actually won this tournament" — shared by
+ * computeTournamentChampionName (players.id space, for display) and
+ * computeTournamentChampionPersonIds (people.id space, for cross-tournament
+ * stats like League Wins). Do not reimplement this logic elsewhere.
+ */
+function computeChampionCore(params: {
+  format: string;
+  completedAt: string | null;
+  matches: ChampionMatch[];
+  teams: CoreTeam[];
+}): { teamId?: string; playerId?: string } {
+  const info = computeStandingsInfo(params);
+  return info ? pickAtRank(info, 0) : {};
+}
+
+// Same rules as computeChampionCore, one rank down -- the tournament's runner-up
+// (people.id space). Used for the League Runner-Up points bonus; see
+// computeTournamentRunnerUpPersonIds below for the public entry point.
+function computeRunnerUpCore(params: {
+  format: string;
+  completedAt: string | null;
+  matches: ChampionMatch[];
+  teams: CoreTeam[];
+}): { teamId?: string; playerId?: string } {
+  const info = computeStandingsInfo(params);
+  return info ? pickAtRank(info, 1) : {};
 }
 
 type ChampionTeam = {
@@ -185,6 +249,35 @@ export function computeTournamentChampionPersonIds(params: {
   }));
 
   const { teamId, playerId } = computeChampionCore({ ...params, teams: coreTeams });
+
+  if (playerId) return [playerId];
+  if (teamId) {
+    const team = coreTeams.find((t) => t.id === teamId);
+    if (!team) return undefined;
+    return [team.member1Id, team.member2Id];
+  }
+  return undefined;
+}
+
+// Cross-tournament runner-up version of computeTournamentChampionPersonIds -- same
+// completion/format rules, one rank down. Returns 1 person id for individual/ladder
+// formats, 2 for team-based formats (both members of the runner-up team), or
+// undefined if the tournament isn't complete or has no determinable runner-up (e.g.
+// a team format with fewer than 2 teams, or a ladder result too short to have a
+// 2nd place).
+export function computeTournamentRunnerUpPersonIds(params: {
+  format: string;
+  completedAt: string | null;
+  matches: ChampionMatch[];
+  teams: { id: string; person1Id: string; person2Id: string }[];
+}): string[] | undefined {
+  const coreTeams: CoreTeam[] = params.teams.map((t) => ({
+    id: t.id,
+    member1Id: t.person1Id,
+    member2Id: t.person2Id,
+  }));
+
+  const { teamId, playerId } = computeRunnerUpCore({ ...params, teams: coreTeams });
 
   if (playerId) return [playerId];
   if (teamId) {

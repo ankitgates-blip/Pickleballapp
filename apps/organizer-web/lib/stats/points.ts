@@ -1,13 +1,25 @@
 // apps/organizer-web/lib/stats/points.ts
 import { buildPersonMatchRecords } from './buildPersonMatchRecords';
-import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
+import { computeTournamentChampionPersonIds, computeTournamentRunnerUpPersonIds } from '@/lib/tournament/champion';
 import type { ChampionMatch } from '@/lib/tournament/champion';
 import type { DateRange } from './monthRange';
 import type { RawMatch, RawTeam } from './types';
 
 export const POINTS_PER_MATCH_WIN = 10;
-export const POINTS_PER_LEAGUE_WIN = 50;
+// A losing side whose own final score reached 10 or higher (12-10, 13-11, 14-12...)
+// necessarily passed through a 10-10 tie under standard win-by-2-to-11 rules -- only
+// final scores are stored (no point-by-point play), so this is the honest signal
+// available for "lost a match that went to at least 10-10".
+export const POINTS_CLOSE_LOSS = 5;
+export const POINTS_LEAGUE_WINNER = 25;
+export const POINTS_LEAGUE_RUNNER_UP = 10;
 export const POINTS_SHUTOUT_BONUS = 10;
+// Awarded on top of the league-winner bonus when the champion(s) never lost a single
+// match anywhere in that tournament. Matches only carry one date per whole tournament
+// (no per-round/per-day date), so "without losing a single match that day" is scored
+// as "without losing a single match in the whole league" -- the closest honest match
+// to the intended rule with the data actually available.
+export const POINTS_CLEAN_SWEEP_BONUS = 10;
 
 /**
  * The points system goes live for tournaments PLAYED on or after this date.
@@ -21,12 +33,11 @@ export const POINTS_SHUTOUT_BONUS = 10;
 export const POINTS_SYSTEM_START_DATE = '2026-09-01';
 
 /**
- * The whole points mechanism -- match-win points, the league-win bonus, and
- * the shutout bonus alike -- is scoped to these two season-style formats only,
- * not every format. This was a deliberate organizer decision, not an
- * oversight: Custom League and League + Playoffs are this app's structured,
- * multi-round formats where an incentive point system makes sense; Round
- * Robin/Popcorn/Gauntlet/etc. never earn Total Points under this system.
+ * The whole points mechanism -- every point value and bonus above -- is scoped to
+ * these two season-style formats only, not every format. This was a deliberate
+ * organizer decision, not an oversight: Custom League and League + Playoffs are this
+ * app's structured, multi-round formats where an incentive point system makes sense;
+ * Round Robin/Popcorn/Gauntlet/etc. never earn Total Points under this system.
  */
 export const POINTS_ELIGIBLE_FORMATS: readonly string[] = ['custom', 'league_playoffs'];
 
@@ -45,12 +56,34 @@ export type PointsEntry = {
   totalPoints: number;
   matchWins: number;
   matchWinPoints: number;
+  closeLosses: number;
+  closeLossPoints: number;
   leagueWins: number;
   leagueWinPoints: number;
+  leagueRunnerUps: number;
+  leagueRunnerUpPoints: number;
   shutoutWins: number;
   shutoutBonusPoints: number;
+  cleanSweepBonuses: number;
+  cleanSweepBonusPoints: number;
   matchesPlayed: number;
 };
+
+// Did this person go through this one tournament without a single loss? Scoped to
+// just this tournament's own rows (not the person's whole in-range history) by
+// filtering the already-scoped matches/teams down to one tournamentId, then reusing
+// the same buildPersonMatchRecords everything else in this function is built on.
+function wentUndefeatedInTournament(
+  personId: string,
+  tournamentId: string,
+  scopedMatches: RawMatch[],
+  scopedTeams: RawTeam[]
+): boolean {
+  const tournamentMatches = scopedMatches.filter((m) => m.tournamentId === tournamentId);
+  const tournamentTeams = scopedTeams.filter((t) => t.tournamentId === tournamentId);
+  const records = buildPersonMatchRecords(personId, tournamentMatches, tournamentTeams);
+  return records.length > 0 && records.every((r) => r.won);
+}
 
 /**
  * Total Points leaderboard for one scope (e.g. a venue) over one date window.
@@ -88,11 +121,14 @@ export function computePointsLeaderboard(params: {
   const scopedTeams = teams.filter((t) => inRangeIds.has(t.tournamentId));
   const scopedMatches = matches.filter((m) => inRangeIds.has(m.tournamentId));
 
-  // Reuses the exact same champion-detection function every other League Won stat in
-  // this app uses -- never reimplemented. Both teammates get the full bonus in team
-  // formats (computeTournamentChampionPersonIds already returns both ids); only one
-  // person gets it for individual/ladder formats.
+  // Reuses the exact same champion/runner-up-detection functions every other League
+  // Won stat in this app uses -- never reimplemented. Both teammates get the full
+  // bonus in team formats (computeTournamentChampionPersonIds/
+  // computeTournamentRunnerUpPersonIds already return both ids); only one person gets
+  // it for individual/ladder formats.
   const leagueWinsByPersonId = new Map<string, number>();
+  const leagueRunnerUpsByPersonId = new Map<string, number>();
+  const cleanSweepBonusesByPersonId = new Map<string, number>();
   for (const tournament of inRangeTournaments) {
     const championPersonIds = computeTournamentChampionPersonIds({
       format: tournament.format,
@@ -102,10 +138,26 @@ export function computePointsLeaderboard(params: {
     });
     for (const personId of championPersonIds ?? []) {
       leagueWinsByPersonId.set(personId, (leagueWinsByPersonId.get(personId) ?? 0) + 1);
+      if (wentUndefeatedInTournament(personId, tournament.id, scopedMatches, scopedTeams)) {
+        cleanSweepBonusesByPersonId.set(personId, (cleanSweepBonusesByPersonId.get(personId) ?? 0) + 1);
+      }
+    }
+
+    const runnerUpPersonIds = computeTournamentRunnerUpPersonIds({
+      format: tournament.format,
+      completedAt: tournament.completedAt,
+      matches: tournament.matches,
+      teams: tournament.teams,
+    });
+    for (const personId of runnerUpPersonIds ?? []) {
+      leagueRunnerUpsByPersonId.set(personId, (leagueRunnerUpsByPersonId.get(personId) ?? 0) + 1);
     }
   }
 
-  const personIds = new Set<string>(leagueWinsByPersonId.keys());
+  const personIds = new Set<string>([
+    ...leagueWinsByPersonId.keys(),
+    ...leagueRunnerUpsByPersonId.keys(),
+  ]);
   for (const t of scopedTeams) {
     personIds.add(t.player1PersonId);
     personIds.add(t.player2PersonId);
@@ -117,6 +169,8 @@ export function computePointsLeaderboard(params: {
     const matchWins = records.filter((r) => r.won).length;
     const matchesPlayed = records.length;
     const leagueWins = leagueWinsByPersonId.get(personId) ?? 0;
+    const leagueRunnerUps = leagueRunnerUpsByPersonId.get(personId) ?? 0;
+    const cleanSweepBonuses = cleanSweepBonusesByPersonId.get(personId) ?? 0;
 
     // Matches the existing /locations leaderboard convention: only list people who
     // actually played in this window. A league-bonus-only edge case (a champion with
@@ -130,18 +184,38 @@ export function computePointsLeaderboard(params: {
     // score_a/score_b), so the losing side of an 11-0 game never qualifies.
     const shutoutWins = records.filter((r) => r.won && r.scoreFor === 11 && r.scoreAgainst === 0).length;
 
+    // A close loss stacks per qualifying match too, same as a shutout win -- checked
+    // from this person's own oriented scoreFor (their own final score), not the
+    // match's raw, unoriented score_a/score_b.
+    const closeLosses = records.filter((r) => !r.won && r.scoreFor >= 10).length;
+
     const matchWinPoints = matchWins * POINTS_PER_MATCH_WIN;
-    const leagueWinPoints = leagueWins * POINTS_PER_LEAGUE_WIN;
+    const closeLossPoints = closeLosses * POINTS_CLOSE_LOSS;
+    const leagueWinPoints = leagueWins * POINTS_LEAGUE_WINNER;
+    const leagueRunnerUpPoints = leagueRunnerUps * POINTS_LEAGUE_RUNNER_UP;
     const shutoutBonusPoints = shutoutWins * POINTS_SHUTOUT_BONUS;
+    const cleanSweepBonusPoints = cleanSweepBonuses * POINTS_CLEAN_SWEEP_BONUS;
     entries.push({
       personId,
       matchWins,
-      shutoutWins,
-      shutoutBonusPoints,
       matchWinPoints,
+      closeLosses,
+      closeLossPoints,
       leagueWins,
       leagueWinPoints,
-      totalPoints: matchWinPoints + leagueWinPoints + shutoutBonusPoints,
+      leagueRunnerUps,
+      leagueRunnerUpPoints,
+      shutoutWins,
+      shutoutBonusPoints,
+      cleanSweepBonuses,
+      cleanSweepBonusPoints,
+      totalPoints:
+        matchWinPoints +
+        closeLossPoints +
+        leagueWinPoints +
+        leagueRunnerUpPoints +
+        shutoutBonusPoints +
+        cleanSweepBonusPoints,
       matchesPlayed,
     });
   }

@@ -21,7 +21,7 @@ describe('buildMonthlyCandidates', () => {
       },
     ];
 
-    const result = buildMonthlyCandidates(matches, teams, new Map());
+    const result = buildMonthlyCandidates(matches, teams, new Map(), new Map());
     const alice = result.find((c) => c.personId === 'alice')!;
     const carol = result.find((c) => c.personId === 'carol')!;
 
@@ -48,9 +48,31 @@ describe('buildMonthlyCandidates', () => {
       },
     ];
 
-    const result = buildMonthlyCandidates(matches, teams, new Map([['alice', 2]]));
+    const result = buildMonthlyCandidates(matches, teams, new Map([['alice', 2]]), new Map());
     expect(result.find((c) => c.personId === 'alice')!.leagueWins).toBe(2);
     expect(result.find((c) => c.personId === 'bob')!.leagueWins).toBe(0);
+  });
+
+  it('attaches total points from the supplied map, defaulting to 0', () => {
+    const teams: RawTeam[] = [
+      { id: 't1', tournamentId: 'tourn1', player1PersonId: 'alice', player2PersonId: 'bob' },
+    ];
+    const matches: RawMatch[] = [
+      {
+        tournamentId: 'tourn1',
+        tournamentDate: '2026-09-05',
+        venueName: 'Pickleturf',
+        teamAId: 't1',
+        teamBId: 't1',
+        scoreA: 11,
+        scoreB: 5,
+        status: 'complete',
+      },
+    ];
+
+    const result = buildMonthlyCandidates(matches, teams, new Map(), new Map([['alice', 45]]));
+    expect(result.find((c) => c.personId === 'alice')!.totalPoints).toBe(45);
+    expect(result.find((c) => c.personId === 'bob')!.totalPoints).toBe(0);
   });
 
   it('returns one entry per unique team participant, with no duplicates', () => {
@@ -59,12 +81,12 @@ describe('buildMonthlyCandidates', () => {
       { id: 't2', tournamentId: 'tourn2', player1PersonId: 'alice', player2PersonId: 'carol' },
     ];
 
-    const result = buildMonthlyCandidates([], teams, new Map());
+    const result = buildMonthlyCandidates([], teams, new Map(), new Map());
     const personIds = result.map((c) => c.personId).sort();
     expect(personIds).toEqual(['alice', 'bob', 'carol']);
   });
 
   it('returns an empty array when there are no teams', () => {
-    expect(buildMonthlyCandidates([], [], new Map())).toEqual([]);
+    expect(buildMonthlyCandidates([], [], new Map(), new Map())).toEqual([]);
   });
 });

@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { computeTournamentChampionName, computeTournamentChampionPersonIds } from './champion';
+import {
+  computeTournamentChampionName,
+  computeTournamentChampionPersonIds,
+  computeTournamentRunnerUpPersonIds,
+} from './champion';
 
 const teamsFixture = [
   { id: 't1', player_1_id: 'p1', player_2_id: 'p2' },
@@ -311,5 +315,182 @@ describe('computeTournamentChampionPersonIds', () => {
     });
     expect(result).toEqual(['person-alice']);
     expect(result).not.toContain('person-ziad');
+  });
+});
+
+describe('computeTournamentRunnerUpPersonIds', () => {
+  it('returns undefined when the tournament is not completed', () => {
+    const result = computeTournamentRunnerUpPersonIds({
+      format: 'round_robin',
+      completedAt: null,
+      matches: [
+        {
+          stage: 'league',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 11,
+          score_b: 5,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+      ],
+      teams: [
+        { id: 't1', person1Id: 'person-alice', person2Id: 'person-bob' },
+        { id: 't2', person1Id: 'person-carol', person2Id: 'person-dave' },
+      ],
+    });
+    expect(result).toBeUndefined();
+  });
+
+  it('returns both members of the losing Final team for league_playoffs, even if that team won the league stage', () => {
+    const result = computeTournamentRunnerUpPersonIds({
+      format: 'league_playoffs',
+      completedAt: '2026-01-01T00:00:00Z',
+      matches: [
+        {
+          stage: 'league',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 11,
+          score_b: 5,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+        {
+          stage: 'final',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 8,
+          score_b: 11,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+      ],
+      teams: [
+        { id: 't1', person1Id: 'person-alice', person2Id: 'person-bob' },
+        { id: 't2', person1Id: 'person-carol', person2Id: 'person-dave' },
+      ],
+    });
+    // t1 (Alice/Bob) won the league stage but lost the Final -- they're the runner-up,
+    // not t2 (the champion).
+    expect(result).toEqual(['person-alice', 'person-bob']);
+  });
+
+  it('returns the 2nd-place team for a team-based format with no Final match', () => {
+    const result = computeTournamentRunnerUpPersonIds({
+      format: 'round_robin',
+      completedAt: '2026-01-01T00:00:00Z',
+      matches: [
+        {
+          stage: 'league',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 11,
+          score_b: 5,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+      ],
+      teams: [
+        { id: 't1', person1Id: 'person-alice', person2Id: 'person-bob' },
+        { id: 't2', person1Id: 'person-carol', person2Id: 'person-dave' },
+      ],
+    });
+    expect(result).toEqual(['person-carol', 'person-dave']);
+  });
+
+  it('falls back to 2nd-place individual standings for Custom League when no Final was generated', () => {
+    const result = computeTournamentRunnerUpPersonIds({
+      format: 'custom',
+      completedAt: '2026-01-01T00:00:00Z',
+      matches: [
+        {
+          stage: 'league',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 11,
+          score_b: 5,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+      ],
+      teams: [
+        { id: 't1', person1Id: 'person-alice', person2Id: 'person-bob' },
+        { id: 't2', person1Id: 'person-carol', person2Id: 'person-dave' },
+      ],
+    });
+    // Alice (t1) tops individual standings from the single match; Bob is her fixed
+    // doubles partner and shares her exact 1-0 record, so a naive "next row" pick
+    // would wrongly return him as "runner-up". The real 2nd place is whoever from
+    // the losing side (Carol/Dave) individual standings ranks first among them.
+    expect(result).toHaveLength(1);
+    expect(result![0]).not.toBe('person-bob');
+    expect(['person-carol', 'person-dave']).toContain(result![0]);
+  });
+
+  it("never returns the champion's own fixed doubles partner as runner-up, even when they're tied on individual standings", () => {
+    // t1 (Alice/Bob) wins both of its matches; t2 (Carol/Dave) and t3 (Erin/Frank)
+    // each win one and lose one. Alice and Bob are tied 2-0 -- without the
+    // same-team exclusion, whichever of them ISN'T picked as champion would land
+    // in the very next standings row and get wrongly returned as "runner-up".
+    const result = computeTournamentRunnerUpPersonIds({
+      format: 'custom',
+      completedAt: '2026-01-01T00:00:00Z',
+      matches: [
+        { stage: 'league', team_a_id: 't1', team_b_id: 't2', score_a: 11, score_b: 5, status: 'complete', round: 1, court: null },
+        { stage: 'league', team_a_id: 't1', team_b_id: 't3', score_a: 11, score_b: 5, status: 'complete', round: 2, court: null },
+        { stage: 'league', team_a_id: 't2', team_b_id: 't3', score_a: 11, score_b: 5, status: 'complete', round: 3, court: null },
+      ],
+      teams: [
+        { id: 't1', person1Id: 'person-alice', person2Id: 'person-bob' },
+        { id: 't2', person1Id: 'person-carol', person2Id: 'person-dave' },
+        { id: 't3', person1Id: 'person-erin', person2Id: 'person-frank' },
+      ],
+    });
+    expect(result).not.toBeUndefined();
+    expect(result).toHaveLength(1);
+    expect(result).not.toContain('person-alice');
+    expect(result).not.toContain('person-bob');
+    // Carol/Dave beat Erin/Frank, so Carol and Dave are the genuine 2nd-place pair.
+    expect(['person-carol', 'person-dave']).toContain(result![0]);
+  });
+
+  it('returns the losing Final team for Custom League when a Final exists', () => {
+    const result = computeTournamentRunnerUpPersonIds({
+      format: 'custom',
+      completedAt: '2026-01-01T00:00:00Z',
+      matches: [
+        {
+          stage: 'league',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 11,
+          score_b: 5,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+        {
+          stage: 'final',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 8,
+          score_b: 11,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+      ],
+      teams: [
+        { id: 't1', person1Id: 'person-alice', person2Id: 'person-bob' },
+        { id: 't2', person1Id: 'person-carol', person2Id: 'person-dave' },
+      ],
+    });
+    expect(result).toEqual(['person-alice', 'person-bob']);
   });
 });
