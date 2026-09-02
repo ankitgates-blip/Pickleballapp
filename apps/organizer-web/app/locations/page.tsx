@@ -8,6 +8,7 @@ import { winPercentageFromRecords } from '@/lib/stats/winRate';
 import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
 import { computePointsLeaderboard, type PointsTournament } from '@/lib/stats/points';
+import { assignRanksWithTies } from '@/lib/stats/rankWithTies';
 import { monthDateRange, monthToDateRange, monthsToCheck } from '@/lib/stats/monthRange';
 import LocationLeaderboardCard from './LocationLeaderboardCard';
 import Link from 'next/link';
@@ -274,21 +275,28 @@ export default async function LocationsPage({
   // leaderboard" means at a venue that runs mixed formats.
   const leaderboardCardRowsByVenue = leaderboardsByVenue.map(({ venueId, venueName, leaderboard, points }) => {
     const totalPointsByPersonId = new Map(points.map((p) => [p.personId, p.totalPoints]));
-    return {
-      venueId,
-      venueName,
-      rows: leaderboard.map((entry, i) => ({
-        rank: i + 1,
-        name: personNameById.get(entry.personId) ?? 'Unknown',
-        venueWinPercentage: entry.winPercentage,
-        overallWinPercentage: overallWinPercentageByPersonId.get(entry.personId) ?? null,
-        matchesPlayed: entry.matchesPlayed,
-        matchWins: entry.matchWins,
-        losses: entry.losses,
-        tournamentWins: entry.tournamentWins,
-        totalPoints: totalPointsByPersonId.get(entry.personId) ?? 0,
-      })),
-    };
+    const rowsWithoutRank = leaderboard.map((entry) => ({
+      name: personNameById.get(entry.personId) ?? 'Unknown',
+      venueWinPercentage: entry.winPercentage,
+      overallWinPercentage: overallWinPercentageByPersonId.get(entry.personId) ?? null,
+      matchesPlayed: entry.matchesPlayed,
+      matchWins: entry.matchWins,
+      losses: entry.losses,
+      tournamentWins: entry.tournamentWins,
+      totalPoints: totalPointsByPersonId.get(entry.personId) ?? 0,
+    }));
+    // Two people identical on every one of these -- match wins, matches played,
+    // league (tournament) wins, and Total Points -- must show the same rank number,
+    // not an arbitrary 1st/2nd from array order. Anyone differing on even one of
+    // these is NOT considered tied, even if computeLocationLeaderboard's own
+    // underlying composite score happens to match (that score is only a function of
+    // match/tournament wins, so it can't see a points or matches-played difference
+    // on its own).
+    const rows = assignRanksWithTies(
+      rowsWithoutRank,
+      (r) => `${r.matchWins}|${r.matchesPlayed}|${r.tournamentWins}|${r.totalPoints}`
+    );
+    return { venueId, venueName, rows };
   });
 
   return (

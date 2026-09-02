@@ -321,7 +321,10 @@ export default function LocationLeaderboardCard({
                 row.venueWinPercentage !== null && tier ? THREAT_CHIP[tier.label].accent : MUTED_TEXT;
 
               return (
-                <g key={row.rank}>
+                // Index, not row.rank -- tied players now legitimately share a rank
+                // number (see assignRanksWithTies), so rank alone is no longer a
+                // unique key.
+                <g key={i}>
                   {medalColor && (
                     <>
                       <rect
