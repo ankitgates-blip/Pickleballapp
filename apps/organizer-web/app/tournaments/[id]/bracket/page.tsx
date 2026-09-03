@@ -120,6 +120,43 @@ export default async function BracketPage({
     splitByStage
   );
 
+  // Player-level sit-outs for the schedule card: Popcorn, Gauntlet, and Custom League's
+  // dynamic/ad-hoc pairing mode can leave an individual player unpaired for a round with
+  // no matches-table row at all -- nothing persists who sat out, so it's derived here:
+  // whoever isn't on either team of any match in that round sat out. A bye row
+  // (team_b_id null, used by League + Playoffs and Custom's fixed-team mode) is handled
+  // separately, inside buildUpcomingMatchGroups itself, from the matches it's already
+  // given -- this map only covers the case that has no row to read at all.
+  const leagueMatchesForSitOuts = (matches ?? []).filter((m) => m.stage === 'league');
+  const leagueRoundsForSitOuts = new Map<number, typeof leagueMatchesForSitOuts>();
+  for (const m of leagueMatchesForSitOuts) {
+    const round = leagueRoundsForSitOuts.get(m.round) ?? [];
+    round.push(m);
+    leagueRoundsForSitOuts.set(m.round, round);
+  }
+  const showSitOuts = isPopcorn || isGauntlet || isCustom;
+  const sitOutNamesByRound = new Map<number, string[]>();
+  if (showSitOuts) {
+    for (const [round, roundMatches] of leagueRoundsForSitOuts) {
+      const playingIds = new Set<string>();
+      for (const m of roundMatches) {
+        // A bye row's team_a_id isn't actually playing -- it's the team sitting out,
+        // already picked up separately from the raw matches by buildUpcomingMatchGroups.
+        if (m.team_b_id === null) continue;
+        for (const teamId of [m.team_a_id, m.team_b_id]) {
+          const teamPlayers = teamId ? teamPlayerIdsById.get(teamId) : undefined;
+          if (teamPlayers) teamPlayers.forEach((pid) => playingIds.add(pid));
+        }
+      }
+      const sittingOut = (players ?? [])
+        .filter((p) => !playingIds.has(p.id))
+        .map((p) => p.name);
+      if (sittingOut.length > 0) {
+        sitOutNamesByRound.set(round, sittingOut);
+      }
+    }
+  }
+
   // "Share Schedule" is a shareable image (rather than the PDF ShareScheduleButton
   // still used by every other format) only for League + Playoffs and Custom League --
   // the two formats organized into numbered rounds where a forward-looking "what's
@@ -135,9 +172,11 @@ export default async function BracketPage({
           score_a: m.score_a,
           score_b: m.score_b,
           status: m.status,
+          court: m.court,
         })),
         teamById,
-        splitByStage
+        splitByStage,
+        sitOutNamesByRound
       )
     : [];
   const scheduleTeams = usesScheduleCard
@@ -290,31 +329,6 @@ export default async function BracketPage({
   };
 
   const leagueRoundsMap = roundsFor(leagueMatches);
-
-  // Popcorn and Gauntlet re-pair players fresh each round, and Custom's auto-generate
-  // (or an organizer who manually pairs fewer than all teams) can leave one team
-  // unpaired for a round. Nothing persists who sat out, so derive it here: whoever
-  // isn't on either team of any match in that round sat out. Other formats never leave
-  // a registered player out of every match, so this is always empty for them.
-  const showSitOuts = isPopcorn || isGauntlet || isCustom;
-  const sitOutNamesByRound = new Map<number, string[]>();
-  if (showSitOuts) {
-    for (const [round, roundMatches] of leagueRoundsMap) {
-      const playingIds = new Set<string>();
-      for (const m of roundMatches) {
-        for (const teamId of [m.team_a_id, m.team_b_id]) {
-          const teamPlayers = teamId ? teamPlayerIdsById.get(teamId) : undefined;
-          if (teamPlayers) teamPlayers.forEach((pid) => playingIds.add(pid));
-        }
-      }
-      const sittingOut = (players ?? [])
-        .filter((p) => !playingIds.has(p.id))
-        .map((p) => p.name);
-      if (sittingOut.length > 0) {
-        sitOutNamesByRound.set(round, sittingOut);
-      }
-    }
-  }
 
   const renderMatchList = (list: MatchRow[], isFinal: boolean = false) => (
     <ul className="space-y-2">

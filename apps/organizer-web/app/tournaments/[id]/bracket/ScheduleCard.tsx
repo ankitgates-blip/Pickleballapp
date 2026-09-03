@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { shareOrDownloadFile, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
+import { courtLabel } from '@/lib/tournament/courts';
 import type { UpcomingStageGroup } from '@/lib/tournament/resultsExport';
 
 export type ScheduleCardTeam = {
@@ -28,6 +29,7 @@ const HEADER_HEIGHT = 190;
 const ROUND_HEADER_HEIGHT = 26;
 const STAGE_BOX_HEADER_HEIGHT = 26;
 const MATCH_ROW_HEIGHT = 26;
+const SITOUT_ROW_HEIGHT = 22;
 const ROUND_GROUP_GAP = 12;
 const STAGE_GAP = 26;
 const BOX_PADDING = 14;
@@ -46,14 +48,17 @@ const BRAND_ORANGE = '#bf5919';
 const BRAND_ORANGE_DARK = '#b6462a';
 const MUTED_SILVER = '#94a3b8';
 
+type ScheduleMatch = { teamAName: string; teamBName: string; court: number | null };
+
 type ScheduleBlock =
-  | { type: 'round'; y: number; round: number; matches: { teamAName: string; teamBName: string }[] }
+  | { type: 'round'; y: number; round: number; matches: ScheduleMatch[]; sitOutNames: string[] }
   | {
       type: 'box';
       y: number;
       height: number;
       stageLabel: string;
-      matches: { teamAName: string; teamBName: string }[];
+      matches: ScheduleMatch[];
+      sitOutNames: string[];
     };
 
 // SVG rendered as an <img> src runs in "secure static mode": external resource references
@@ -100,19 +105,33 @@ export default function ScheduleCard({
     const isBoxed = stageGroup.stageLabel === 'Semifinal' || stageGroup.stageLabel === 'Final';
     if (!isBoxed) {
       for (const roundGroup of stageGroup.roundGroups) {
+        const sitOutNames = roundGroup.sitOutNames;
+        const sitOutHeight = sitOutNames.length > 0 ? SITOUT_ROW_HEIGHT : 0;
         blocks.push({
           type: 'round',
           y: cursorY,
           round: roundGroup.round ?? 0,
           matches: roundGroup.matches,
+          sitOutNames,
         });
-        cursorY += ROUND_HEADER_HEIGHT + roundGroup.matches.length * MATCH_ROW_HEIGHT + ROUND_GROUP_GAP;
+        cursorY +=
+          ROUND_HEADER_HEIGHT + roundGroup.matches.length * MATCH_ROW_HEIGHT + sitOutHeight + ROUND_GROUP_GAP;
       }
       cursorY += STAGE_GAP - ROUND_GROUP_GAP;
     } else {
       const matches = stageGroup.roundGroups[0]?.matches ?? [];
-      const boxHeight = BOX_PADDING * 2 + STAGE_BOX_HEADER_HEIGHT + matches.length * MATCH_ROW_HEIGHT;
-      blocks.push({ type: 'box', y: cursorY, height: boxHeight, stageLabel: stageGroup.stageLabel, matches });
+      const sitOutNames = stageGroup.roundGroups[0]?.sitOutNames ?? [];
+      const sitOutHeight = sitOutNames.length > 0 ? SITOUT_ROW_HEIGHT : 0;
+      const boxHeight =
+        BOX_PADDING * 2 + STAGE_BOX_HEADER_HEIGHT + matches.length * MATCH_ROW_HEIGHT + sitOutHeight;
+      blocks.push({
+        type: 'box',
+        y: cursorY,
+        height: boxHeight,
+        stageLabel: stageGroup.stageLabel,
+        matches,
+        sitOutNames,
+      });
       cursorY += boxHeight + STAGE_GAP;
     }
   }
@@ -400,9 +419,35 @@ export default function ScheduleCard({
                             {m.teamBName}
                           </tspan>
                         </text>
+                        {m.court !== null && (
+                          <text
+                            x={CONTENT_RIGHT}
+                            y={rowMidY}
+                            fontSize="10.5"
+                            fontWeight="700"
+                            fill={GOLD_BRIGHT}
+                            textAnchor="end"
+                            letterSpacing="0.5"
+                            fontFamily="var(--font-oswald), sans-serif"
+                          >
+                            {courtLabel(m.court).toUpperCase()}
+                          </text>
+                        )}
                       </g>
                     );
                   })}
+                  {block.sitOutNames.length > 0 && (
+                    <text
+                      x={CONTENT_LEFT}
+                      y={rowsY + block.matches.length * MATCH_ROW_HEIGHT + 15}
+                      fontSize="11.5"
+                      fontStyle="italic"
+                      fill={MUTED_SILVER}
+                      fontFamily="var(--font-geist-sans), sans-serif"
+                    >
+                      Sitting out: {block.sitOutNames.join(', ')}
+                    </text>
+                  )}
                 </g>
               );
             }
@@ -473,9 +518,35 @@ export default function ScheduleCard({
                           {m.teamBName}
                         </tspan>
                       </text>
+                      {m.court !== null && (
+                        <text
+                          x={CONTENT_RIGHT}
+                          y={rowMidY}
+                          fontSize="10.5"
+                          fontWeight="700"
+                          fill={boxColor}
+                          textAnchor="end"
+                          letterSpacing="0.5"
+                          fontFamily="var(--font-oswald), sans-serif"
+                        >
+                          {courtLabel(m.court).toUpperCase()}
+                        </text>
+                      )}
                     </g>
                   );
                 })}
+                {block.sitOutNames.length > 0 && (
+                  <text
+                    x={CONTENT_LEFT}
+                    y={rowsY + block.matches.length * MATCH_ROW_HEIGHT + 15}
+                    fontSize="11.5"
+                    fontStyle="italic"
+                    fill={MUTED_SILVER}
+                    fontFamily="var(--font-geist-sans), sans-serif"
+                  >
+                    Sitting out: {block.sitOutNames.join(', ')}
+                  </text>
+                )}
               </g>
             );
           })}

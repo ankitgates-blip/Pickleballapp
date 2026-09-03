@@ -174,10 +174,34 @@ describe('buildUpcomingMatchGroups', () => {
       {
         stageLabel: 'Matches',
         roundGroups: [
-          { round: 2, matches: [{ teamAName: 'Carol / Dave', teamBName: 'Erin / Frank' }] },
+          {
+            round: 2,
+            matches: [{ teamAName: 'Carol / Dave', teamBName: 'Erin / Frank', court: null }],
+            sitOutNames: [],
+          },
         ],
       },
     ]);
+  });
+
+  it('carries the court number through onto each match', () => {
+    const result = buildUpcomingMatchGroups(
+      [
+        {
+          round: 1,
+          stage: 'league',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: null,
+          score_b: null,
+          status: 'pending',
+          court: 3,
+        },
+      ],
+      teamById,
+      false
+    );
+    expect(result[0].roundGroups[0].matches[0].court).toBe(3);
   });
 
   it('returns an empty array when there are no pending matches', () => {
@@ -206,11 +230,16 @@ describe('buildUpcomingMatchGroups', () => {
           {
             round: 1,
             matches: [
-              { teamAName: 'Carol / Dave', teamBName: 'Erin / Frank' },
-              { teamAName: 'Alice / Bob', teamBName: 'Erin / Frank' },
+              { teamAName: 'Carol / Dave', teamBName: 'Erin / Frank', court: null },
+              { teamAName: 'Alice / Bob', teamBName: 'Erin / Frank', court: null },
             ],
+            sitOutNames: [],
           },
-          { round: 2, matches: [{ teamAName: 'Alice / Bob', teamBName: 'Carol / Dave' }] },
+          {
+            round: 2,
+            matches: [{ teamAName: 'Alice / Bob', teamBName: 'Carol / Dave', court: null }],
+            sitOutNames: [],
+          },
         ],
       },
     ]);
@@ -230,30 +259,96 @@ describe('buildUpcomingMatchGroups', () => {
       {
         stageLabel: 'League',
         roundGroups: [
-          { round: 1, matches: [{ teamAName: 'Alice / Bob', teamBName: 'Carol / Dave' }] },
+          {
+            round: 1,
+            matches: [{ teamAName: 'Alice / Bob', teamBName: 'Carol / Dave', court: null }],
+            sitOutNames: [],
+          },
         ],
       },
       {
         stageLabel: 'Semifinal',
         roundGroups: [
-          { round: null, matches: [{ teamAName: 'Alice / Bob', teamBName: 'Erin / Frank' }] },
+          {
+            round: null,
+            matches: [{ teamAName: 'Alice / Bob', teamBName: 'Erin / Frank', court: null }],
+            sitOutNames: [],
+          },
         ],
       },
       {
         stageLabel: 'Final',
         roundGroups: [
-          { round: null, matches: [{ teamAName: 'Carol / Dave', teamBName: 'Erin / Frank' }] },
+          {
+            round: null,
+            matches: [{ teamAName: 'Carol / Dave', teamBName: 'Erin / Frank', court: null }],
+            sitOutNames: [],
+          },
         ],
       },
     ]);
   });
 
-  it('excludes bye matches (team_b_id null)', () => {
+  it('folds a bye match (team_b_id null) into sitOutNames instead of dropping it', () => {
     const result = buildUpcomingMatchGroups(
       [{ round: 1, stage: 'league', team_a_id: 't1', team_b_id: null, score_a: null, score_b: null, status: 'pending' }],
       teamById,
       false
     );
-    expect(result).toEqual([]);
+    expect(result).toEqual([
+      {
+        stageLabel: 'Matches',
+        roundGroups: [{ round: 1, matches: [], sitOutNames: ['Alice / Bob'] }],
+      },
+    ]);
+  });
+
+  it('merges a bye-derived sit-out with a real match already in the same round', () => {
+    const result = buildUpcomingMatchGroups(
+      [
+        { round: 1, stage: 'league', team_a_id: 't1', team_b_id: null, score_a: null, score_b: null, status: 'pending' },
+        { round: 1, stage: 'league', team_a_id: 't2', team_b_id: 't3', score_a: null, score_b: null, status: 'pending' },
+      ],
+      teamById,
+      false
+    );
+    expect(result).toEqual([
+      {
+        stageLabel: 'Matches',
+        roundGroups: [
+          {
+            round: 1,
+            matches: [{ teamAName: 'Carol / Dave', teamBName: 'Erin / Frank', court: null }],
+            sitOutNames: ['Alice / Bob'],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it('merges externally-supplied (player-level) sit-outs with any bye-derived names for the same round', () => {
+    const result = buildUpcomingMatchGroups(
+      [
+        { round: 1, stage: 'league', team_a_id: 't1', team_b_id: null, score_a: null, score_b: null, status: 'pending' },
+        { round: 1, stage: 'league', team_a_id: 't2', team_b_id: 't3', score_a: null, score_b: null, status: 'pending' },
+      ],
+      teamById,
+      false,
+      new Map([[1, ['Gina']]])
+    );
+    expect(result[0].roundGroups[0].sitOutNames).toEqual(['Alice / Bob', 'Gina']);
+  });
+
+  it('does not leak league-stage sit-outs into Semifinal/Final round groups', () => {
+    const result = buildUpcomingMatchGroups(
+      [
+        { round: 1, stage: 'league', team_a_id: 't1', team_b_id: null, score_a: null, score_b: null, status: 'pending' },
+        { round: 1, stage: 'semifinal', team_a_id: 't2', team_b_id: 't3', score_a: null, score_b: null, status: 'pending' },
+      ],
+      teamById,
+      true
+    );
+    const semifinalGroup = result.find((g) => g.stageLabel === 'Semifinal');
+    expect(semifinalGroup?.roundGroups[0].sitOutNames).toEqual([]);
   });
 });
