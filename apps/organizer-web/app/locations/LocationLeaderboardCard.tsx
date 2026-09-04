@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { shareOrDownloadFile, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
 import { threatTierFor } from '@/lib/stats/threatLevel';
+import ThreatShieldBadge from '@/app/components/ThreatShieldBadge';
 
 export type LeaderboardCardRow = {
   rank: number;
@@ -78,17 +79,6 @@ const BRONZE_LIGHT = '#e0aa72';
 const WIN_ON_NAVY = '#34d8bd';
 const LOSS_ON_NAVY = '#ff8a80';
 
-// Same 5 tiers as ThreatBadge/threatTierFor, expressed as a pip count (1-5) rather
-// than 5 separate saturated hues -- tier becomes a countable meter instead of a
-// color fight with the hero number for attention.
-const TIER_PIPS: Record<string, { pips: number; word: string }> = {
-  ROOKIE: { pips: 1, word: 'ROOKIE' },
-  CONTENDER: { pips: 2, word: 'CONTEND' },
-  ENFORCER: { pips: 3, word: 'ENFORCE' },
-  'APEX THREAT': { pips: 4, word: 'APEX' },
-  'COURT DOMINATOR': { pips: 5, word: 'DOMINATE' },
-};
-
 function medalStops(rank: number): { deep: string; core: string; light: string } | null {
   if (rank === 1) return { deep: GOLD_DEEP, core: GOLD_CORE, light: GOLD_LIGHT };
   if (rank === 2) return { deep: SILVER_DEEP, core: SILVER_CORE, light: SILVER_LIGHT };
@@ -110,36 +100,6 @@ function fitName(name: string, maxWidth: number, baseSize: number, minSize: numb
   const maxChars = Math.floor(maxWidth / (size * AVG_CHAR_WIDTH_RATIO));
   const text = name.length > maxChars ? `${name.slice(0, Math.max(1, maxChars - 1))}…` : name;
   return { size, text };
-}
-
-function TierMeter({ tier, x, y }: { tier: { pips: number; word: string } | null; x: number; y: number }) {
-  if (!tier) return null;
-  const pipGap = 10;
-  return (
-    <>
-      {Array.from({ length: 5 }).map((_, p) => (
-        <circle
-          key={p}
-          cx={x + p * pipGap}
-          cy={y - 4}
-          r="3"
-          fill={p < tier.pips ? ON_NAVY_SECOND : 'none'}
-          stroke={p < tier.pips ? 'none' : NAVY_RULE}
-          strokeWidth="1"
-        />
-      ))}
-      <text
-        x={x + 5 * pipGap + 8}
-        y={y}
-        fontSize="14"
-        fontWeight="700"
-        fill={ON_NAVY_SECOND}
-        fontFamily="var(--font-oswald), sans-serif"
-      >
-        {tier.word}
-      </text>
-    </>
-  );
 }
 
 async function loadDataUrl(url: string): Promise<string | null> {
@@ -399,7 +359,6 @@ export default function LocationLeaderboardCard({
               const y = HEADER_HEIGHT + i * PODIUM_ROW_HEIGHT;
               const medal = medalStops(row.rank);
               const tier = row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
-              const tierMeter = tier ? TIER_PIPS[tier.label] ?? null : null;
               const { size: nameSize, text: nameText } = fitName(row.name, 380, 30, 20);
               return (
                 <g key={i}>
@@ -447,10 +406,14 @@ export default function LocationLeaderboardCard({
                     <tspan fill={ON_NAVY_SECOND}>–</tspan>
                     <tspan fill={LOSS_ON_NAVY} fontWeight="700">{row.losses}L</tspan>
                   </text>
-                  <TierMeter tier={tierMeter} x={CONTENT_LEFT + 74 + 68} y={y + 76} />
+                  {tier && (
+                    <g transform={`translate(${CONTENT_LEFT + 74 + 68}, ${y + 55})`}>
+                      <ThreatShieldBadge tier={tier} size={24} />
+                    </g>
+                  )}
                   {row.tournamentWins > 0 && (
                     <text
-                      x={CONTENT_LEFT + 74 + 68 + 5 * 10 + 8 + (tierMeter?.word.length ?? 4) * 9 + 16}
+                      x={CONTENT_LEFT + 74 + 68 + 24 + 12}
                       y={y + 76}
                       fontSize="14"
                       fontWeight="700"
@@ -553,7 +516,6 @@ export default function LocationLeaderboardCard({
             {bodyRows.map((row, i) => {
               const y = HEADER_HEIGHT + podiumHeight + CUT_LINE_HEIGHT + COL_HEADER_HEIGHT + i * BODY_ROW_HEIGHT;
               const tier = row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
-              const tierMeter = tier ? TIER_PIPS[tier.label] ?? null : null;
               const { size: nameSize, text: nameText } = fitName(row.name, 400, 26, 18);
               return (
                 <g key={i}>
@@ -584,7 +546,11 @@ export default function LocationLeaderboardCard({
                     <tspan fill={ON_NAVY_SECOND}>–</tspan>
                     <tspan fill={LOSS_ON_NAVY} fontWeight="700">{row.losses}L</tspan>
                   </text>
-                  <TierMeter tier={tierMeter} x={CONTENT_LEFT + 64 + 60} y={y + 64} />
+                  {tier && (
+                    <g transform={`translate(${CONTENT_LEFT + 64 + 60}, ${y + 42})`}>
+                      <ThreatShieldBadge tier={tier} size={18} />
+                    </g>
+                  )}
                   {/* Same boxed "TOTAL POINTS" treatment as the podium rows, just
                       sized for the shorter body row height -- every rank gets the
                       identical plate style, not just the top 3. Muted when zero so a

@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { threatTierFor } from '@/lib/stats/threatLevel';
 import { shareOrDownloadFile, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
+import ThreatShieldBadge from './ThreatShieldBadge';
 
 export type PlayerStatsCardProps = {
   name: string;
@@ -49,24 +50,6 @@ const STATUS_LINES: Record<string, string> = {
   'APEX THREAT': 'Bring your A-game.',
   'COURT DOMINATOR': 'Owns the court.',
 };
-
-// Monotonic 1-5, one chevron per tier -- a non-monotonic version of this map
-// previously rendered fewer chevrons for the top tier than the one below it.
-const CHEVRON_COUNT: Record<string, number> = {
-  ROOKIE: 1,
-  CONTENDER: 2,
-  ENFORCER: 3,
-  'APEX THREAT': 4,
-  'COURT DOMINATOR': 5,
-};
-
-function chevronYPositions(count: number): number[] {
-  if (count === 1) return [78];
-  if (count === 2) return [68, 86];
-  if (count === 3) return [58, 74, 90];
-  if (count === 4) return [50, 64, 78, 92];
-  return [46, 58, 70, 82, 94];
-}
 
 function renderStarRow(count: number): string {
   return '★'.repeat(count) + '☆'.repeat(5 - count);
@@ -120,11 +103,8 @@ export default function PlayerStatsCard({
   const totalHeight = celebrationLabel ? CARD_HEIGHT + BANNER_HEIGHT : CARD_HEIGHT;
 
   const threatTier = threatTierFor(threatPercentage);
-  const palette = THREAT_PALETTE[threatTier.label] ?? THREAT_PALETTE['LOW THREAT'];
-  const statusLine = STATUS_LINES[threatTier.label] ?? 'Just warming up.';
-  const chevronCount = CHEVRON_COUNT[threatTier.label] ?? 1;
-  const chevronYs = chevronYPositions(chevronCount);
-  const isCourtDominator = threatTier.label === 'COURT DOMINATOR';
+  const palette = THREAT_PALETTE[threatTier.label] ?? THREAT_PALETTE['ROOKIE'];
+  const statusLine = STATUS_LINES[threatTier.label] ?? 'Just getting started.';
   const initial = name.trim().charAt(0).toUpperCase() || '?';
   const trendLabel =
     trendPoints === null ? '—' : trendPoints > 0 ? `+${trendPoints}` : `${trendPoints}`;
@@ -247,19 +227,6 @@ export default function PlayerStatsCard({
               <stop offset="0%" stopColor={palette.accentDark} />
               <stop offset="100%" stopColor="#0c0a09" />
             </linearGradient>
-            <radialGradient id="shieldGloss" cx="32%" cy="22%" r="85%">
-              <stop offset="0%" stopColor={palette.accentLight} />
-              <stop offset="45%" stopColor={palette.accent} />
-              <stop offset="100%" stopColor={palette.accentDark} />
-            </radialGradient>
-            <linearGradient id="shieldShadow" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="55%" stopColor="#000000" stopOpacity="0" />
-              <stop offset="100%" stopColor="#000000" stopOpacity="0.35" />
-            </linearGradient>
-            <radialGradient id="ballGrad" cx="35%" cy="30%" r="75%">
-              <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="100%" stopColor="#cbd5e1" />
-            </radialGradient>
             <linearGradient id="heatScale" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="#fbbf24" />
               <stop offset="50%" stopColor="#f97316" />
@@ -443,77 +410,11 @@ export default function PlayerStatsCard({
             </>
           )}
 
-          <g transform="translate(248,188) scale(0.8)">
-            <ellipse cx="90" cy="152" rx="46" ry="8" fill="#000000" opacity="0.35" />
-            <path
-              d="M90 20 L128 34 L128 78 C128 112 110 132 90 142 C70 132 52 112 52 78 L52 34 Z"
-              fill="url(#shieldGloss)"
-              stroke={palette.accentDark}
-              strokeWidth="2.5"
-            />
-            <path
-              d="M90 20 L128 34 L128 78 C128 112 110 132 90 142 C70 132 52 112 52 78 L52 34 Z"
-              fill="url(#shieldShadow)"
-            />
-            <path d="M62 32 L78 26 L68 68 L54 74 Z" fill="#ffffff" fillOpacity="0.25" />
-            <path
-              d="M90 26 L122 38 L122 78 C122 106 107 123 90 133 C73 123 58 106 58 78 L58 38 Z"
-              fill="none"
-              stroke="#ffffff"
-              strokeOpacity="0.18"
-              strokeWidth="1.2"
-            />
-            <circle cx="90" cy="44" r="13" fill="url(#ballGrad)" stroke="#94a3b8" strokeWidth="1.2" />
-            {[
-              [84, 38],
-              [96, 38],
-              [90, 42],
-              [80, 44],
-              [100, 44],
-              [84, 50],
-              [96, 50],
-              [90, 46],
-              [87, 54],
-              [93, 54],
-            ].map(([cx, cy], i) => (
-              <circle key={i} cx={cx} cy={cy} r="1.1" fill="#64748b" />
-            ))}
-            {chevronYs.map((y) => (
-              <g key={y}>
-                <path
-                  d={`M68 ${y + 1.5} L90 ${y + 13.5} L112 ${y + 1.5}`}
-                  fill="none"
-                  stroke={palette.accentDark}
-                  strokeWidth="7"
-                  strokeLinecap="round"
-                />
-                <path
-                  d={`M68 ${y} L90 ${y + 12} L112 ${y}`}
-                  fill="none"
-                  stroke={palette.accentLight}
-                  strokeWidth="5"
-                  strokeLinecap="round"
-                />
-              </g>
-            ))}
-            {isCourtDominator && (
-              <>
-                {/* Crown, not a skull -- Court Dominator is this system's top, celebratory
-                    tier (a champion), not a warning, so the old "DO NOT PLAY" skull charge
-                    was replaced rather than relabeled. */}
-                <path
-                  d="M70 122 L76 100 L90 114 L104 100 L110 122 Z"
-                  fill={palette.accentLight}
-                  stroke={palette.accentDark}
-                  strokeWidth="2"
-                  strokeLinejoin="round"
-                />
-                <rect x="70" y="120" width="40" height="7" rx="1.5" fill={palette.accentLight} stroke={palette.accentDark} strokeWidth="2" />
-                <circle cx="76" cy="100" r="2.6" fill="#fde68a" />
-                <circle cx="90" cy="114" r="2.6" fill="#fde68a" />
-                <circle cx="104" cy="100" r="2.6" fill="#fde68a" />
-              </>
-            )}
+          {/* The Threat Tier shield emblem -- same component as ThreatBadge/the
+              leaderboard cards, just bigger, since this hero card is a single-player
+              surface with room for the full detailed badge. */}
+          <g transform="translate(260,180)">
+            <ThreatShieldBadge tier={threatTier} size={120} />
           </g>
 
           <text
