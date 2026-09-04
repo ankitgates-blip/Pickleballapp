@@ -2,78 +2,78 @@ import { describe, it, expect } from 'vitest';
 import { threatTierFor } from './threatLevel';
 
 describe('threatTierFor', () => {
-  it('returns DO NOT PLAY at and above 81%', () => {
+  it('returns COURT DOMINATOR at and above 91%', () => {
     expect(threatTierFor(100)).toEqual({
-      emoji: '💀',
-      label: 'DO NOT PLAY',
+      emoji: '🟣',
+      label: 'COURT DOMINATOR',
       colorClass: 'bg-purple-100 text-purple-800',
-      accent: '#c026d3',
+      accent: '#a855f7',
     });
-    expect(threatTierFor(81)).toEqual({
-      emoji: '💀',
-      label: 'DO NOT PLAY',
+    expect(threatTierFor(91)).toEqual({
+      emoji: '🟣',
+      label: 'COURT DOMINATOR',
       colorClass: 'bg-purple-100 text-purple-800',
-      accent: '#c026d3',
+      accent: '#a855f7',
     });
   });
 
-  it('returns HIGH THREAT from 61% to just under 81%', () => {
-    expect(threatTierFor(80)).toEqual({
+  it('returns APEX THREAT from 71% to just under 91%', () => {
+    expect(threatTierFor(90)).toEqual({
       emoji: '🔴',
-      label: 'HIGH THREAT',
+      label: 'APEX THREAT',
       colorClass: 'bg-red-100 text-red-800',
       accent: '#dc2626',
     });
-    expect(threatTierFor(61)).toEqual({
+    expect(threatTierFor(71)).toEqual({
       emoji: '🔴',
-      label: 'HIGH THREAT',
+      label: 'APEX THREAT',
       colorClass: 'bg-red-100 text-red-800',
       accent: '#dc2626',
     });
   });
 
-  it('returns DANGEROUS from 41% to just under 61%', () => {
-    expect(threatTierFor(60)).toEqual({
-      emoji: '🟠',
-      label: 'DANGEROUS',
-      colorClass: 'bg-orange-100 text-orange-800',
-      accent: '#ea580c',
+  it('returns ENFORCER from 46% to just under 71%', () => {
+    expect(threatTierFor(70)).toEqual({
+      emoji: '🟢',
+      label: 'ENFORCER',
+      colorClass: 'bg-emerald-100 text-emerald-800',
+      accent: '#10b981',
     });
-    expect(threatTierFor(41)).toEqual({
-      emoji: '🟠',
-      label: 'DANGEROUS',
-      colorClass: 'bg-orange-100 text-orange-800',
-      accent: '#ea580c',
+    expect(threatTierFor(46)).toEqual({
+      emoji: '🟢',
+      label: 'ENFORCER',
+      colorClass: 'bg-emerald-100 text-emerald-800',
+      accent: '#10b981',
     });
   });
 
-  it('returns WATCH OUT from 21% to just under 41%', () => {
-    expect(threatTierFor(40)).toEqual({
-      emoji: '🟡',
-      label: 'WATCH OUT',
-      colorClass: 'bg-yellow-100 text-yellow-800',
-      accent: '#ca8a04',
+  it('returns CONTENDER from 21% to just under 46%', () => {
+    expect(threatTierFor(45)).toEqual({
+      emoji: '🔵',
+      label: 'CONTENDER',
+      colorClass: 'bg-blue-100 text-blue-800',
+      accent: '#2563eb',
     });
     expect(threatTierFor(21)).toEqual({
-      emoji: '🟡',
-      label: 'WATCH OUT',
-      colorClass: 'bg-yellow-100 text-yellow-800',
-      accent: '#ca8a04',
+      emoji: '🔵',
+      label: 'CONTENDER',
+      colorClass: 'bg-blue-100 text-blue-800',
+      accent: '#2563eb',
     });
   });
 
-  it('returns LOW THREAT below 21%', () => {
+  it('returns ROOKIE below 21%', () => {
     expect(threatTierFor(20)).toEqual({
-      emoji: '🟢',
-      label: 'LOW THREAT',
-      colorClass: 'bg-green-100 text-green-800',
-      accent: '#16a34a',
+      emoji: '⚪',
+      label: 'ROOKIE',
+      colorClass: 'bg-slate-100 text-slate-700',
+      accent: '#64748b',
     });
     expect(threatTierFor(0)).toEqual({
-      emoji: '🟢',
-      label: 'LOW THREAT',
-      colorClass: 'bg-green-100 text-green-800',
-      accent: '#16a34a',
+      emoji: '⚪',
+      label: 'ROOKIE',
+      colorClass: 'bg-slate-100 text-slate-700',
+      accent: '#64748b',
     });
   });
 });

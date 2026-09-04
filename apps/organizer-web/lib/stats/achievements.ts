@@ -216,7 +216,7 @@ const ACHIEVEMENT_CATALOG: readonly AchievementDefinition[] = [
   // --- Competitive Edge -------------------------------------------------
   { key: 'giant-slayer', emoji: '⚔️', label: 'Giant Slayer', category: 'competitive-edge', unit: 'wins vs higher-rated', value: (i) => i.winsVsHigherRated, thresholds: [1, 3, 7, 15] },
   { key: 'clutch', emoji: '🎯', label: 'Clutch', category: 'competitive-edge', unit: 'wins by 2 points', value: (i) => i.matchHistory.filter((m) => m.won && m.scoreFor - m.scoreAgainst === 2).length, thresholds: [1, 5, 12, 25] },
-  { key: 'danger-zone', emoji: '☠️', label: 'Danger Zone', category: 'competitive-edge', unit: 'reached DO NOT PLAY', value: (i) => (i.winPercentage !== null && i.winPercentage >= 85 ? 1 : 0), thresholds: [1] },
+  { key: 'danger-zone', emoji: '👑', label: 'Court Dominator', category: 'competitive-edge', unit: 'reached Court Dominator', value: (i) => (i.winPercentage !== null && i.winPercentage >= 91 ? 1 : 0), thresholds: [1] },
   { key: 'the-bagel', emoji: '🥯', label: 'The Bagel', category: 'competitive-edge', unit: 'shutout (11-0) wins', value: (i) => i.matchHistory.filter((m) => m.won && m.scoreFor === 11 && m.scoreAgainst === 0).length, thresholds: [1, 5, 15] },
   { key: 'big-winner', emoji: '💥', label: 'Big Winner', category: 'competitive-edge', unit: 'best win margin', value: (i) => Math.max(0, ...i.matchHistory.filter((m) => m.won).map((m) => m.scoreFor - m.scoreAgainst)), thresholds: [9] },
 

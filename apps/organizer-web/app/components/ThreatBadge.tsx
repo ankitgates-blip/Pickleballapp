@@ -1,4 +1,5 @@
 import { threatTierFor } from '@/lib/stats/threatLevel';
+import ThreatShieldBadge from './ThreatShieldBadge';
 
 export type ThreatBadgeProps = {
   winPercentage: number | null;
@@ -28,22 +29,25 @@ export default function ThreatBadge({ winPercentage, size = 'compact' }: ThreatB
   if (size === 'default') {
     return (
       <div
-        className="inline-flex flex-col items-center gap-1 rounded-lg border border-[#3f3f46] bg-[#1c1917] px-4 py-2"
+        className="inline-flex items-center gap-3 rounded-lg border border-[#3f3f46] bg-[#1c1917] px-3 py-2"
         role="img"
         aria-label={accessibleLabel}
         title={accessibleLabel}
       >
-        <span className="font-heading text-xl font-extrabold leading-none" style={{ color: tier.accent }}>
-          {winPercentage}
-        </span>
-        <span className="font-heading text-[8px] font-semibold tracking-widest text-slate-400">
-          THREAT LVL
-        </span>
-        <div className="relative h-1.5 w-[100px] rounded-full" style={{ background: HEAT_GRADIENT }}>
-          <div
-            className="absolute -top-0.5 h-2.5 w-[2.5px] rounded-sm bg-white"
-            style={{ left: `calc(${markerPct}% - 1.25px)` }}
-          />
+        <ThreatShieldBadge tier={tier} size={34} />
+        <div className="flex flex-col items-center gap-1">
+          <span className="font-heading text-xl font-extrabold leading-none" style={{ color: tier.accent }}>
+            {winPercentage}
+          </span>
+          <span className="font-heading text-[8px] font-semibold tracking-widest text-slate-400">
+            THREAT LVL
+          </span>
+          <div className="relative h-1.5 w-[100px] rounded-full" style={{ background: HEAT_GRADIENT }}>
+            <div
+              className="absolute -top-0.5 h-2.5 w-[2.5px] rounded-sm bg-white"
+              style={{ left: `calc(${markerPct}% - 1.25px)` }}
+            />
+          </div>
         </div>
       </div>
     );

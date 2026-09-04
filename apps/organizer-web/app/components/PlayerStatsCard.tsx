@@ -35,33 +35,37 @@ const SIGNATURE_SHOTS_MAX_SPACING = 32;
 type TierPalette = { accent: string; accentDark: string; accentLight: string };
 
 const THREAT_PALETTE: Record<string, TierPalette> = {
-  'LOW THREAT': { accent: '#16a34a', accentDark: '#052e16', accentLight: '#86efac' },
-  'WATCH OUT': { accent: '#ca8a04', accentDark: '#1c1503', accentLight: '#fde047' },
-  DANGEROUS: { accent: '#ea580c', accentDark: '#1c0a03', accentLight: '#fdba74' },
-  'HIGH THREAT': { accent: '#dc2626', accentDark: '#1c0505', accentLight: '#fca5a5' },
-  'DO NOT PLAY': { accent: '#c026d3', accentDark: '#1a0526', accentLight: '#f0abfc' },
+  ROOKIE: { accent: '#64748b', accentDark: '#0f172a', accentLight: '#cbd5e1' },
+  CONTENDER: { accent: '#2563eb', accentDark: '#0c1a3d', accentLight: '#93c5fd' },
+  ENFORCER: { accent: '#10b981', accentDark: '#03170f', accentLight: '#6ee7b7' },
+  'APEX THREAT': { accent: '#dc2626', accentDark: '#1c0505', accentLight: '#fca5a5' },
+  'COURT DOMINATOR': { accent: '#a855f7', accentDark: '#1a0526', accentLight: '#f0abfc' },
 };
 
 const STATUS_LINES: Record<string, string> = {
-  'LOW THREAT': 'Just warming up.',
-  'WATCH OUT': 'Getting dangerous.',
-  DANGEROUS: "Don't underestimate.",
-  'HIGH THREAT': 'Serious competition.',
-  'DO NOT PLAY': 'You have been warned.',
+  ROOKIE: 'Just getting started.',
+  CONTENDER: 'Building momentum.',
+  ENFORCER: 'A real threat on court.',
+  'APEX THREAT': 'Bring your A-game.',
+  'COURT DOMINATOR': 'Owns the court.',
 };
 
+// Monotonic 1-5, one chevron per tier -- a non-monotonic version of this map
+// previously rendered fewer chevrons for the top tier than the one below it.
 const CHEVRON_COUNT: Record<string, number> = {
-  'LOW THREAT': 1,
-  'WATCH OUT': 2,
-  DANGEROUS: 3,
-  'HIGH THREAT': 3,
-  'DO NOT PLAY': 2,
+  ROOKIE: 1,
+  CONTENDER: 2,
+  ENFORCER: 3,
+  'APEX THREAT': 4,
+  'COURT DOMINATOR': 5,
 };
 
 function chevronYPositions(count: number): number[] {
   if (count === 1) return [78];
   if (count === 2) return [68, 86];
-  return [58, 74, 90];
+  if (count === 3) return [58, 74, 90];
+  if (count === 4) return [50, 64, 78, 92];
+  return [46, 58, 70, 82, 94];
 }
 
 function renderStarRow(count: number): string {
@@ -120,7 +124,7 @@ export default function PlayerStatsCard({
   const statusLine = STATUS_LINES[threatTier.label] ?? 'Just warming up.';
   const chevronCount = CHEVRON_COUNT[threatTier.label] ?? 1;
   const chevronYs = chevronYPositions(chevronCount);
-  const isDoNotPlay = threatTier.label === 'DO NOT PLAY';
+  const isCourtDominator = threatTier.label === 'COURT DOMINATOR';
   const initial = name.trim().charAt(0).toUpperCase() || '?';
   const trendLabel =
     trendPoints === null ? '—' : trendPoints > 0 ? `+${trendPoints}` : `${trendPoints}`;
@@ -492,14 +496,22 @@ export default function PlayerStatsCard({
                 />
               </g>
             ))}
-            {isDoNotPlay && (
+            {isCourtDominator && (
               <>
-                <circle cx="90" cy="118" r="12" fill="#e4e4e7" />
-                <circle cx="85" cy="116" r="2.4" fill="#27272a" />
-                <circle cx="95" cy="116" r="2.4" fill="#27272a" />
-                <rect x="86" y="122" width="8" height="3" fill="#27272a" rx="1" />
-                <path d="M52 118 C44 110 44 96 52 88" fill="none" stroke={palette.accent} strokeWidth="2.5" />
-                <path d="M128 118 C136 110 136 96 128 88" fill="none" stroke={palette.accent} strokeWidth="2.5" />
+                {/* Crown, not a skull -- Court Dominator is this system's top, celebratory
+                    tier (a champion), not a warning, so the old "DO NOT PLAY" skull charge
+                    was replaced rather than relabeled. */}
+                <path
+                  d="M70 122 L76 100 L90 114 L104 100 L110 122 Z"
+                  fill={palette.accentLight}
+                  stroke={palette.accentDark}
+                  strokeWidth="2"
+                  strokeLinejoin="round"
+                />
+                <rect x="70" y="120" width="40" height="7" rx="1.5" fill={palette.accentLight} stroke={palette.accentDark} strokeWidth="2" />
+                <circle cx="76" cy="100" r="2.6" fill="#fde68a" />
+                <circle cx="90" cy="114" r="2.6" fill="#fde68a" />
+                <circle cx="104" cy="100" r="2.6" fill="#fde68a" />
               </>
             )}
           </g>

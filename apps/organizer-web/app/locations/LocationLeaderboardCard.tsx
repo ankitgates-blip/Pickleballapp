@@ -82,11 +82,11 @@ const LOSS_ON_NAVY = '#ff8a80';
 // than 5 separate saturated hues -- tier becomes a countable meter instead of a
 // color fight with the hero number for attention.
 const TIER_PIPS: Record<string, { pips: number; word: string }> = {
-  'LOW THREAT': { pips: 1, word: 'LOW' },
-  'WATCH OUT': { pips: 2, word: 'WATCH' },
-  DANGEROUS: { pips: 3, word: 'DANGER' },
-  'HIGH THREAT': { pips: 4, word: 'HIGH' },
-  'DO NOT PLAY': { pips: 5, word: 'AVOID' },
+  ROOKIE: { pips: 1, word: 'ROOKIE' },
+  CONTENDER: { pips: 2, word: 'CONTEND' },
+  ENFORCER: { pips: 3, word: 'ENFORCE' },
+  'APEX THREAT': { pips: 4, word: 'APEX' },
+  'COURT DOMINATOR': { pips: 5, word: 'DOMINATE' },
 };
 
 function medalStops(rank: number): { deep: string; core: string; light: string } | null {

@@ -8,6 +8,7 @@ import DeletePersonButton from './DeletePersonButton';
 import PersonAvatar from '@/app/components/PersonAvatar';
 import SaveButton from '@/app/components/SaveButton';
 import ThreatBadge from '@/app/components/ThreatBadge';
+import ThreatTiersLegend from '@/app/components/ThreatTiersLegend';
 import PlayerStatsCard from '@/app/components/PlayerStatsCard';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { winPercentageFromRecords } from '@/lib/stats/winRate';
@@ -403,6 +404,16 @@ export default async function PersonDetailPage({
           'No matches played yet'
         )}
       </p>
+      {stats.winPercentage !== null && (
+        <details className="mb-3">
+          <summary className="text-sm font-semibold text-navy-mid cursor-pointer w-fit">
+            What are Threat Tiers?
+          </summary>
+          <div className="mt-2 max-w-sm">
+            <ThreatTiersLegend />
+          </div>
+        </details>
+      )}
       {profileSummary && <p className="text-sm text-slate-500">{profileSummary}</p>}
       {signatureShotBadges.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
