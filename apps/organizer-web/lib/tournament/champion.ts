@@ -229,6 +229,38 @@ export function computeTournamentChampionName(params: {
   return undefined;
 }
 
+// Same rules as computeTournamentChampionName, one rank down -- the tournament's
+// runner-up, for display (players.id space). Mirrors computeTournamentChampionName
+// exactly except for reusing computeRunnerUpCore instead of computeChampionCore.
+export function computeTournamentRunnerUpName(params: {
+  format: string;
+  completedAt: string | null;
+  matches: ChampionMatch[];
+  teams: ChampionTeam[];
+  players: ChampionPlayer[];
+}): string | undefined {
+  const { teams, players, ...rest } = params;
+  const coreTeams: CoreTeam[] = teams.map((t) => ({
+    id: t.id,
+    member1Id: t.player_1_id,
+    member2Id: t.player_2_id,
+  }));
+
+  const { teamId, playerId } = computeRunnerUpCore({ ...rest, teams: coreTeams });
+
+  const playerById = new Map(players.map((p) => [p.id, p.name]));
+
+  if (playerId) {
+    return playerById.get(playerId);
+  }
+  if (teamId) {
+    const team = coreTeams.find((t) => t.id === teamId);
+    if (!team) return undefined;
+    return `${playerById.get(team.member1Id)} / ${playerById.get(team.member2Id)}`;
+  }
+  return undefined;
+}
+
 // Cross-tournament version of the same logic (e.g. for a "League Wins" leaderboard
 // stat spanning many tournaments): same champion-detection rules, but the teams
 // passed in are already in people.id space (person1Id/person2Id) rather than

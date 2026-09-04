@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   computeTournamentChampionName,
+  computeTournamentRunnerUpName,
   computeTournamentChampionPersonIds,
   computeTournamentRunnerUpPersonIds,
 } from './champion';
@@ -234,6 +235,108 @@ describe('computeTournamentChampionName', () => {
       players: playersFixture,
     });
     expect(result).toBe('Alice');
+  });
+});
+
+describe('computeTournamentRunnerUpName', () => {
+  it('returns undefined when the tournament is not completed', () => {
+    const result = computeTournamentRunnerUpName({
+      format: 'round_robin',
+      completedAt: null,
+      matches: [
+        {
+          stage: 'league',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 11,
+          score_b: 5,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+      ],
+      teams: teamsFixture,
+      players: playersFixture,
+    });
+    expect(result).toBeUndefined();
+  });
+
+  it('returns the second-place standings team name for a team-based format with no final match', () => {
+    const result = computeTournamentRunnerUpName({
+      format: 'round_robin',
+      completedAt: '2026-01-01T00:00:00Z',
+      matches: [
+        {
+          stage: 'league',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 11,
+          score_b: 5,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+      ],
+      teams: teamsFixture,
+      players: playersFixture,
+    });
+    expect(result).toBe('Carol / Dave');
+  });
+
+  it("returns the final match loser's team name for league_playoffs when a final exists", () => {
+    const result = computeTournamentRunnerUpName({
+      format: 'league_playoffs',
+      completedAt: '2026-01-01T00:00:00Z',
+      matches: [
+        {
+          stage: 'league',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 5,
+          score_b: 11,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+        {
+          stage: 'final',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 11,
+          score_b: 8,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+      ],
+      teams: teamsFixture,
+      players: playersFixture,
+    });
+    expect(result).toBe('Carol / Dave');
+  });
+
+  it('skips the champion\'s own teammate (identical record) and returns the first genuinely distinct result for an individual format', () => {
+    const result = computeTournamentRunnerUpName({
+      format: 'popcorn',
+      completedAt: '2026-01-01T00:00:00Z',
+      matches: [
+        {
+          stage: 'league',
+          team_a_id: 't1',
+          team_b_id: 't2',
+          score_a: 11,
+          score_b: 5,
+          status: 'complete',
+          round: 1,
+          court: null,
+        },
+      ],
+      teams: teamsFixture,
+      players: playersFixture,
+    });
+    // Champion is Alice (p1); her teammate Bob (p2) shares her identical 1-0 record
+    // and is skipped, so the runner-up is Carol (p3), the first genuinely distinct result.
+    expect(result).toBe('Carol');
   });
 });
 

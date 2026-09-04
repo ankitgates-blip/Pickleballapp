@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import EmptyState from '@/app/components/EmptyState';
-import { cardClass, vibrantCardClass, primaryButtonClass } from '@/app/components/ui';
+import { cardClass, primaryButtonClass } from '@/app/components/ui';
 
 function CalendarIcon() {
   return (
@@ -16,10 +16,20 @@ function CalendarIcon() {
 }
 import { timeslotLabel } from '@/lib/tournament/timeslots';
 import { formatLabel } from '@/lib/tournament/formats';
-import { computeTournamentChampionName } from '@/lib/tournament/champion';
+import { computeTournamentChampionName, computeTournamentRunnerUpName } from '@/lib/tournament/champion';
 import { cancelTournament } from './actions';
-import CancelTournamentButton from './CancelTournamentButton';
-import PlayerCountBadge from './PlayerCountBadge';
+import TournamentCard from './TournamentCard';
+
+const WEEKDAY_ABBR = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const MONTH_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+// ISO date -> "WED 03 SEP", UTC-parsed so the weekday/day-of-month can't shift
+// with the viewer's own timezone (same convention as this app's other
+// date-labeling code).
+function formatDateLabel(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  return `${WEEKDAY_ABBR[d.getUTCDay()]} ${String(d.getUTCDate()).padStart(2, '0')} ${MONTH_ABBR[d.getUTCMonth()]}`;
+}
 
 export default async function TournamentsPage() {
   const { supabase, organizer } = await requireOrganizer();
@@ -129,6 +139,8 @@ export default async function TournamentsPage() {
     return Array.isArray(venue) ? (venue[0]?.name ?? 'Pickleturf') : venue.name;
   };
 
+  const hasAnyList = upcoming.length > 0 || recentlyCompleted.length > 0;
+
   return (
     <OrganizerShell organizerName={organizer.name}>
       {(tournaments ?? []).length === 0 && (
@@ -146,113 +158,98 @@ export default async function TournamentsPage() {
         </div>
       )}
 
-      {upcoming.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-navy-deep mb-3 flex items-center gap-2">
-            <span>🔥</span> Upcoming Matches
-          </h2>
-          <ul className="space-y-3">
-            {upcoming.map((t) => {
-              const playerCount = playerCountByTournament.get(t.id) ?? 0;
-              const daysAway = Math.round(
-                (new Date(`${t.date}T00:00:00`).getTime() - today.getTime()) / 86400000
-              );
-              const isOverdue = daysAway < 0;
-              return (
-                <li key={t.id}>
-                  <div className={vibrantCardClass}>
-                    <span
-                      className={`absolute top-0 right-0 ${
-                        isOverdue ? 'bg-loss' : 'bg-brand-orange'
-                      } text-white text-[10px] font-extrabold px-3 py-1 rounded-bl-xl rounded-tr-2xl tracking-wide`}
-                    >
-                      {isOverdue
-                        ? 'OVERDUE'
-                        : daysAway === 0
-                          ? 'TODAY'
-                          : `${daysAway} DAY${daysAway === 1 ? '' : 'S'}`}
-                    </span>
-                    <div className="font-extrabold text-lg text-navy-deep mb-1.5">
-                      🏆 {t.name}
-                    </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-600">
-                      <span>📍 {venueNameFor(t)}</span>
-                      <span>🕐 {timeslotLabel(t.timeslot)}</span>
-                      <PlayerCountBadge tournamentId={t.id} playerCount={playerCount} />
-                      <span>📅 {t.date}</span>
-                      <span>🎯 {formatLabel(t.format)}</span>
-                    </div>
-                    <div className="flex items-center justify-between mt-2">
-                      <Link
-                        href={`/tournaments/${t.id}/roster`}
-                        className="text-xs font-bold text-navy-mid hover:underline"
-                      >
-                        Manage tournament →
-                      </Link>
-                      <CancelTournamentButton
-                        tournamentName={t.name}
+      {hasAnyList && (
+        <div
+          className="-mx-4 px-4 pt-6 pb-8 sm:mx-0 sm:rounded-2xl sm:px-6"
+          style={{
+            backgroundImage:
+              'linear-gradient(180deg, #0c1830 0%, #0a1226 55%, #0c1830 100%), repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 32px), repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 32px)',
+          }}
+        >
+          {upcoming.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-white mb-3 font-heading">Upcoming Matches</h2>
+              <ul className="space-y-3">
+                {upcoming.map((t) => {
+                  const playerCount = playerCountByTournament.get(t.id) ?? 0;
+                  const daysAway = Math.round(
+                    (new Date(`${t.date}T00:00:00`).getTime() - today.getTime()) / 86400000
+                  );
+                  const status = daysAway < 0 ? 'overdue' : daysAway === 0 ? 'today' : 'upcoming';
+                  const dateLabel =
+                    status === 'today'
+                      ? `${timeslotLabel(t.timeslot)}`
+                      : status === 'overdue'
+                        ? formatDateLabel(t.date)
+                        : `IN ${daysAway} DAY${daysAway === 1 ? '' : 'S'} · ${formatDateLabel(t.date)}`;
+                  return (
+                    <li key={t.id}>
+                      <TournamentCard
+                        tournamentId={t.id}
+                        status={status}
+                        dateLabel={dateLabel}
+                        format={formatLabel(t.format).toUpperCase()}
+                        title={t.name}
+                        venue={venueNameFor(t)}
+                        playerCount={playerCount}
+                        ctaHref={`/tournaments/${t.id}/roster`}
+                        ctaLabel="Manage tournament"
                         cancelAction={cancelTournament.bind(null, t.id)}
                       />
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
 
-      {recentlyCompleted.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-navy-deep mb-3 flex items-center gap-2">
-            <span>✅</span> Recently Completed
-          </h2>
-          <ul className="space-y-3">
-            {recentlyCompleted.map((t) => {
-              const playerCount = playerCountByTournament.get(t.id) ?? 0;
-              const championName = computeTournamentChampionName({
-                format: t.format,
-                completedAt: t.completed_at,
-                matches: matchesByTournament.get(t.id) ?? [],
-                teams: teamsByTournament.get(t.id) ?? [],
-                players: playersByTournament.get(t.id) ?? [],
-              });
-              return (
-                <li key={t.id}>
-                  <div className={cardClass}>
-                    <div className="font-extrabold text-lg text-navy-deep mb-1.5">
-                      🏆 {t.name}
-                    </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-600">
-                      <span>📍 {venueNameFor(t)}</span>
-                      <span>🕐 {timeslotLabel(t.timeslot)}</span>
-                      <span>👥 {playerCount} player{playerCount === 1 ? '' : 's'}</span>
-                      <span>📅 {t.date}</span>
-                      <span>🎯 {formatLabel(t.format)}</span>
-                    </div>
-                    {championName && (
-                      <div className="text-xs font-bold text-[#8d7142] mt-1.5">
-                        🏆 {championName}
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between mt-2">
-                      <Link
-                        href={`/tournaments/${t.id}/results`}
-                        className="text-xs font-bold text-navy-mid hover:underline"
-                      >
-                        View results →
-                      </Link>
-                      <CancelTournamentButton
-                        tournamentName={t.name}
+          {recentlyCompleted.length > 0 && (
+            <div>
+              <h2 className="text-xl font-bold text-white mb-3 font-heading">Recently Completed</h2>
+              <ul className="space-y-3">
+                {recentlyCompleted.map((t) => {
+                  const playerCount = playerCountByTournament.get(t.id) ?? 0;
+                  const matches = matchesByTournament.get(t.id) ?? [];
+                  const teams = teamsByTournament.get(t.id) ?? [];
+                  const players = playersByTournament.get(t.id) ?? [];
+                  const championName = computeTournamentChampionName({
+                    format: t.format,
+                    completedAt: t.completed_at,
+                    matches,
+                    teams,
+                    players,
+                  });
+                  const runnerUpName = computeTournamentRunnerUpName({
+                    format: t.format,
+                    completedAt: t.completed_at,
+                    matches,
+                    teams,
+                    players,
+                  });
+                  return (
+                    <li key={t.id}>
+                      <TournamentCard
+                        tournamentId={t.id}
+                        status="completed"
+                        dateLabel={`${formatDateLabel(t.date)} · ${timeslotLabel(t.timeslot)}`}
+                        format={formatLabel(t.format).toUpperCase()}
+                        title={t.name}
+                        champion={championName}
+                        runnerUp={runnerUpName}
+                        venue={venueNameFor(t)}
+                        playerCount={playerCount}
+                        matchesCount={matches.length}
+                        ctaHref={`/tournaments/${t.id}/results`}
+                        ctaLabel="View results"
                         cancelAction={cancelTournament.bind(null, t.id)}
                         isCompleted
                       />
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </OrganizerShell>
