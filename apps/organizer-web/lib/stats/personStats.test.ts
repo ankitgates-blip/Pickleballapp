@@ -91,6 +91,17 @@ describe('computePersonStats', () => {
     expect(stats.matchHistory.map((m) => m.tournamentId)).toEqual(['t2', 't1']);
   });
 
+  it('breaks a same-date tie by round, newest round first -- a whole league round-robin plays in one afternoon, so the date alone cannot order those matches', () => {
+    const matches: PersonMatchRecord[] = [
+      { tournamentId: 't1', tournamentDate: '2026-07-06', round: 1, venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 4, scoreAgainst: 11, won: false },
+      { tournamentId: 't1', tournamentDate: '2026-07-06', round: 3, venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 9, won: true },
+      { tournamentId: 't1', tournamentDate: '2026-07-06', round: 2, venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 6, won: true },
+    ];
+
+    const stats = computePersonStats(matches, []);
+    expect(stats.matchHistory.map((m) => m.round)).toEqual([3, 2, 1]);
+  });
+
   it('returns the most recent match date as lastPlayedDate, or null with no matches', () => {
     const matches: PersonMatchRecord[] = [
       { tournamentId: 't1', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },

@@ -27,6 +27,7 @@ describe('buildPersonMatchRecords', () => {
       {
         tournamentId: 't1',
         tournamentDate: '2026-07-06',
+        round: 0,
         venueName: 'Pickle Turf',
         partnerId: 'bob',
         opponentIds: ['carol', 'dave'],
@@ -41,6 +42,7 @@ describe('buildPersonMatchRecords', () => {
       {
         tournamentId: 't1',
         tournamentDate: '2026-07-06',
+        round: 0,
         venueName: 'Pickle Turf',
         partnerId: 'dave',
         opponentIds: ['alice', 'bob'],
@@ -49,6 +51,27 @@ describe('buildPersonMatchRecords', () => {
         won: false,
       },
     ]);
+  });
+
+  it('carries the round number through from the raw match, defaulting to 0 when absent', () => {
+    const matches: RawMatch[] = [
+      {
+        tournamentId: 't1',
+        tournamentDate: '2026-07-06',
+        round: 3,
+        venueName: 'Pickle Turf',
+        teamAId: 'team-ab',
+        teamBId: 'team-cd',
+        scoreA: 11,
+        scoreB: 7,
+        status: 'complete',
+      },
+    ];
+
+    expect(buildPersonMatchRecords('alice', matches, teams)[0].round).toBe(3);
+
+    const matchesWithoutRound: RawMatch[] = [{ ...matches[0], round: undefined }];
+    expect(buildPersonMatchRecords('alice', matchesWithoutRound, teams)[0].round).toBe(0);
   });
 
   it('excludes pending (incomplete) matches', () => {

@@ -172,9 +172,17 @@ export function computePersonStats(
   matches: PersonMatchRecord[],
   tournamentsWon: TournamentWon[]
 ): PersonStats {
-  const sortedHistory = [...matches].sort((a, b) =>
-    a.tournamentDate < b.tournamentDate ? 1 : -1
-  );
+  // Most-recent-first. A tournament date alone can't order two matches played the
+  // same day (a whole league round-robin runs in one afternoon), so round breaks
+  // the tie -- without it, same-date matches kept whatever arbitrary order the
+  // unordered matches-table query happened to return them in, which could scramble
+  // win streaks and "last N" form into the wrong result.
+  const sortedHistory = [...matches].sort((a, b) => {
+    if (a.tournamentDate !== b.tournamentDate) {
+      return a.tournamentDate < b.tournamentDate ? 1 : -1;
+    }
+    return (b.round ?? 0) - (a.round ?? 0);
+  });
 
   return {
     weekly: buildPeriods(matches, tournamentsWon, getWeekStart),

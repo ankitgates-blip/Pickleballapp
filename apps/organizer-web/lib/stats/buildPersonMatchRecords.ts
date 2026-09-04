@@ -40,6 +40,7 @@ export function buildPersonMatchRecords(
     records.push({
       tournamentId: m.tournamentId,
       tournamentDate: m.tournamentDate,
+      round: m.round ?? 0,
       venueName: m.venueName,
       partnerId,
       opponentIds: [otherTeam.player1PersonId, otherTeam.player2PersonId],
