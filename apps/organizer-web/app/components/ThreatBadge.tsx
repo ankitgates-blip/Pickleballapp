@@ -55,11 +55,12 @@ export default function ThreatBadge({ winPercentage, size = 'compact' }: ThreatB
 
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full bg-[#1c1917] px-2 py-1"
+      className="inline-flex items-center gap-1.5 rounded-full bg-[#1c1917] py-1 pl-1 pr-2"
       role="img"
       aria-label={accessibleLabel}
       title={accessibleLabel}
     >
+      <ThreatShieldBadge tier={tier} size={18} />
       <span className="font-heading text-xs font-extrabold leading-none" style={{ color: tier.accent }}>
         {winPercentage}
       </span>
