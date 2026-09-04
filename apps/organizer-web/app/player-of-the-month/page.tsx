@@ -305,9 +305,12 @@ export default async function PlayerOfTheMonthPage() {
                     overallWinPercentage: winPercentageByPersonId.get(entry.personId) ?? null,
                   })),
                   // Same tie criteria as the Locations Leaderboard: two people
-                  // identical on wins, losses, league wins, and Total Points share a
-                  // rank instead of an arbitrary 1st/2nd from array order.
-                  (r) => `${r.matchWins}|${r.losses}|${r.leagueWins}|${r.totalPoints}`
+                  // identical on match wins, losses, and league wins share a rank
+                  // instead of an arbitrary 1st/2nd from array order -- deliberately
+                  // NOT keyed on Total Points, so a small bonus-point difference (a
+                  // shutout, a close loss) between two otherwise-identical records
+                  // doesn't split them into different ranks.
+                  (r) => `${r.matchWins}|${r.losses}|${r.leagueWins}`
                 )}
               />
             )}

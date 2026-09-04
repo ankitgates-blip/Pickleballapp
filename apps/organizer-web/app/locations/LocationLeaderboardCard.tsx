@@ -169,8 +169,13 @@ export default function LocationLeaderboardCard({
 
   const shownRows = rows.slice(0, MAX_ROWS);
   const overflowCount = rows.length - shownRows.length;
-  const podiumRows = shownRows.slice(0, Math.min(3, shownRows.length));
-  const bodyRows = shownRows.slice(podiumRows.length);
+  // Split by RANK, not array position -- assignRanksWithTies gives every player tied
+  // for a top-3 spot the same rank number (e.g. two people tied for 3rd both get
+  // rank 3), and both must get the podium/medal treatment. Slicing the first 3 array
+  // entries instead would strand the second tied player in the plain body-row list
+  // even though they're genuinely 3rd place too.
+  const podiumRows = shownRows.filter((r) => r.rank <= 3);
+  const bodyRows = shownRows.filter((r) => r.rank > 3);
   const podiumHeight = podiumRows.length * PODIUM_ROW_HEIGHT;
   const hasColumnHeader = bodyRows.length > 0;
   const listHeight =
@@ -180,7 +185,7 @@ export default function LocationLeaderboardCard({
     bodyRows.length * BODY_ROW_HEIGHT;
   const totalHeight = HEADER_HEIGHT + listHeight + FOOTER_HEIGHT;
   const footerY = HEADER_HEIGHT + listHeight;
-  const top3Names = shownRows.slice(0, 3).map((r) => r.name).join(', ');
+  const top3Names = podiumRows.map((r) => r.name).join(', ');
 
   const handleDownload = async () => {
     if (!svgRef.current) return;

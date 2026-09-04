@@ -284,22 +284,16 @@ export default async function LocationsPage({
       tournamentWins: entry.tournamentWins,
       totalPoints: totalPointsByPersonId.get(entry.personId) ?? 0,
     }));
-    // Two people identical on every one of these -- match wins, matches played,
-    // league (tournament) wins, and Total Points -- must show the same rank number,
-    // not an arbitrary 1st/2nd from array order. Anyone differing on even one of
-    // these is NOT considered tied, even if computeLocationLeaderboard's own
-    // underlying composite score happens to match (that score is only a function of
-    // match/tournament wins, so it can't see a points or matches-played difference
-    // on its own).
-    //
-    // sortLeaderboardCardRows re-orders by Total Points first -- the card's own sole
-    // hero stat -- rather than leaving rows in computeLocationLeaderboard's original
-    // win/loss-composite order, which never looks at points at all. See that
-    // function's own comment for why the old order could show a bigger point total
-    // ranked below a smaller one.
+    // Two people identical on match wins, losses, matches played, and league
+    // (tournament) wins share the same rank number, not an arbitrary 1st/2nd from
+    // array order -- deliberately NOT keyed on Total Points: two players with an
+    // identical match record are considered tied even if a bonus (a shutout, a close
+    // loss) gave one of them a few more points than the other. sortLeaderboardCardRows
+    // below still uses Total Points to decide which of a tied pair is listed first,
+    // but the rank number itself follows the match-record tie, per organizer request.
     const rows = assignRanksWithTies(
       sortLeaderboardCardRows(rowsWithoutRank),
-      (r) => `${r.matchWins}|${r.matchesPlayed}|${r.tournamentWins}|${r.totalPoints}`
+      (r) => `${r.matchWins}|${r.losses}|${r.matchesPlayed}|${r.tournamentWins}`
     );
     return { venueId, venueName, rows };
   });
