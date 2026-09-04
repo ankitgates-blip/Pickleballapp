@@ -54,6 +54,7 @@ export default function TournamentCard({
   isCompleted = false,
 }: TournamentCardProps) {
   const meta = STATUS_META[status];
+  const isPickleturf = venue.trim().toLowerCase() === 'pickleturf';
   return (
     <div className="flex rounded-2xl border overflow-hidden" style={{ background: '#16294e', borderColor: '#4a6ba8', boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}>
       <div className="w-1 flex-shrink-0" style={{ background: meta.rail }} />
@@ -86,7 +87,7 @@ export default function TournamentCard({
           </>
         )}
 
-        <div className="flex flex-wrap gap-x-6 gap-y-1.5 my-3">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 my-3">
           <div>
             <div className="text-[9px] font-bold tracking-wide" style={{ color: '#94a3b8' }}>VENUE</div>
             <div className="text-sm font-semibold" style={{ color: '#e2e8f0' }}>{venue}</div>
@@ -103,6 +104,15 @@ export default function TournamentCard({
               <div className="text-[9px] font-bold tracking-wide" style={{ color: '#94a3b8' }}>MATCHES</div>
               <div className="text-sm font-semibold" style={{ color: '#e2e8f0' }}>{matchesCount}</div>
             </div>
+          )}
+          {isPickleturf && (
+            // eslint-disable-next-line @next/next/no-img-element -- static brand mark, not content that needs Next/Image optimization
+            <img
+              src="/pickleturf-mark.png"
+              alt="Pickleturf"
+              className="ml-auto h-20 w-auto flex-shrink-0 hidden sm:block"
+              style={{ opacity: 0.95 }}
+            />
           )}
         </div>
 
