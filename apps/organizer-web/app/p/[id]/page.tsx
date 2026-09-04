@@ -108,6 +108,7 @@ export default async function PublicPersonPage({
       tournamentId: m.tournament_id,
       tournamentDate: tournamentDateById.get(m.tournament_id) ?? '',
       round: m.round,
+      stage: m.stage,
       venueName: venueNameByTournamentId.get(m.tournament_id) ?? '',
       teamAId: m.team_a_id!,
       teamBId: m.team_b_id!,

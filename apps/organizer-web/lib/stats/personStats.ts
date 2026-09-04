@@ -168,21 +168,37 @@ function countMatchesByLocation(matches: PersonMatchRecord[]): LocationCount[] {
     .sort((a, b) => b.count - a.count);
 }
 
+// A tournament's stages always play out in this order within one day: every League
+// round, then Semifinal, then Final. Needed because Semifinal/Final matches are
+// always stored as round 1 (a DB-schema formality -- see resultsExport.ts), so a
+// same-day Final would otherwise tie with League Round 1 on round number alone, and
+// sort BELOW League Round 5 (or whatever the last league round was) even though the
+// Final is the last match actually played that day.
+const STAGE_RANK: Record<string, number> = { league: 0, semifinal: 1, final: 2 };
+
+// Most-recent-first comparator for PersonMatchRecord -- shared by this module's own
+// matchHistory sort and any other caller building a similarly-ordered match list
+// (e.g. the Player of the Month winner card's own match history). Tournament date
+// first; within the same date, stage (see STAGE_RANK above); then round descending
+// within the same stage -- a tournament date alone can't order two matches played
+// the same day (a whole league round-robin runs in one evening), and without these
+// tiebreaks, same-date matches kept whatever arbitrary order the unordered
+// matches-table query happened to return them in, which could scramble win streaks
+// and "last N" form into the wrong result.
+export function compareMatchRecordsMostRecentFirst(a: PersonMatchRecord, b: PersonMatchRecord): number {
+  if (a.tournamentDate !== b.tournamentDate) {
+    return a.tournamentDate < b.tournamentDate ? 1 : -1;
+  }
+  const stageDiff = (STAGE_RANK[b.stage ?? 'league'] ?? 0) - (STAGE_RANK[a.stage ?? 'league'] ?? 0);
+  if (stageDiff !== 0) return stageDiff;
+  return (b.round ?? 0) - (a.round ?? 0);
+}
+
 export function computePersonStats(
   matches: PersonMatchRecord[],
   tournamentsWon: TournamentWon[]
 ): PersonStats {
-  // Most-recent-first. A tournament date alone can't order two matches played the
-  // same day (a whole league round-robin runs in one afternoon), so round breaks
-  // the tie -- without it, same-date matches kept whatever arbitrary order the
-  // unordered matches-table query happened to return them in, which could scramble
-  // win streaks and "last N" form into the wrong result.
-  const sortedHistory = [...matches].sort((a, b) => {
-    if (a.tournamentDate !== b.tournamentDate) {
-      return a.tournamentDate < b.tournamentDate ? 1 : -1;
-    }
-    return (b.round ?? 0) - (a.round ?? 0);
-  });
+  const sortedHistory = [...matches].sort(compareMatchRecordsMostRecentFirst);
 
   return {
     weekly: buildPeriods(matches, tournamentsWon, getWeekStart),

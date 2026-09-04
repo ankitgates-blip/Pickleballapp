@@ -4,6 +4,7 @@ import { lockMissingPlayerOfTheMonthWinners } from './lockMissingWinners';
 import { rankMonthlyCandidates, rankMonthlyCandidatesByPoints } from '@/lib/stats/playerOfTheMonth';
 import { buildMonthlyCandidates } from '@/lib/stats/monthlyCandidates';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
+import { compareMatchRecordsMostRecentFirst } from '@/lib/stats/personStats';
 import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
 import { longestWinStreak } from '@/lib/stats/winStreak';
 import { winsInLastN } from '@/lib/stats/winsInLastN';
@@ -135,6 +136,7 @@ export default async function PlayerOfTheMonthPage() {
         tournamentId: m.tournament_id,
         tournamentDate: tournamentDateById.get(m.tournament_id) ?? '',
         round: m.round,
+        stage: m.stage,
         venueName,
         teamAId: m.team_a_id!,
         teamBId: m.team_b_id!,
@@ -194,14 +196,9 @@ export default async function PlayerOfTheMonthPage() {
       let winnerMatches: ReturnType<typeof buildPersonMatchRecords> = [];
       if (winnerPerson) {
         const { matches, teams } = await fetchMonthData(venue.id, venue.name, lastMonthYear, lastMonth);
-        // Most-recent-first, tiebroken by round -- see personStats.ts's identical
-        // sort for why tournamentDate alone can't order same-day matches correctly.
-        winnerMatches = buildPersonMatchRecords(winnerPerson.id, matches, teams).sort((a, b) => {
-          if (a.tournamentDate !== b.tournamentDate) {
-            return a.tournamentDate < b.tournamentDate ? 1 : -1;
-          }
-          return (b.round ?? 0) - (a.round ?? 0);
-        });
+        winnerMatches = buildPersonMatchRecords(winnerPerson.id, matches, teams).sort(
+          compareMatchRecordsMostRecentFirst
+        );
       }
       const winnerWins = lastMonthRow?.match_wins ?? 0;
       const winnerLosses = (lastMonthRow?.matches_played ?? 0) - winnerWins;

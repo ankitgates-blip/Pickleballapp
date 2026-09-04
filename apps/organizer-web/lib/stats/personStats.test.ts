@@ -102,6 +102,20 @@ describe('computePersonStats', () => {
     expect(stats.matchHistory.map((m) => m.round)).toEqual([3, 2, 1]);
   });
 
+  it('sorts a same-day Semifinal/Final after every League round, even though they are stored as round 1 -- round alone would wrongly sort a same-day Final below League Round 5', () => {
+    const matches: PersonMatchRecord[] = [
+      { tournamentId: 't1', tournamentDate: '2026-09-04', round: 1, stage: 'league', venueName: 'Pickleturf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 6, won: true },
+      { tournamentId: 't1', tournamentDate: '2026-09-04', round: 5, stage: 'league', venueName: 'Pickleturf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 9, won: true },
+      { tournamentId: 't1', tournamentDate: '2026-09-04', round: 1, stage: 'semifinal', venueName: 'Pickleturf', partnerId: 'p-bob', opponentIds: ['p-eve', 'p-frank'], scoreFor: 11, scoreAgainst: 4, won: true },
+      { tournamentId: 't1', tournamentDate: '2026-09-04', round: 1, stage: 'final', venueName: 'Pickleturf', partnerId: 'p-bob', opponentIds: ['p-gina', 'p-hank'], scoreFor: 11, scoreAgainst: 8, won: true },
+    ];
+
+    const stats = computePersonStats(matches, []);
+    expect(stats.matchHistory.map((m) => m.stage)).toEqual(['final', 'semifinal', 'league', 'league']);
+    // Within the league stage, still newest round first.
+    expect(stats.matchHistory.filter((m) => m.stage === 'league').map((m) => m.round)).toEqual([5, 1]);
+  });
+
   it('returns the most recent match date as lastPlayedDate, or null with no matches', () => {
     const matches: PersonMatchRecord[] = [
       { tournamentId: 't1', tournamentDate: '2026-07-06', venueName: 'Pickle Turf', partnerId: 'p-bob', opponentIds: ['p-carol', 'p-dave'], scoreFor: 11, scoreAgainst: 7, won: true },

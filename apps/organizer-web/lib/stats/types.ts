@@ -15,6 +15,15 @@ export type RawMatch = {
   // aggregates (e.g. buildWinPercentageByPersonId, which just counts wins) and don't
   // have a real round to pass.
   round?: number;
+  // 'league' | 'semifinal' | 'final' -- needed alongside round because Semifinal/Final
+  // matches are always stored as round 1 (a DB-schema formality, not a real round
+  // sequence: see resultsExport.ts), even though they're played AFTER every league
+  // round on the same date. Sorting by round alone would put a same-day Final above
+  // League Round 1 correctly, but tied with it (both round 1) -- and below League
+  // Round 5, which is backwards, since the Final is played last. Optional for the
+  // same reason as round -- defaults to 'league' (the common case) for callers that
+  // don't have a real stage to pass.
+  stage?: string;
   venueName: string;
   teamAId: string;
   teamBId: string;
@@ -31,6 +40,9 @@ export type PersonMatchRecord = {
   // Optional for the same reason as RawMatch.round -- existing fixtures/callers
   // that never set it default to 0 (an untiebroken same-date order), not a type error.
   round?: number;
+  // Carried through from RawMatch.stage -- see that field's comment for why round
+  // alone can't correctly order a same-day Semifinal/Final against League rounds.
+  stage?: string;
   venueName: string;
   partnerId: string;
   opponentIds: [string, string];

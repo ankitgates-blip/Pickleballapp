@@ -41,6 +41,7 @@ export function buildPersonMatchRecords(
       tournamentId: m.tournamentId,
       tournamentDate: m.tournamentDate,
       round: m.round ?? 0,
+      stage: m.stage ?? 'league',
       venueName: m.venueName,
       partnerId,
       opponentIds: [otherTeam.player1PersonId, otherTeam.player2PersonId],
