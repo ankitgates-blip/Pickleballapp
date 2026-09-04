@@ -3,7 +3,7 @@ import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, headingClass } from '@/app/components/ui';
 import EmptyState from '@/app/components/EmptyState';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
-import { computeLocationLeaderboard } from '@/lib/stats/locationLeaderboard';
+import { computeLocationLeaderboard, sortLeaderboardCardRows } from '@/lib/stats/locationLeaderboard';
 import { winPercentageFromRecords } from '@/lib/stats/winRate';
 import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
 import type { RawMatch, RawTeam } from '@/lib/stats/types';
@@ -291,8 +291,14 @@ export default async function LocationsPage({
     // underlying composite score happens to match (that score is only a function of
     // match/tournament wins, so it can't see a points or matches-played difference
     // on its own).
+    //
+    // sortLeaderboardCardRows re-orders by Total Points first -- the card's own sole
+    // hero stat -- rather than leaving rows in computeLocationLeaderboard's original
+    // win/loss-composite order, which never looks at points at all. See that
+    // function's own comment for why the old order could show a bigger point total
+    // ranked below a smaller one.
     const rows = assignRanksWithTies(
-      rowsWithoutRank,
+      sortLeaderboardCardRows(rowsWithoutRank),
       (r) => `${r.matchWins}|${r.matchesPlayed}|${r.tournamentWins}|${r.totalPoints}`
     );
     return { venueId, venueName, rows };

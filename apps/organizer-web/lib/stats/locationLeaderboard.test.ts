@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeLocationLeaderboard } from './locationLeaderboard';
+import { computeLocationLeaderboard, sortLeaderboardCardRows } from './locationLeaderboard';
 
 describe('computeLocationLeaderboard', () => {
   it('weights tournament wins at 60% and match wins at 40%, both normalized to the max', () => {
@@ -102,5 +102,55 @@ describe('computeLocationLeaderboard', () => {
     expect(result[0].matchesPlayed).toBe(5);
     expect(result[0].matchWins).toBe(3);
     expect(result[0].losses).toBe(2);
+  });
+});
+
+describe('sortLeaderboardCardRows', () => {
+  it('weights Total Points at 75%, matches played at 15%, and tournament wins at 10%, all normalized to the max', () => {
+    const result = sortLeaderboardCardRows([
+      // a: pointsScore = 100/100 = 1, matchesScore = 8/10 = 0.8, tourneyScore = 1/2 = 0.5
+      //    -> score = 0.75*1 + 0.15*0.8 + 0.10*0.5 = 0.75 + 0.12 + 0.05 = 0.92
+      { personId: 'a', matchWins: 6, tournamentWins: 1, matchesPlayed: 8, totalPoints: 100 },
+      // b: pointsScore = 50/100 = 0.5, matchesScore = 10/10 = 1, tourneyScore = 2/2 = 1
+      //    -> score = 0.75*0.5 + 0.15*1 + 0.10*1 = 0.375 + 0.15 + 0.1 = 0.625
+      { personId: 'b', matchWins: 7, tournamentWins: 2, matchesPlayed: 10, totalPoints: 50 },
+    ]);
+    expect(result.map((r) => r.personId)).toEqual(['a', 'b']);
+  });
+
+  it('ranks more Total Points above more matches played and tournament wins combined, reproducing the reported chirag/rajath case', () => {
+    // rajath has more matches played and more tournament wins (the old, points-blind
+    // composite would rank him first), but chirag's much larger Total Points total --
+    // weighted at 75% -- outweighs that, so chirag must still come first.
+    const result = sortLeaderboardCardRows([
+      { personId: 'rajath', matchWins: 8, tournamentWins: 2, matchesPlayed: 11, totalPoints: 60 },
+      { personId: 'chirag', matchWins: 5, tournamentWins: 0, matchesPlayed: 8, totalPoints: 110 },
+    ]);
+    expect(result.map((r) => r.personId)).toEqual(['chirag', 'rajath']);
+  });
+
+  it('falls back to raw Total Points, then match wins, then matches played when the weighted score ties', () => {
+    const result = sortLeaderboardCardRows([
+      { personId: 'fewer-points', matchWins: 2, tournamentWins: 0, matchesPlayed: 4, totalPoints: 50 },
+      { personId: 'more-points', matchWins: 2, tournamentWins: 0, matchesPlayed: 4, totalPoints: 90 },
+    ]);
+    expect(result.map((r) => r.personId)).toEqual(['more-points', 'fewer-points']);
+  });
+
+  it('ranks by matches played (with no NaN) when nobody has any Total Points or tournament wins yet', () => {
+    const result = sortLeaderboardCardRows([
+      { personId: 'fewer-matches', matchWins: 1, tournamentWins: 0, matchesPlayed: 5, totalPoints: 0 },
+      { personId: 'more-matches', matchWins: 1, tournamentWins: 0, matchesPlayed: 8, totalPoints: 0 },
+    ]);
+    expect(result.map((r) => r.personId)).toEqual(['more-matches', 'fewer-matches']);
+  });
+
+  it('does not mutate the input array', () => {
+    const rows = [
+      { personId: 'a', matchWins: 1, tournamentWins: 0, matchesPlayed: 1, totalPoints: 10 },
+      { personId: 'b', matchWins: 1, tournamentWins: 0, matchesPlayed: 1, totalPoints: 20 },
+    ];
+    sortLeaderboardCardRows(rows);
+    expect(rows.map((r) => r.personId)).toEqual(['a', 'b']);
   });
 });

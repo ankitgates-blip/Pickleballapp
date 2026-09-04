@@ -36,14 +36,20 @@ export type MonthlyPointsRankedEntry = {
 };
 
 const APPEARANCE_ELIGIBILITY_THRESHOLD = 0.6; // must have played >= 60% of the month's busiest player's matches
-const POINTS_WEIGHT = 0.85;
+const POINTS_WEIGHT = 0.75;
 const APPEARANCE_WEIGHT = 0.15;
+const LEAGUE_WINS_WEIGHT = 0.1;
 
 /**
- * September-2026-onward Player of the Month ranking: 85% Total Points Earned + 15%
- * Matches Played/Appearance, both normalized against the month's most active
- * candidate (not an absolute scale) -- same normalize-by-max convention as
- * rankMonthlyCandidates and computeLocationLeaderboard elsewhere in this file/module.
+ * September-2026-onward Player of the Month ranking: 75% Total Points Earned + 15%
+ * Matches Played/Appearance + 10% League (tournament) Wins, all three normalized
+ * against the month's most active/highest-scoring eligible candidate (not an
+ * absolute scale) -- same normalize-by-max convention as rankMonthlyCandidates and
+ * computeLocationLeaderboard elsewhere in this file/module. Matches the weighting
+ * used for the venue Leaderboard's own Total Points ranking (sortLeaderboardCardRows
+ * in locationLeaderboard.ts) so both surfaces agree on how points, appearance, and
+ * championships trade off against each other.
+ *
  * Eligibility is *only* the 60% appearance floor (no separate absolute-match-count
  * floor): a player below 60% of the busiest player's match count is excluded
  * regardless of how many points they earned. Superseded rankMonthlyCandidates (which
@@ -60,6 +66,7 @@ export function rankMonthlyCandidatesByPoints(candidates: MonthlyCandidate[]): M
     (c) => maxMatchesPlayed > 0 && c.matchesPlayed >= APPEARANCE_ELIGIBILITY_THRESHOLD * maxMatchesPlayed
   );
   const maxTotalPoints = Math.max(0, ...eligible.map((c) => c.totalPoints));
+  const maxLeagueWins = Math.max(0, ...eligible.map((c) => c.leagueWins));
 
   return eligible
     .map((c) => {
@@ -67,7 +74,11 @@ export function rankMonthlyCandidatesByPoints(candidates: MonthlyCandidate[]): M
       const appearancePercentage = Math.round((c.matchesPlayed / maxMatchesPlayed) * 100);
       const normalizedPoints = maxTotalPoints > 0 ? c.totalPoints / maxTotalPoints : 0;
       const normalizedAppearance = c.matchesPlayed / maxMatchesPlayed;
-      const score = POINTS_WEIGHT * normalizedPoints + APPEARANCE_WEIGHT * normalizedAppearance;
+      const normalizedLeagueWins = maxLeagueWins > 0 ? c.leagueWins / maxLeagueWins : 0;
+      const score =
+        POINTS_WEIGHT * normalizedPoints +
+        APPEARANCE_WEIGHT * normalizedAppearance +
+        LEAGUE_WINS_WEIGHT * normalizedLeagueWins;
       return {
         personId: c.personId,
         score,

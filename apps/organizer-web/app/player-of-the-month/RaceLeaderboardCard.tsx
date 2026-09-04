@@ -612,7 +612,7 @@ export default function RaceLeaderboardCard({
               textAnchor="middle"
               fontFamily="var(--font-oswald), sans-serif"
             >
-              Ranked by 85% Total Points · 15% appearance · 60% of the busiest player&apos;s matches to qualify
+              Ranked by 75% Total Points · 15% appearance · 10% league wins · 60% of the busiest player&apos;s matches to qualify
             </text>
             <text
               x={CARD_WIDTH / 2}

@@ -621,7 +621,7 @@ export default function LocationLeaderboardCard({
               textAnchor="middle"
               fontFamily="var(--font-oswald), sans-serif"
             >
-              Ranked by league wins (60%) + match wins (40%) · PTS = Total Points this period
+              Ranked by Total Points (75%) + matches played (15%) + league wins (10%)
             </text>
             {overflowCount > 0 && (
               <text
