@@ -385,7 +385,7 @@ export default async function PersonDetailPage({
         <PersonAvatar photoUrl={person.photo_url} name={person.name} size={80} />
         <div className="flex items-center gap-2 flex-wrap">
           <h1 className={`text-2xl ${headingClass}`}>{displayName}</h1>
-          <ThreatBadge winPercentage={stats.winPercentage} />
+          <ThreatBadge winPercentage={stats.winPercentage} size="default" />
         </div>
       </div>
       <p className="text-sm text-slate-500">

@@ -7,11 +7,13 @@ describe('threatTierFor', () => {
       emoji: '💀',
       label: 'DO NOT PLAY',
       colorClass: 'bg-purple-100 text-purple-800',
+      accent: '#c026d3',
     });
     expect(threatTierFor(81)).toEqual({
       emoji: '💀',
       label: 'DO NOT PLAY',
       colorClass: 'bg-purple-100 text-purple-800',
+      accent: '#c026d3',
     });
   });
 
@@ -20,11 +22,13 @@ describe('threatTierFor', () => {
       emoji: '🔴',
       label: 'HIGH THREAT',
       colorClass: 'bg-red-100 text-red-800',
+      accent: '#dc2626',
     });
     expect(threatTierFor(61)).toEqual({
       emoji: '🔴',
       label: 'HIGH THREAT',
       colorClass: 'bg-red-100 text-red-800',
+      accent: '#dc2626',
     });
   });
 
@@ -33,11 +37,13 @@ describe('threatTierFor', () => {
       emoji: '🟠',
       label: 'DANGEROUS',
       colorClass: 'bg-orange-100 text-orange-800',
+      accent: '#ea580c',
     });
     expect(threatTierFor(41)).toEqual({
       emoji: '🟠',
       label: 'DANGEROUS',
       colorClass: 'bg-orange-100 text-orange-800',
+      accent: '#ea580c',
     });
   });
 
@@ -46,11 +52,13 @@ describe('threatTierFor', () => {
       emoji: '🟡',
       label: 'WATCH OUT',
       colorClass: 'bg-yellow-100 text-yellow-800',
+      accent: '#ca8a04',
     });
     expect(threatTierFor(21)).toEqual({
       emoji: '🟡',
       label: 'WATCH OUT',
       colorClass: 'bg-yellow-100 text-yellow-800',
+      accent: '#ca8a04',
     });
   });
 
@@ -59,11 +67,13 @@ describe('threatTierFor', () => {
       emoji: '🟢',
       label: 'LOW THREAT',
       colorClass: 'bg-green-100 text-green-800',
+      accent: '#16a34a',
     });
     expect(threatTierFor(0)).toEqual({
       emoji: '🟢',
       label: 'LOW THREAT',
       colorClass: 'bg-green-100 text-green-800',
+      accent: '#16a34a',
     });
   });
 });
