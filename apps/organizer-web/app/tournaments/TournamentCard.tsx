@@ -110,7 +110,7 @@ export default function TournamentCard({
             <img
               src="/pickleturf-mark.png"
               alt="Pickleturf"
-              className="ml-auto h-20 w-auto flex-shrink-0 hidden sm:block"
+              className="ml-auto h-14 sm:h-20 w-auto flex-shrink-0 block"
               style={{ opacity: 0.95 }}
             />
           )}
