@@ -16,14 +16,14 @@ describe('assignRanksWithTies', () => {
     expect(result.map((r) => r.rank)).toEqual([1, 2, 3]);
   });
 
-  it('gives two tied leaders the same rank, then skips to 3rd for whoever is next', () => {
+  it('gives two tied leaders the same rank, then the very next rank for whoever is next (no skip)', () => {
     const rows: Row[] = [
       { name: 'a', wins: 5, points: 50 },
       { name: 'b', wins: 5, points: 50 },
       { name: 'c', wins: 3, points: 30 },
     ];
     const result = assignRanksWithTies(rows, keyFor);
-    expect(result.map((r) => r.rank)).toEqual([1, 1, 3]);
+    expect(result.map((r) => r.rank)).toEqual([1, 1, 2]);
   });
 
   it('handles a tie in the middle of the list', () => {
@@ -35,7 +35,19 @@ describe('assignRanksWithTies', () => {
       { name: 'e', wins: 1, points: 10 },
     ];
     const result = assignRanksWithTies(rows, keyFor);
-    expect(result.map((r) => r.rank)).toEqual([1, 2, 2, 2, 5]);
+    expect(result.map((r) => r.rank)).toEqual([1, 2, 2, 2, 3]);
+  });
+
+  it('does not skip a rank number after a tie (dense ranking, not competition ranking)', () => {
+    const rows: Row[] = [
+      { name: 'a', wins: 9, points: 90 },
+      { name: 'b', wins: 8, points: 80 },
+      { name: 'c', wins: 7, points: 70 },
+      { name: 'd', wins: 7, points: 70 },
+      { name: 'e', wins: 6, points: 60 },
+    ];
+    const result = assignRanksWithTies(rows, keyFor);
+    expect(result.map((r) => r.rank)).toEqual([1, 2, 3, 3, 4]);
   });
 
   it('does not tie two rows that are adjacent but differ on the key', () => {

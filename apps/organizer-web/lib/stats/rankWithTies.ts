@@ -1,11 +1,12 @@
 // apps/organizer-web/lib/stats/rankWithTies.ts
 
 /**
- * Standard "competition ranking" (1, 2, 2, 4): assigns rank numbers over an
- * already-sorted array so that consecutive entries with an identical key share the
- * same rank, and the next distinct entry's rank is its 1-based array index -- not the
- * previous rank + 1. Two people tied for 1st both show as 1st; whoever comes right
- * after them is 3rd, not 2nd, because there are two people ahead of them, not one.
+ * Dense ranking (1, 2, 2, 3): assigns rank numbers over an already-sorted array
+ * so that consecutive entries with an identical key share the same rank, and the
+ * next distinct entry's rank is simply the previous rank + 1 -- never skipping a
+ * number. Two people tied for 1st both show as 1st; whoever comes right after them
+ * is 2nd, not 3rd, because rank numbers never skip regardless of how many people
+ * share a rank above them.
  *
  * `sortedRows` must already be in the order you want displayed -- this only decides
  * which adjacent rows count as tied, never reorders anything. `keyFor` should return
@@ -23,8 +24,10 @@ export function assignRanksWithTies<T>(
 
   return sortedRows.map((row, i) => {
     const key = keyFor(row);
-    if (i === 0 || key !== previousKey) {
-      currentRank = i + 1;
+    if (i === 0) {
+      currentRank = 1;
+    } else if (key !== previousKey) {
+      currentRank = currentRank + 1;
     }
     previousKey = key;
     return { ...row, rank: currentRank };
