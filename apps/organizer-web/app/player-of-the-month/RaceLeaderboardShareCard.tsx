@@ -4,6 +4,32 @@ import { useRef, useState } from 'react';
 import { shareOrDownloadFile, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
 import { threatTierFor } from '@/lib/stats/threatLevel';
 import ThreatShieldBadge from '@/app/components/ThreatShieldBadge';
+import {
+  NAVY_MID,
+  NAVY_DEEP,
+  NAVY_DARKER,
+  NAVY_RULE,
+  PLATE,
+  PLATE_STROKE,
+  ON_NAVY_PRIMARY,
+  ON_NAVY_SECOND,
+  ON_NAVY_MUTED,
+  ON_NAVY_FAINT,
+  GOLD_DEEP,
+  GOLD_CORE,
+  GOLD_LIGHT,
+  SILVER_DEEP,
+  SILVER_CORE,
+  SILVER_LIGHT,
+  BRONZE_DEEP,
+  BRONZE_CORE,
+  BRONZE_LIGHT,
+  WIN_ON_NAVY,
+  LOSS_ON_NAVY,
+  LIVE_COLOR,
+  medalStops,
+} from '@/app/components/leaderboardPalette';
+import { outlineButtonClass } from '@/app/components/ui';
 
 export type RaceCardRow = {
   rank: number;
@@ -48,38 +74,6 @@ const FOOTER_HEIGHT = 56;
 // card are: the LIVE pill (this ranking is a live snapshot of an in-progress month,
 // not a frozen period), the kicker text, and the footer's ranking-basis caption (a
 // different formula).
-const NAVY_MID = '#16294e';
-const NAVY_DEEP = '#0c1830';
-const NAVY_DARKER = '#0a1730';
-const NAVY_RULE = '#24406f';
-const PLATE = '#081328';
-const PLATE_STROKE = '#2c4a7d';
-const ON_NAVY_PRIMARY = '#ffffff';
-const ON_NAVY_SECOND = '#b8c8de';
-const ON_NAVY_MUTED = '#8ea6c8';
-const ON_NAVY_FAINT = '#5b7196';
-
-const GOLD_DEEP = '#a8874f';
-const GOLD_CORE = '#d6af36';
-const GOLD_LIGHT = '#f7e6a8';
-const SILVER_DEEP = '#7e8288';
-const SILVER_CORE = '#a7a7ad';
-const SILVER_LIGHT = '#e8eaed';
-const BRONZE_DEEP = '#7a4b23';
-const BRONZE_CORE = '#a77044';
-const BRONZE_LIGHT = '#e0aa72';
-
-const WIN_ON_NAVY = '#34d8bd';
-const LOSS_ON_NAVY = '#ff8a80';
-const LIVE_COLOR = '#d1601f';
-
-function medalStops(rank: number): { deep: string; core: string; light: string } | null {
-  if (rank === 1) return { deep: GOLD_DEEP, core: GOLD_CORE, light: GOLD_LIGHT };
-  if (rank === 2) return { deep: SILVER_DEEP, core: SILVER_CORE, light: SILVER_LIGHT };
-  if (rank === 3) return { deep: BRONZE_DEEP, core: BRONZE_CORE, light: BRONZE_LIGHT };
-  return null;
-}
-
 const AVG_CHAR_WIDTH_RATIO = 0.54;
 
 function fitName(name: string, maxWidth: number, baseSize: number, minSize: number): { size: number; text: string } {
@@ -109,7 +103,7 @@ async function loadDataUrl(url: string): Promise<string | null> {
   }
 }
 
-export default function RaceLeaderboardCard({
+export default function RaceLeaderboardShareCard({
   venueName,
   monthLabel,
   generatedDateLabel,
@@ -198,20 +192,13 @@ export default function RaceLeaderboardCard({
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={handleDownload}
-        disabled={status === 'generating'}
-        className="block w-full cursor-pointer border-0 bg-transparent p-0"
-        aria-label={`Download ${venueName} Player of the Month Race as an image`}
-      >
+      <div className="hidden" aria-hidden="true">
         <svg
           ref={svgRef}
           width={CARD_WIDTH}
           height={totalHeight}
           viewBox={`0 0 ${CARD_WIDTH} ${totalHeight}`}
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-auto max-w-[760px] rounded-2xl"
           role="img"
         >
           <title>{`${venueName} Race to Player of the Month, ${monthLabel}`}</title>
@@ -603,10 +590,12 @@ export default function RaceLeaderboardCard({
           </g>
           <rect x="1" y="1" width={CARD_WIDTH - 2} height={totalHeight - 2} rx="19" fill="none" stroke={GOLD_CORE} strokeOpacity="0.35" strokeWidth="1.5" />
         </svg>
+      </div>
+      <button type="button" onClick={handleDownload} disabled={status === 'generating'} className={outlineButtonClass}>
+        {status === 'generating' ? 'Generating…' : `📤 Share ${venueName} Race`}
       </button>
-      <p className="text-xs text-muted mt-1.5">Click the card to share or download it as an image.</p>
       {status === 'error' && (
-        <p className="text-xs text-red-600 mt-1">Couldn&apos;t generate the image. Try again.</p>
+        <p className="text-xs text-red-600 mt-1.5">Couldn&apos;t generate the image. Try again.</p>
       )}
     </div>
   );
