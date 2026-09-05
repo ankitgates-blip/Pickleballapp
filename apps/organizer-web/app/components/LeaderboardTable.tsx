@@ -97,9 +97,14 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
               {row.rank}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-heading font-bold text-lg truncate" style={{ color: ON_NAVY_PRIMARY }}>
-                  {row.name}
+              <div className="font-heading font-bold text-lg truncate" style={{ color: ON_NAVY_PRIMARY }}>
+                {row.name}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="stat-num text-sm flex-shrink-0">
+                  <span style={{ color: WIN_ON_NAVY, fontWeight: 700 }}>{row.matchWins}W</span>
+                  <span style={{ color: ON_NAVY_SECOND }}> – </span>
+                  <span style={{ color: LOSS_ON_NAVY, fontWeight: 700 }}>{row.losses}L</span>
                 </span>
                 {tier && <ThreatShieldBadge tier={tier} size={24} />}
                 {row.secondaryWins > 0 && (
@@ -107,11 +112,6 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
                     <GoldStar /> {row.secondaryWins}
                   </span>
                 )}
-              </div>
-              <div className="stat-num text-sm">
-                <span style={{ color: WIN_ON_NAVY, fontWeight: 700 }}>{row.matchWins}W</span>
-                <span style={{ color: ON_NAVY_SECOND }}> – </span>
-                <span style={{ color: LOSS_ON_NAVY, fontWeight: 700 }}>{row.losses}L</span>
               </div>
             </div>
             <div
@@ -131,8 +131,13 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
 
       {bodyRows.length > 0 && (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
             <caption className="sr-only">{`${title} leaderboard, ranks ${podiumRows.length + 1} and below`}</caption>
+            <colgroup>
+              <col style={{ width: '52px' }} />
+              <col />
+              <col style={{ width: '84px' }} />
+            </colgroup>
             <thead>
               <tr style={{ background: NAVY_DARKER }}>
                 <th scope="col" className="text-left px-5 py-2 text-[10.5px] font-bold" style={{ color: ON_NAVY_MUTED, letterSpacing: '2px' }}>
@@ -154,9 +159,9 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
                     <td className="stat-num px-5 py-3 font-heading font-extrabold text-lg text-center" style={{ color: ON_NAVY_FAINT }}>
                       {row.rank}
                     </td>
-                    <td className="px-2 py-3 min-w-0">
+                    <td className="px-2 py-3" style={{ maxWidth: 0 }}>
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-heading font-bold truncate" style={{ color: ON_NAVY_PRIMARY }}>
+                        <span className="font-heading font-bold truncate min-w-0 flex-1" style={{ color: ON_NAVY_PRIMARY }}>
                           {row.name}
                         </span>
                         {tier && <ThreatShieldBadge tier={tier} size={18} />}
