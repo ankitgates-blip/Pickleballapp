@@ -15,7 +15,8 @@ import { computePointsLeaderboard, POINTS_SYSTEM_START_DATE, type PointsTourname
 import { assignRanksWithTies } from '@/lib/stats/rankWithTies';
 import { monthDateRange } from '@/lib/stats/monthRange';
 import PlayerOfTheMonthCard from './PlayerOfTheMonthCard';
-import RaceLeaderboardCard from './RaceLeaderboardCard';
+import RaceLeaderboardShareCard from './RaceLeaderboardShareCard';
+import LeaderboardTable, { type LeaderboardTableRow } from '@/app/components/LeaderboardTable';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import { cardClass, headingClass, sectionKickerClass } from '@/app/components/ui';
 import { SIGNATURE_SHOT_OPTIONS } from '@/lib/people/profileOptions';
@@ -290,11 +291,8 @@ export default async function PlayerOfTheMonthPage() {
             {race.length === 0 ? (
               <p className="text-sm text-slate-500">No qualifying players yet this month.</p>
             ) : (
-              <RaceLeaderboardCard
-                venueName={venue.name}
-                monthLabel={`${MONTH_NAMES[currentMonth - 1].toUpperCase()} ${currentYear}`}
-                generatedDateLabel={generatedDateLabel}
-                rows={assignRanksWithTies(
+              (() => {
+                const raceRows = assignRanksWithTies(
                   race.map((entry) => ({
                     name: personById.get(entry.personId)?.name ?? 'Unknown',
                     matchWins: entry.matchWins,
@@ -314,8 +312,36 @@ export default async function PlayerOfTheMonthPage() {
                   // shutout, a close loss) between two otherwise-identical records
                   // doesn't split them into different ranks.
                   (r) => `${r.matchWins}|${r.losses}|${r.leagueWins}`
-                )}
-              />
+                );
+                const monthLabel = `${MONTH_NAMES[currentMonth - 1].toUpperCase()} ${currentYear}`;
+                return (
+                  <div className="space-y-3">
+                    <LeaderboardTable
+                      title={venue.name}
+                      kicker={monthLabel}
+                      isLive
+                      footerCaption="Ranked by 75% Total Points · 15% appearance · 10% league wins · 60% of the busiest player's matches to qualify"
+                      rows={raceRows.map(
+                        (r): LeaderboardTableRow => ({
+                          rank: r.rank,
+                          name: r.name,
+                          overallWinPercentage: r.overallWinPercentage,
+                          matchWins: r.matchWins,
+                          losses: r.losses,
+                          totalPoints: r.totalPoints,
+                          secondaryWins: r.leagueWins,
+                        })
+                      )}
+                    />
+                    <RaceLeaderboardShareCard
+                      venueName={venue.name}
+                      monthLabel={monthLabel}
+                      generatedDateLabel={generatedDateLabel}
+                      rows={raceRows}
+                    />
+                  </div>
+                );
+              })()
             )}
           </div>
         </div>
