@@ -53,13 +53,13 @@ Because this resolves once at signup, `requireOrganizer()` never does first-time
 
 ## Permission boundary
 
-Every mutation in the app goes through one of the 27 server actions below (inventoried directly from `app/tournaments/**/actions.ts`). The boundary is a straight split between "create/run" and "delete/modify":
+Every organizer-gated mutation in the app (i.e. every server action that calls `requireOrganizer()`) lives in one of 8 files: the 7 under `app/tournaments/**/actions.ts` plus `app/people/[id]/actions.ts` (roster-profile editing — missed in the first pass of this spec and added here). Two other action files exist (`app/t/[id]/actions.ts`, `app/login/actions.ts`) but neither calls `requireOrganizer()` — `joinLeague`/`setLeagueRsvp` are the public, unauthenticated sign-up path with their own separate authorization, and `signOut` isn't a data mutation — so neither is in scope for the owner/guest split. The boundary below is a straight split between "create/run" and "delete/modify":
 
 **Guest-allowed (create / run the event):**
 `createTournament`, `pairTeam`, `shuffleRemaining`, `startAddPlayers`, `addExistingPeople`, `confirmAddPlayers`, `addCustomMatch`, `generateBracket`, `generateLeaguePlayoffsBracket`, `generatePopcornBracket`, `regenerateLeaguePlayoffsBracket`, `advanceGauntletRound`, `advanceClaimTheThroneRound`, `advanceUpAndDownRiverRound`, `generateSemifinalMatches`, `skipToFinalMatch`, `generateFinalMatch`, `autoGenerateCustomRound`, `enterScore`, `skipMatch`.
 
 **Owner-only (delete / modify existing data):**
-`cancelTournament`, `removeTeam`, `removePlayer`, `removeCustomMatch`, `updateTournamentDetails`, `renameTournament`, `updateMatchTeams`, `unlockTournamentResults`, `lockTournamentResults`.
+`cancelTournament`, `removeTeam`, `removePlayer`, `removeCustomMatch`, `updateTournamentDetails`, `renameTournament`, `updateMatchTeams`, `unlockTournamentResults`, `lockTournamentResults`, `updatePersonProfile`, `uploadPersonPhoto`, `removePersonPhoto`, `deletePerson`. The last four are a roster person's profile (name/nickname/photo) — editing or deleting one is unambiguously a modify/delete action, not part of creating or running an event.
 
 A guest calling an owner-only action gets a thrown error ("Only the workspace owner can do this") — never a silent no-op. The UI hides (not just disables) controls for actions a guest can't perform, following the existing pattern from the result-locking feature (`canEditScore`/`canEditTeams`).
 
@@ -68,11 +68,18 @@ A guest calling an owner-only action gets a thrown error ("Only the workspace ow
 Two layers:
 
 1. **`requireOrganizer()`** (in `lib/supabase/requireOrganizer.ts`, already the single choke-point nearly every server action calls) changes its lookup from `organizers.auth_user_id` directly to `organizer_members.auth_user_id` (joined to `organizers` for the name), since by the time any app code runs, `handle_new_user()` has already guaranteed a membership row exists. It returns `{ supabase, organizer, role }` instead of `{ supabase, organizer }`; every existing call site keeps compiling and working unchanged since object destructuring of a supertype is source-compatible.
-2. **`requireOwner()`**, a new helper wrapping `requireOrganizer()`, throws if `role !== 'owner'`. The 9 owner-only actions call this instead of `requireOrganizer()` directly — a one-line change per action.
+2. **`requireOwner()`**, a new helper wrapping `requireOrganizer()`, throws if `role !== 'owner'`. The 13 owner-only actions call this instead of `requireOrganizer()` directly — a one-line change per action.
 
-**RLS (defense-in-depth, not the primary gate):** `is_tournament_owner(t_id)` is renamed/generalized to `is_organizer_member(t_id)` (true for owner OR guest — backs INSERT and SELECT policies), and a new `is_organizer_owner(t_id)` (true for owner only) backs DELETE policies and the UPDATE policies for owner-only-shaped tables/columns.
+**RLS (defense-in-depth, not the primary gate):** `is_tournament_owner(t_id)` is renamed/generalized to `is_organizer_member(t_id)` (true for owner OR guest), and a new `is_organizer_owner(t_id)` (true for owner only) is added alongside it. Per table:
+- `tournaments`, `matches`: INSERT and UPDATE use `is_organizer_member` (member-level — see the accepted gap below for why UPDATE can't be tightened further); DELETE uses `is_organizer_owner`.
+- `players`, `teams`: INSERT uses `is_organizer_member`; DELETE uses `is_organizer_owner`. (`players` also gets an UPDATE policy using `is_organizer_owner` — today's `players_update_own_tournament` policy exists but no current action performs a `players` UPDATE except the owner-only `updatePersonProfile` rename cascade, so it's cleanly owner-only, no gap.)
+- `people`: INSERT uses `is_organizer_member`-equivalent (organizer match, no per-tournament owner concept here); UPDATE and DELETE use the owner-only equivalent, matching that all four `people/[id]/actions.ts` actions are owner-only.
 
-**Known accepted gap:** the `matches` table's UPDATE policy is used by both `enterScore` (guest-allowed) and `updateMatchTeams` (owner-only). Postgres row-level security cannot distinguish these by which columns a statement touches without a trigger, which is more machinery than this feature needs. This split is enforced at the `requireOwner()` layer in `updateMatchTeams` itself, not in SQL — the same shape of trust boundary this app already relies on for `canEditScore`/`canEditTeams` state-based gating. RLS still blocks a non-member entirely; it just can't further split a member's UPDATE grant on `matches` by column. This is called out here explicitly rather than left as a silent gap.
+**Known accepted gap:** two tables' UPDATE policies are each used by both a guest-allowed and an owner-only action, and Postgres RLS cannot distinguish "which action called this" or "which columns changed" without a trigger — more machinery than this feature needs. Both stay member-level (owner OR guest) in RLS, with the owner-only split enforced at the `requireOwner()` layer in the app code instead:
+- `matches` UPDATE: `enterScore`/`skipMatch` (guest-allowed) vs. `updateMatchTeams` (owner-only).
+- `tournaments` UPDATE: `enterScore` and `skipMatch` both update `tournaments.completed_at` as a side effect via the shared `checkAndMarkTournamentComplete()` helper (`app/tournaments/[id]/matches/actions.ts`) when the last match finishes, and `generateLeaguePlayoffsBracket`/`regenerateLeaguePlayoffsBracket` update `tournaments.league_playoffs_rounds` — all guest-allowed — vs. `updateTournamentDetails`, `renameTournament`, `unlockTournamentResults`, `lockTournamentResults` (owner-only), all of which also write to `tournaments`.
+
+This is the same shape of trust boundary this app already relies on for `canEditScore`/`canEditTeams` state-based gating. RLS still blocks a non-member entirely; it just can't further split a member's UPDATE grant on these two tables by column. Called out here explicitly rather than left as a silent gap.
 
 ## Guest management UI
 
