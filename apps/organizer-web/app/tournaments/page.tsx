@@ -32,7 +32,7 @@ function formatDateLabel(dateStr: string): string {
 }
 
 export default async function TournamentsPage() {
-  const { supabase, organizer } = await requireOrganizer();
+  const { supabase, organizer, role } = await requireOrganizer();
 
   const { data: tournaments } = await supabase
     .from('tournaments')
@@ -142,7 +142,7 @@ export default async function TournamentsPage() {
   const hasAnyList = upcoming.length > 0 || recentlyCompleted.length > 0;
 
   return (
-    <OrganizerShell organizerName={organizer.name}>
+    <OrganizerShell organizerName={organizer.name} role={role}>
       {(tournaments ?? []).length === 0 && (
         <div className={cardClass}>
           <EmptyState

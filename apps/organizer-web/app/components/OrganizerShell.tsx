@@ -93,9 +93,11 @@ function LeaguesIcon({ active }: { active?: boolean }) {
 export default function OrganizerShell({
   children,
   organizerName,
+  role,
 }: {
   children: React.ReactNode;
   organizerName?: string;
+  role?: 'owner' | 'guest';
 }) {
   const pathname = usePathname();
   const isLeaguesActive = pathname.startsWith('/tournaments');
@@ -183,17 +185,27 @@ export default function OrganizerShell({
             <img src="/header-paddle-action.webp" alt="" className="relative w-full h-auto" />
           </div>
           {organizerName && (
-            <form action={signOut} className="absolute top-3 right-4 flex items-center gap-3">
+            <div className="absolute top-3 right-4 flex items-center gap-3">
+              {role === 'owner' && (
+                <Link
+                  href="/settings"
+                  className="text-sm font-semibold bg-navy-mid/60 hover:bg-navy-mid transition-colors px-3 py-1.5 rounded-full backdrop-blur-sm"
+                >
+                  Settings
+                </Link>
+              )}
               <span className="text-sm text-[#dbe4f5] hidden sm:inline">
                 Hi, {organizerName}
               </span>
-              <SaveButton
-                className="text-sm font-semibold bg-navy-mid/60 hover:bg-navy-mid transition-colors px-3 py-1.5 rounded-full backdrop-blur-sm disabled:opacity-50"
-                pendingLabel="Signing out…"
-              >
-                Sign out
-              </SaveButton>
-            </form>
+              <form action={signOut}>
+                <SaveButton
+                  className="text-sm font-semibold bg-navy-mid/60 hover:bg-navy-mid transition-colors px-3 py-1.5 rounded-full backdrop-blur-sm disabled:opacity-50"
+                  pendingLabel="Signing out…"
+                >
+                  Sign out
+                </SaveButton>
+              </form>
+            </div>
           )}
         </header>
         <Link href="/tournaments" className="absolute z-10 left-[30px] top-[196px] -translate-y-1/2">
