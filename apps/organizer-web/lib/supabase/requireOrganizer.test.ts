@@ -15,18 +15,23 @@ vi.mock('./server', () => ({
 
 import { requireOrganizer, requireOwner } from './requireOrganizer';
 
+beforeEach(() => {
+  mockGetUser.mockReset();
+  mockSingle.mockReset();
+  mockFrom.mockReset();
+  mockSelect.mockReset();
+  mockEq.mockReset();
+
+  // Set up the chain of calls
+  mockFrom.mockReturnValue({ select: mockSelect });
+  mockSelect.mockReturnValue({ eq: mockEq });
+  mockEq.mockReturnValue({ single: mockSingle });
+});
+
 describe('requireOrganizer', () => {
   beforeEach(() => {
     mockGetUser.mockReset();
     mockSingle.mockReset();
-    mockFrom.mockReset();
-    mockSelect.mockReset();
-    mockEq.mockReset();
-
-    // Set up the chain of calls
-    mockFrom.mockReturnValue({ select: mockSelect });
-    mockSelect.mockReturnValue({ eq: mockEq });
-    mockEq.mockReturnValue({ single: mockSingle });
   });
 
   it('returns the organizer and role for an owner', async () => {
