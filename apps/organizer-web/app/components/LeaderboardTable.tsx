@@ -8,6 +8,7 @@ import {
   medalStops,
   NAVY_DEEP,
   NAVY_DARKER,
+  NAVY_RULE,
   PLATE,
   PLATE_STROKE,
   ON_NAVY_PRIMARY,
@@ -17,6 +18,7 @@ import {
   WIN_ON_NAVY,
   LOSS_ON_NAVY,
   LIVE_COLOR,
+  GOLD_LIGHT,
 } from './leaderboardPalette';
 import { threatTierFor } from '@/lib/stats/threatLevel';
 import ThreatShieldBadge from './ThreatShieldBadge';
@@ -75,14 +77,14 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
         </span>
       </div>
 
-      {podiumRows.map((row) => {
+      {podiumRows.map((row, i) => {
         const medal = medalStops(row.rank);
         const tier = row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
         return (
           <div
-            key={row.rank}
+            key={i}
             className="flex items-center gap-4 px-5 py-4 border-t"
-            style={{ borderColor: '#24406f', borderLeft: medal ? `6px solid ${medal.core}` : undefined }}
+            style={{ borderColor: NAVY_RULE, borderLeft: medal ? `6px solid ${medal.core}` : undefined }}
           >
             <div
               className="flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center font-heading font-extrabold text-2xl"
@@ -101,7 +103,7 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
                 </span>
                 {tier && <ThreatShieldBadge tier={tier} size={24} />}
                 {row.secondaryWins > 0 && (
-                  <span className="font-heading font-bold text-sm flex items-center gap-1 flex-shrink-0" style={{ color: '#f7e6a8' }}>
+                  <span className="font-heading font-bold text-sm flex items-center gap-1 flex-shrink-0" style={{ color: GOLD_LIGHT }}>
                     <GoldStar /> {row.secondaryWins}
                   </span>
                 )}
@@ -132,7 +134,7 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
           <table className="w-full border-collapse">
             <caption className="sr-only">{`${title} leaderboard, ranks ${podiumRows.length + 1} and below`}</caption>
             <thead>
-              <tr style={{ background: '#0a1730' }}>
+              <tr style={{ background: NAVY_DARKER }}>
                 <th scope="col" className="text-left px-5 py-2 text-[10.5px] font-bold" style={{ color: ON_NAVY_MUTED, letterSpacing: '2px' }}>
                   POS
                 </th>
@@ -148,7 +150,7 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
               {bodyRows.map((row, i) => {
                 const tier = row.overallWinPercentage !== null ? threatTierFor(row.overallWinPercentage) : null;
                 return (
-                  <tr key={row.rank} style={{ background: i % 2 === 0 ? NAVY_DEEP : NAVY_DARKER }}>
+                  <tr key={i} style={{ background: i % 2 === 0 ? NAVY_DEEP : NAVY_DARKER }}>
                     <td className="stat-num px-5 py-3 font-heading font-extrabold text-lg text-center" style={{ color: ON_NAVY_FAINT }}>
                       {row.rank}
                     </td>
@@ -179,7 +181,7 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
         </div>
       )}
 
-      <div className="px-5 py-3 border-t text-center text-xs" style={{ borderColor: '#24406f', color: ON_NAVY_SECOND }}>
+      <div className="px-5 py-3 border-t text-center text-xs" style={{ borderColor: NAVY_RULE, color: ON_NAVY_SECOND }}>
         {footerCaption}
       </div>
     </div>
