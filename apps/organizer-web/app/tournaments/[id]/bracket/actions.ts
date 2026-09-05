@@ -147,7 +147,7 @@ export async function generateLeaguePlayoffsBracket(tournamentId: string, formDa
 }
 
 export async function regenerateLeaguePlayoffsBracket(tournamentId: string) {
-  const { supabase } = await requireOrganizer();
+  const { supabase } = await requireOwner();
 
   const { data: playoffMatches, error: playoffError } = await supabase
     .from('matches')
