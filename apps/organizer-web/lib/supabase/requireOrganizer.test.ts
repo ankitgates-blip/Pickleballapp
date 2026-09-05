@@ -2,17 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockGetUser = vi.fn();
 const mockSingle = vi.fn();
+const mockFrom = vi.fn();
+const mockSelect = vi.fn();
+const mockEq = vi.fn();
 
 vi.mock('./server', () => ({
   createClient: vi.fn(async () => ({
     auth: { getUser: mockGetUser },
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: mockSingle,
-        })),
-      })),
-    })),
+    from: mockFrom,
   })),
 }));
 
@@ -22,6 +19,14 @@ describe('requireOrganizer', () => {
   beforeEach(() => {
     mockGetUser.mockReset();
     mockSingle.mockReset();
+    mockFrom.mockReset();
+    mockSelect.mockReset();
+    mockEq.mockReset();
+
+    // Set up the chain of calls
+    mockFrom.mockReturnValue({ select: mockSelect });
+    mockSelect.mockReturnValue({ eq: mockEq });
+    mockEq.mockReturnValue({ single: mockSingle });
   });
 
   it('returns the organizer and role for an owner', async () => {
@@ -35,6 +40,11 @@ describe('requireOrganizer', () => {
 
     expect(result.organizer).toEqual({ id: 'org-1', name: 'Ankit' });
     expect(result.role).toBe('owner');
+
+    // Assert the query was built with the correct arguments
+    expect(mockFrom).toHaveBeenCalledWith('organizer_members');
+    expect(mockSelect).toHaveBeenCalledWith('role, organizers(id, name)');
+    expect(mockEq).toHaveBeenCalledWith('auth_user_id', 'user-1');
   });
 
   it('returns the organizer and role for a guest', async () => {
