@@ -195,6 +195,7 @@ export default async function TournamentsPage() {
                         ctaHref={`/tournaments/${t.id}/roster`}
                         ctaLabel="Manage tournament"
                         cancelAction={cancelTournament.bind(null, t.id)}
+                        canCancel={role === 'owner'}
                       />
                     </li>
                   );
@@ -243,6 +244,7 @@ export default async function TournamentsPage() {
                         ctaLabel="View results"
                         cancelAction={cancelTournament.bind(null, t.id)}
                         isCompleted
+                        canCancel={role === 'owner'}
                       />
                     </li>
                   );

@@ -35,6 +35,7 @@ export type TournamentCardProps = {
   ctaLabel: string;
   cancelAction: () => Promise<void>;
   isCompleted?: boolean;
+  canCancel?: boolean;
 };
 
 export default function TournamentCard({
@@ -52,6 +53,7 @@ export default function TournamentCard({
   ctaLabel,
   cancelAction,
   isCompleted = false,
+  canCancel = true,
 }: TournamentCardProps) {
   const meta = STATUS_META[status];
   const isPickleturf = venue.trim().toLowerCase() === 'pickleturf';
@@ -120,7 +122,9 @@ export default function TournamentCard({
           <Link href={ctaHref} className="text-sm font-bold hover:underline" style={{ color: '#d6af36' }}>
             {ctaLabel} →
           </Link>
-          <CancelTournamentButton tournamentName={title} cancelAction={cancelAction} isCompleted={isCompleted} />
+          {canCancel && (
+            <CancelTournamentButton tournamentName={title} cancelAction={cancelAction} isCompleted={isCompleted} />
+          )}
         </div>
       </div>
     </div>
