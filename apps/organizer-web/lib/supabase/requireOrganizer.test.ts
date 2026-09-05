@@ -96,6 +96,17 @@ describe('requireOrganizer', () => {
     expect(result.role).toBe('guest');
     expect(result.organizer).toEqual({ id: 'org-3', name: 'Reinvited' });
   });
+
+  it('still redirects to /login when the retry finds no invite either', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-5' } } });
+    mockSingle
+      .mockResolvedValueOnce({ data: null, error: { message: 'not found' } })
+      .mockResolvedValueOnce({ data: null, error: { message: 'not found' } });
+
+    await expect(requireOrganizer()).rejects.toThrow();
+
+    expect(mockRpc).toHaveBeenCalledWith('claim_pending_guest_invite');
+  });
 });
 
 describe('requireOwner', () => {
