@@ -35,7 +35,7 @@ export default async function RosterPage({
 }) {
   const { id } = await params;
   const { pendingNames } = await searchParams;
-  const { supabase, organizer } = await requireOrganizer();
+  const { supabase, organizer, role } = await requireOrganizer();
 
   const { data: tournament } = await supabase
     .from('tournaments')
@@ -225,7 +225,7 @@ export default async function RosterPage({
         </p>
       </div>
 
-      {!isCompleted && (
+      {!isCompleted && role === 'owner' && (
         <div className={`${cardClass} mb-6`}>
           <h2 className="text-lg font-bold text-slate-900 mb-2">League Details</h2>
           <form action={updateTournamentDetailsWithId} className="flex flex-col sm:flex-row gap-3">
@@ -348,7 +348,7 @@ export default async function RosterPage({
                     winPercentage={p.person_id ? (winPercentageByPersonId.get(p.person_id) ?? null) : null}
                   />
                 </span>
-                {!isCompleted && (
+                {!isCompleted && role === 'owner' && (
                   <form action={removePlayerForPlayer}>
                     <SaveButton
                       className="text-xs font-semibold text-navy-mid hover:text-red-600 transition-colors disabled:opacity-50"
