@@ -44,10 +44,10 @@ export default async function PlayerOfTheMonthPage() {
     lastMonthYear = currentYear - 1;
   }
 
-  // Pre-formatted server-side (pinned to UTC) and passed to RaceLeaderboardCard as a
+  // Pre-formatted server-side (pinned to UTC) and passed to RaceLeaderboardShareCard as a
   // plain string -- it's a client component that's also server-rendered on first
   // paint, so computing this inside it would risk the same server/client timezone
-  // hydration mismatch fixed in ChampionCard/LocationLeaderboardCard.
+  // hydration mismatch fixed in ChampionCard/LocationLeaderboardShareCard.
   const generatedDateLabel = today.toLocaleDateString('en-US', {
     timeZone: 'UTC',
     month: 'short',
@@ -320,6 +320,7 @@ export default async function PlayerOfTheMonthPage() {
                       title={venue.name}
                       kicker={monthLabel}
                       isLive
+                      headingLevel="h4"
                       footerCaption="Ranked by 75% Total Points · 15% appearance · 10% league wins · 60% of the busiest player's matches to qualify"
                       rows={raceRows.map(
                         (r): LeaderboardTableRow => ({

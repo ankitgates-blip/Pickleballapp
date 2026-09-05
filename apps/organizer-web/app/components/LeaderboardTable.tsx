@@ -42,6 +42,7 @@ export type LeaderboardTableProps = {
   isLive?: boolean;
   footerCaption: string;
   rows: LeaderboardTableRow[];
+  headingLevel?: 'h2' | 'h3' | 'h4';
 };
 
 function GoldStar() {
@@ -52,7 +53,8 @@ function GoldStar() {
   );
 }
 
-export default function LeaderboardTable({ title, kicker, isLive = false, footerCaption, rows }: LeaderboardTableProps) {
+export default function LeaderboardTable({ title, kicker, isLive = false, footerCaption, rows, headingLevel = 'h2' }: LeaderboardTableProps) {
+  const Heading = headingLevel;
   const podiumRows = rows.filter((r) => r.rank <= 3);
   const bodyRows = rows.filter((r) => r.rank > 3);
 
@@ -68,9 +70,9 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
               LIVE
             </span>
           )}
-          <h2 className="font-heading font-extrabold text-2xl" style={{ color: ON_NAVY_PRIMARY }}>
+          <Heading className="font-heading font-extrabold text-2xl" style={{ color: ON_NAVY_PRIMARY }}>
             {title}
-          </h2>
+          </Heading>
         </div>
         <span className="font-heading font-bold text-sm" style={{ color: ON_NAVY_SECOND, letterSpacing: '1.5px' }}>
           {kicker}
@@ -119,7 +121,7 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
               style={{ background: PLATE, border: `1px solid ${PLATE_STROKE}` }}
             >
               <div className="text-[10px] font-bold" style={{ color: ON_NAVY_MUTED, letterSpacing: '1.5px' }}>
-                TOTAL POINTS
+                POINTS
               </div>
               <div className="stat-num font-heading font-extrabold text-2xl" style={{ color: ON_NAVY_PRIMARY }}>
                 {row.totalPoints}
@@ -132,7 +134,7 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
       {bodyRows.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
-            <caption className="sr-only">{`${title} leaderboard, ranks ${podiumRows.length + 1} and below`}</caption>
+            <caption className="sr-only">{`${title} leaderboard, ranks ${bodyRows[0]?.rank ?? podiumRows.length + 1} and below`}</caption>
             <colgroup>
               <col style={{ width: '52px' }} />
               <col />

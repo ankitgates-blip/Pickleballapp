@@ -12,6 +12,7 @@ import { assignRanksWithTies } from '@/lib/stats/rankWithTies';
 import { monthDateRange, monthToDateRange, monthsToCheck } from '@/lib/stats/monthRange';
 import LocationLeaderboardShareCard from './LocationLeaderboardShareCard';
 import LeaderboardTable, { type LeaderboardTableRow } from '@/app/components/LeaderboardTable';
+import { NAVY_DEEP, PLATE_STROKE, ON_NAVY_SECOND } from '@/app/components/leaderboardPalette';
 import Link from 'next/link';
 
 const MONTH_ABBR = [
@@ -268,7 +269,7 @@ export default async function LocationsPage({
 
   // One leaderboard, not two -- Total Points no longer gets its own section below;
   // each venue's points entries are merged into its ranking rows by personId so the
-  // single LocationLeaderboardCard can show both the win/loss ranking and Total
+  // single LocationLeaderboardShareCard can show both the win/loss ranking and Total
   // Points together. The ranking ORDER stays driven by computeLocationLeaderboard's
   // existing tournament-wins/match-wins composite (spans every format), not points
   // (which only covers Custom League/League + Playoffs) -- ranking by points would
@@ -370,11 +371,11 @@ export default async function LocationsPage({
           <div
             key={venueId}
             className="mb-6 rounded-2xl p-6"
-            style={{ background: '#0c1830', border: '1px solid #2c4a7d' }}
+            style={{ background: NAVY_DEEP, border: `1px solid ${PLATE_STROKE}` }}
           >
             <h2 className="text-lg font-bold text-white mb-3">{venueName}</h2>
             <EmptyState icon={<PaddleIcon />}>
-              <span style={{ color: '#b8c8de' }}>
+              <span style={{ color: ON_NAVY_SECOND }}>
                 No matches played here yet {selectedMonthParam ? `in ${periodLabel.toLowerCase()}` : 'this month'}.
               </span>
             </EmptyState>

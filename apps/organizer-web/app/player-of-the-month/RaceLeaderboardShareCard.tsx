@@ -42,7 +42,7 @@ export type RaceCardRow = {
   // concept yet.
   totalPoints: number;
   // Drives the tier meter (pip dots + word) -- the player's overall, cross-venue
-  // win%, same convention as LocationLeaderboardCard.
+  // win%, same convention as LocationLeaderboardShareCard.
   overallWinPercentage: number | null;
 };
 
@@ -66,7 +66,7 @@ const COL_HEADER_HEIGHT = 32;
 const BODY_ROW_HEIGHT = 80;
 const FOOTER_HEIGHT = 56;
 
-// All-navy throughout -- see LocationLeaderboardCard.tsx for the full rationale
+// All-navy throughout -- see LocationLeaderboardShareCard.tsx for the full rationale
 // (the organizer's explicit request, after the earlier two-tone "podium split"
 // version, to make the whole card one consistent color instead of dark-top/
 // light-bottom). These two cards are a twin family and must not visually diverge
@@ -148,7 +148,7 @@ export default function RaceLeaderboardShareCard({
       }
 
       // Every text element on this card uses Oswald now -- see
-      // LocationLeaderboardCard.tsx for why embedding just this one font is enough
+      // LocationLeaderboardShareCard.tsx for why embedding just this one font is enough
       // to make the exported PNG match what's shown on screen.
       const fontDataUrl = await loadDataUrl('/fonts/oswald-variable.ttf');
       if (fontDataUrl) {
