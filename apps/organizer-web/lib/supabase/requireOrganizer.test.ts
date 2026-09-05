@@ -5,11 +5,13 @@ const mockSingle = vi.fn();
 const mockFrom = vi.fn();
 const mockSelect = vi.fn();
 const mockEq = vi.fn();
+const mockRpc = vi.fn();
 
 vi.mock('./server', () => ({
   createClient: vi.fn(async () => ({
     auth: { getUser: mockGetUser },
     from: mockFrom,
+    rpc: mockRpc,
   })),
 }));
 
@@ -21,11 +23,13 @@ beforeEach(() => {
   mockFrom.mockReset();
   mockSelect.mockReset();
   mockEq.mockReset();
+  mockRpc.mockReset();
 
   // Set up the chain of calls
   mockFrom.mockReturnValue({ select: mockSelect });
   mockSelect.mockReturnValue({ eq: mockEq });
   mockEq.mockReturnValue({ single: mockSingle });
+  mockRpc.mockResolvedValue({ error: null });
 });
 
 describe('requireOrganizer', () => {
@@ -75,6 +79,22 @@ describe('requireOrganizer', () => {
     const result = await requireOrganizer();
 
     expect(result.organizer).toEqual({ id: 'org-2', name: 'Other' });
+  });
+
+  it('falls back to claiming a pending guest invite when no membership is found, then retries once', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-4' } } });
+    mockSingle
+      .mockResolvedValueOnce({ data: null, error: { message: 'not found' } })
+      .mockResolvedValueOnce({
+        data: { role: 'guest', organizers: { id: 'org-3', name: 'Reinvited' } },
+        error: null,
+      });
+
+    const result = await requireOrganizer();
+
+    expect(mockRpc).toHaveBeenCalledWith('claim_pending_guest_invite');
+    expect(result.role).toBe('guest');
+    expect(result.organizer).toEqual({ id: 'org-3', name: 'Reinvited' });
   });
 });
 

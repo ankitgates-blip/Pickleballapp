@@ -18,11 +18,24 @@ export async function requireOrganizer(): Promise<{
     redirect('/login');
   }
 
-  const { data: membership, error } = await supabase
+  let { data: membership, error } = await supabase
     .from('organizer_members')
     .select('role, organizers(id, name)')
     .eq('auth_user_id', user.id)
     .single();
+
+  if (error || !membership) {
+    // A returning user with no membership row yet (e.g. a removed guest
+    // who was re-invited) -- claim any pending invite for their email,
+    // then retry once. A no-op if there's nothing to claim.
+    await supabase.rpc('claim_pending_guest_invite');
+
+    ({ data: membership, error } = await supabase
+      .from('organizer_members')
+      .select('role, organizers(id, name)')
+      .eq('auth_user_id', user.id)
+      .single());
+  }
 
   if (error || !membership) {
     redirect('/login');
