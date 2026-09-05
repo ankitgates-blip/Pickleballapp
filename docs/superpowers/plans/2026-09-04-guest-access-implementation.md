@@ -791,13 +791,106 @@ git commit -m "feat: guest invite management server actions"
 
 ---
 
-### Task 5: `/settings` page UI
+### Task 5: Settings entry point in the nav
+
+> Reordered ahead of the original Task 6 slot (originally "the settings page" first, "the nav entry" second): the settings page passes a `role` prop to `OrganizerShell` that doesn't exist until this task adds it, so it must land first or the settings page's own type-check step cannot pass as written. Caught in pre-flight review before either task was dispatched.
+
+**Files:**
+- Modify: `apps/organizer-web/app/components/OrganizerShell.tsx`
+- Modify: `apps/organizer-web/app/tournaments/page.tsx`
+
+**Interfaces:**
+- Consumes: `role` from `requireOrganizer()` (Task 2), already available in `app/tournaments/page.tsx` at line 35 (`const { supabase, organizer } = await requireOrganizer();` becomes `const { supabase, organizer, role } = await requireOrganizer();`).
+- Produces: `OrganizerShell`'s new optional `role?: 'owner' | 'guest'` prop, consumed by Task 6's settings page.
+
+Only the `/tournaments` page (the landing page after login) gets the entry point in this pass — not all 13 pages that render `OrganizerShell`. This keeps the change small; threading `role` through every page is a trivial, low-risk follow-up once this ships, not required for the feature to work (an owner can always reach `/settings` directly, and this adds the one link from the page they land on).
+
+- [ ] **Step 1: Add an optional `role` prop and a Settings link to `OrganizerShell`**
+
+In `apps/organizer-web/app/components/OrganizerShell.tsx`, change the props signature:
+
+```typescript
+export default function OrganizerShell({
+  children,
+  organizerName,
+  role,
+}: {
+  children: React.ReactNode;
+  organizerName?: string;
+  role?: 'owner' | 'guest';
+}) {
+```
+
+Change the header's sign-out block to also show a Settings link, owner-only:
+
+```tsx
+{organizerName && (
+  <div className="absolute top-3 right-4 flex items-center gap-3">
+    {role === 'owner' && (
+      <Link
+        href="/settings"
+        className="text-sm font-semibold bg-navy-mid/60 hover:bg-navy-mid transition-colors px-3 py-1.5 rounded-full backdrop-blur-sm"
+      >
+        Settings
+      </Link>
+    )}
+    <span className="text-sm text-[#dbe4f5] hidden sm:inline">
+      Hi, {organizerName}
+    </span>
+    <form action={signOut}>
+      <SaveButton
+        className="text-sm font-semibold bg-navy-mid/60 hover:bg-navy-mid transition-colors px-3 py-1.5 rounded-full backdrop-blur-sm disabled:opacity-50"
+        pendingLabel="Signing out…"
+      >
+        Sign out
+      </SaveButton>
+    </form>
+  </div>
+)}
+```
+
+(This replaces the existing `<form action={signOut} className="absolute top-3 right-4 flex items-center gap-3">...</form>` block — the `<form>` now wraps only the sign-out button, with the outer `<div>` carrying the positioning classes it used to.)
+
+- [ ] **Step 2: Pass `role` from the Tournaments page**
+
+In `apps/organizer-web/app/tournaments/page.tsx`, change line 35:
+
+```typescript
+const { supabase, organizer, role } = await requireOrganizer();
+```
+
+And the file's one `<OrganizerShell>` call site (line 145):
+
+```tsx
+<OrganizerShell organizerName={organizer.name} role={role}>
+```
+
+- [ ] **Step 3: Type-check, lint, build**
+
+```bash
+cd apps/organizer-web
+npx tsc --noEmit
+npx eslint app/components/OrganizerShell.tsx app/tournaments/page.tsx
+npm run build
+```
+Expected: all clean. (`app/settings/page.tsx` does not exist yet — that's Task 6 — so it is not part of this step's lint target.)
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add apps/organizer-web/app/components/OrganizerShell.tsx apps/organizer-web/app/tournaments/page.tsx
+git commit -m "feat: add a Settings entry point to the Tournaments page header"
+```
+
+---
+
+### Task 6: `/settings` page UI
 
 **Files:**
 - Create: `apps/organizer-web/app/settings/page.tsx`
 
 **Interfaces:**
-- Consumes: `requireOrganizer()` from Task 2; `addGuestInvite`/`removeGuestInvite`/`removeGuestMember` from Task 4; `OrganizerShell` (existing, `role` prop added in Task 6 — this task can pass `role` even before Task 6 wires it through everywhere else, since `OrganizerShell`'s prop is additive and optional); `SaveButton` (existing, `apps/organizer-web/app/components/SaveButton.tsx`).
+- Consumes: `requireOrganizer()` from Task 2; `addGuestInvite`/`removeGuestInvite`/`removeGuestMember` from Task 4; `OrganizerShell`'s `role` prop from Task 5 (already merged — this task's `tsc` check must be fully clean, no caveat); `SaveButton` (existing, `apps/organizer-web/app/components/SaveButton.tsx`).
 
 No new pure logic here (this is a server component reading two tables and rendering forms already covered by Task 4's actions), so no new unit tests — verified via the manual QA checklist in Task 7, consistent with how every other page in this app is verified (no existing page has its own test file).
 
@@ -899,103 +992,13 @@ cd apps/organizer-web
 npx tsc --noEmit
 npx eslint app/settings/page.tsx
 ```
-Expected: clean. (`tsc` will only be fully clean once Task 6 adds the `role` prop to `OrganizerShell` — if doing these tasks out of order, do Task 6 first or expect a transient type error here.)
+Expected: clean.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add apps/organizer-web/app/settings/page.tsx
 git commit -m "feat: add /settings page for managing guests"
-```
-
----
-
-### Task 6: Settings entry point in the nav
-
-**Files:**
-- Modify: `apps/organizer-web/app/components/OrganizerShell.tsx`
-- Modify: `apps/organizer-web/app/tournaments/page.tsx`
-
-**Interfaces:**
-- Consumes: `role` from `requireOrganizer()` (Task 2), already available in `app/tournaments/page.tsx` at line 35 (`const { supabase, organizer } = await requireOrganizer();` becomes `const { supabase, organizer, role } = await requireOrganizer();`).
-
-Only the `/tournaments` page (the landing page after login) gets the entry point in this pass — not all 13 pages that render `OrganizerShell`. This keeps the change small; threading `role` through every page is a trivial, low-risk follow-up once this ships, not required for the feature to work (an owner can always reach `/settings` directly, and this adds the one link from the page they land on).
-
-- [ ] **Step 1: Add an optional `role` prop and a Settings link to `OrganizerShell`**
-
-In `apps/organizer-web/app/components/OrganizerShell.tsx`, change the props signature:
-
-```typescript
-export default function OrganizerShell({
-  children,
-  organizerName,
-  role,
-}: {
-  children: React.ReactNode;
-  organizerName?: string;
-  role?: 'owner' | 'guest';
-}) {
-```
-
-Change the header's sign-out block to also show a Settings link, owner-only:
-
-```tsx
-{organizerName && (
-  <div className="absolute top-3 right-4 flex items-center gap-3">
-    {role === 'owner' && (
-      <Link
-        href="/settings"
-        className="text-sm font-semibold bg-navy-mid/60 hover:bg-navy-mid transition-colors px-3 py-1.5 rounded-full backdrop-blur-sm"
-      >
-        Settings
-      </Link>
-    )}
-    <span className="text-sm text-[#dbe4f5] hidden sm:inline">
-      Hi, {organizerName}
-    </span>
-    <form action={signOut}>
-      <SaveButton
-        className="text-sm font-semibold bg-navy-mid/60 hover:bg-navy-mid transition-colors px-3 py-1.5 rounded-full backdrop-blur-sm disabled:opacity-50"
-        pendingLabel="Signing out…"
-      >
-        Sign out
-      </SaveButton>
-    </form>
-  </div>
-)}
-```
-
-(This replaces the existing `<form action={signOut} className="absolute top-3 right-4 flex items-center gap-3">...</form>` block — the `<form>` now wraps only the sign-out button, with the outer `<div>` carrying the positioning classes it used to.)
-
-- [ ] **Step 2: Pass `role` from the Tournaments page**
-
-In `apps/organizer-web/app/tournaments/page.tsx`, change line 35:
-
-```typescript
-const { supabase, organizer, role } = await requireOrganizer();
-```
-
-And the file's one `<OrganizerShell>` call site (line 145):
-
-```tsx
-<OrganizerShell organizerName={organizer.name} role={role}>
-```
-
-- [ ] **Step 3: Type-check, lint, build**
-
-```bash
-cd apps/organizer-web
-npx tsc --noEmit
-npx eslint app/components/OrganizerShell.tsx app/tournaments/page.tsx app/settings/page.tsx
-npm run build
-```
-Expected: all clean.
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add apps/organizer-web/app/components/OrganizerShell.tsx apps/organizer-web/app/tournaments/page.tsx
-git commit -m "feat: add a Settings entry point to the Tournaments page header"
 ```
 
 ---
