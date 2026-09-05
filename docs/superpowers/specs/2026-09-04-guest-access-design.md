@@ -56,10 +56,10 @@ Because this resolves once at signup, `requireOrganizer()` never does first-time
 Every organizer-gated mutation in the app (i.e. every server action that calls `requireOrganizer()`) lives in one of 8 files: the 7 under `app/tournaments/**/actions.ts` plus `app/people/[id]/actions.ts` (roster-profile editing — missed in the first pass of this spec and added here). Two other action files exist (`app/t/[id]/actions.ts`, `app/login/actions.ts`) but neither calls `requireOrganizer()` — `joinLeague`/`setLeagueRsvp` are the public, unauthenticated sign-up path with their own separate authorization, and `signOut` isn't a data mutation — so neither is in scope for the owner/guest split. The boundary below is a straight split between "create/run" and "delete/modify":
 
 **Guest-allowed (create / run the event):**
-`createTournament`, `pairTeam`, `shuffleRemaining`, `startAddPlayers`, `addExistingPeople`, `confirmAddPlayers`, `addCustomMatch`, `generateBracket`, `generateLeaguePlayoffsBracket`, `generatePopcornBracket`, `regenerateLeaguePlayoffsBracket`, `advanceGauntletRound`, `advanceClaimTheThroneRound`, `advanceUpAndDownRiverRound`, `generateSemifinalMatches`, `skipToFinalMatch`, `generateFinalMatch`, `autoGenerateCustomRound`, `enterScore`, `skipMatch`.
+`createTournament`, `pairTeam`, `shuffleRemaining`, `startAddPlayers`, `addExistingPeople`, `confirmAddPlayers`, `addCustomMatch`, `generateBracket`, `generateLeaguePlayoffsBracket`, `generatePopcornBracket`, `advanceGauntletRound`, `advanceClaimTheThroneRound`, `advanceUpAndDownRiverRound`, `generateSemifinalMatches`, `skipToFinalMatch`, `generateFinalMatch`, `autoGenerateCustomRound`, `enterScore`, `skipMatch`.
 
 **Owner-only (delete / modify existing data):**
-`cancelTournament`, `removeTeam`, `removePlayer`, `removeCustomMatch`, `updateTournamentDetails`, `renameTournament`, `updateMatchTeams`, `unlockTournamentResults`, `lockTournamentResults`, `updatePersonProfile`, `uploadPersonPhoto`, `removePersonPhoto`, `deletePerson`. The last four are a roster person's profile (name/nickname/photo) — editing or deleting one is unambiguously a modify/delete action, not part of creating or running an event.
+`cancelTournament`, `removeTeam`, `removePlayer`, `removeCustomMatch`, `updateTournamentDetails`, `renameTournament`, `updateMatchTeams`, `unlockTournamentResults`, `lockTournamentResults`, `updatePersonProfile`, `uploadPersonPhoto`, `removePersonPhoto`, `deletePerson`, `regenerateLeaguePlayoffsBracket`. The four profile actions are a roster person's profile (name/nickname/photo) — editing or deleting one is unambiguously a modify/delete action, not part of creating or running an event. `regenerateLeaguePlayoffsBracket` deletes and re-creates the whole league schedule, which is destructive/corrective, not additive round generation (see Post-ship corrections below).
 
 A guest calling an owner-only action gets a thrown error ("Only the workspace owner can do this") — never a silent no-op. The UI hides (not just disables) controls for actions a guest can't perform, following the existing pattern from the result-locking feature (`canEditScore`/`canEditTeams`).
 
@@ -95,3 +95,14 @@ Owner-only page: a guest who navigates to `/settings` is redirected to `/tournam
 - Invite links/codes (deferred; email-allowlist covers the stated need).
 - More than two roles (e.g. "co-director", "referee" from the original PLAN.md roles list) — this pass ships exactly `owner` and `guest`; the `role` column and `is_organizer_owner`/`is_organizer_member` split are written generally enough that a third role could be added later without another migration shape change.
 - A guest ever seeing or managing other guests, or removing themselves.
+
+## Post-ship corrections (2026-09-05)
+
+A final whole-branch review after this feature was merged and live-migrated found two bugs that six individual task reviews (each scoped to one task's diff) had no way to catch, since none of them could exercise real RLS behavior against a live database as a second identity:
+
+1. **No guest could sign in.** `organizers` had no member-level SELECT policy, so `requireOrganizer()`'s embedded lookup came back null for every guest. Fixed by `organizers_select_member`.
+2. **`regenerateLeaguePlayoffsBracket` could silently duplicate a tournament's schedule.** It was guest-allowed but deletes+recreates the league schedule; `matches` DELETE is owner-only, so a guest's delete silently no-opped while the recreate still ran. Reclassified as owner-only (moved in the Permission Boundary section above).
+3. Added `claim_pending_guest_invite()`, a second invite-claim path (beyond `handle_new_user()`, which only ever fires once) so a removed-then-reinvited guest isn't permanently locked out.
+4. Made the invite claim atomic (`for update skip locked`) to close two races: concurrent duplicate signups, and a signup racing an invite's revocation.
+
+See `supabase/migrations/20260905090000_fix_guest_access_signin_and_regenerate.sql` and the accompanying app-code commits.
