@@ -3,7 +3,7 @@
 
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
+import { requireOrganizer, requireOwner } from '@/lib/supabase/requireOrganizer';
 import { matchNamesToPeople } from '@/lib/people/matchNames';
 import { slotsRemaining } from '@/lib/tournament/capacity';
 
@@ -157,7 +157,7 @@ export async function confirmAddPlayers(tournamentId: string, formData: FormData
 }
 
 export async function removePlayer(tournamentId: string, playerId: string) {
-  const { supabase } = await requireOrganizer();
+  const { supabase } = await requireOwner();
 
   const { data: player, error: fetchError } = await supabase
     .from('players')
@@ -199,7 +199,7 @@ export async function removePlayer(tournamentId: string, playerId: string) {
 }
 
 export async function updateTournamentDetails(tournamentId: string, formData: FormData) {
-  const { supabase } = await requireOrganizer();
+  const { supabase } = await requireOwner();
 
   const venueId = formData.get('venueId') as string;
   const timeslot = formData.get('timeslot') as string;

@@ -2,14 +2,14 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
+import { requireOwner } from '@/lib/supabase/requireOrganizer';
 import { ALLOWED_PHOTO_MIME_TO_EXT, validatePhotoFile } from '@/lib/people/photoValidation';
 
 const PLAYER_PHOTOS_BUCKET = 'player-photos';
 const PHOTO_EXTENSIONS = Object.values(ALLOWED_PHOTO_MIME_TO_EXT);
 
 export async function updatePersonProfile(personId: string, formData: FormData) {
-  const { supabase } = await requireOrganizer();
+  const { supabase } = await requireOwner();
 
   const name = (formData.get('name') as string)?.trim();
   if (!name) {
@@ -69,7 +69,7 @@ export async function updatePersonProfile(personId: string, formData: FormData) 
 }
 
 export async function uploadPersonPhoto(personId: string, formData: FormData) {
-  const { supabase, organizer } = await requireOrganizer();
+  const { supabase, organizer } = await requireOwner();
 
   const file = formData.get('photo');
   if (!(file instanceof File) || file.size === 0) {
@@ -110,7 +110,7 @@ export async function uploadPersonPhoto(personId: string, formData: FormData) {
 }
 
 export async function removePersonPhoto(personId: string) {
-  const { supabase, organizer } = await requireOrganizer();
+  const { supabase, organizer } = await requireOwner();
 
   const pathsToRemove = PHOTO_EXTENSIONS.map((ext) => `${organizer.id}/${personId}.${ext}`);
   await supabase.storage.from(PLAYER_PHOTOS_BUCKET).remove(pathsToRemove);
@@ -137,7 +137,7 @@ export async function removePersonPhoto(personId: string) {
 // action already does -- this is the same behavior, just applied across every tournament
 // at once instead of one.
 export async function deletePerson(personId: string) {
-  const { supabase, organizer } = await requireOrganizer();
+  const { supabase, organizer } = await requireOwner();
 
   // Check this BEFORE deleting anything below. players.person_id has no ON DELETE
   // clause (so those rows must be cleared manually before people can be deleted), but

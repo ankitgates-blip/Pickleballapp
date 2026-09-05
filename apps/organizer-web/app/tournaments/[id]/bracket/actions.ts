@@ -2,7 +2,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
+import { requireOrganizer, requireOwner } from '@/lib/supabase/requireOrganizer';
 import {
   generateRoundRobin,
   generateDoubleHeaderRoundRobin,
@@ -980,7 +980,7 @@ export async function updateMatchTeams(
   matchId: string,
   formData: FormData
 ) {
-  const { supabase } = await requireOrganizer();
+  const { supabase } = await requireOwner();
 
   const { data: tournament, error: tournamentError } = await supabase
     .from('tournaments')
@@ -1437,7 +1437,7 @@ export async function autoGenerateCustomRound(tournamentId: string) {
 }
 
 export async function removeCustomMatch(tournamentId: string, matchId: string) {
-  const { supabase } = await requireOrganizer();
+  const { supabase } = await requireOwner();
 
   const { data: tournament, error: tournamentError } = await supabase
     .from('tournaments')
@@ -1488,7 +1488,7 @@ export async function removeCustomMatch(tournamentId: string, matchId: string) {
 }
 
 export async function unlockTournamentResults(tournamentId: string) {
-  const { supabase } = await requireOrganizer();
+  const { supabase } = await requireOwner();
 
   const { data: tournament, error: tournamentError } = await supabase
     .from('tournaments')
@@ -1517,7 +1517,7 @@ export async function unlockTournamentResults(tournamentId: string) {
 }
 
 export async function lockTournamentResults(tournamentId: string) {
-  const { supabase } = await requireOrganizer();
+  const { supabase } = await requireOwner();
 
   const { error } = await supabase
     .from('tournaments')

@@ -1,13 +1,13 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
+import { requireOwner } from '@/lib/supabase/requireOrganizer';
 
 export async function renameTournament(
   tournamentId: string,
   formData: FormData
 ): Promise<{ name: string }> {
-  const { supabase } = await requireOrganizer();
+  const { supabase } = await requireOwner();
 
   const rawName = (formData.get('name') as string | null)?.trim();
   if (!rawName) {

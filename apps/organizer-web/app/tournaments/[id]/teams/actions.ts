@@ -2,7 +2,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
+import { requireOrganizer, requireOwner } from '@/lib/supabase/requireOrganizer';
 import { shuffleIntoTeams } from '@/lib/tournament/shuffle';
 
 const LEAGUE_PLAYOFFS_TEAM_CAP = 8;
@@ -131,7 +131,7 @@ export async function shuffleRemaining(tournamentId: string) {
 }
 
 export async function removeTeam(tournamentId: string, teamId: string) {
-  const { supabase } = await requireOrganizer();
+  const { supabase } = await requireOwner();
 
   const { error } = await supabase.from('teams').delete().eq('id', teamId);
 
