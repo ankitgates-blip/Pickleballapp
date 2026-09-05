@@ -1,6 +1,6 @@
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
-import { cardClass, headingClass } from '@/app/components/ui';
+import { headingClass } from '@/app/components/ui';
 import EmptyState from '@/app/components/EmptyState';
 import { buildPersonMatchRecords } from '@/lib/stats/buildPersonMatchRecords';
 import { computeLocationLeaderboard, sortLeaderboardCardRows } from '@/lib/stats/locationLeaderboard';
@@ -10,7 +10,8 @@ import type { RawMatch, RawTeam } from '@/lib/stats/types';
 import { computePointsLeaderboard, type PointsTournament } from '@/lib/stats/points';
 import { assignRanksWithTies } from '@/lib/stats/rankWithTies';
 import { monthDateRange, monthToDateRange, monthsToCheck } from '@/lib/stats/monthRange';
-import LocationLeaderboardCard from './LocationLeaderboardCard';
+import LocationLeaderboardShareCard from './LocationLeaderboardShareCard';
+import LeaderboardTable, { type LeaderboardTableRow } from '@/app/components/LeaderboardTable';
 import Link from 'next/link';
 
 const MONTH_ABBR = [
@@ -341,8 +342,24 @@ export default async function LocationsPage({
 
       {leaderboardCardRowsByVenue.map(({ venueId, venueName, rows }) =>
         rows.length > 0 ? (
-          <div key={venueId} className="mb-6">
-            <LocationLeaderboardCard
+          <div key={venueId} className="mb-6 space-y-3">
+            <LeaderboardTable
+              title={venueName}
+              kicker={periodLabel}
+              footerCaption="Ranked by Total Points (75%) + matches played (15%) + league wins (10%)"
+              rows={rows.map(
+                (r): LeaderboardTableRow => ({
+                  rank: r.rank,
+                  name: r.name,
+                  overallWinPercentage: r.overallWinPercentage,
+                  matchWins: r.matchWins,
+                  losses: r.losses,
+                  totalPoints: r.totalPoints,
+                  secondaryWins: r.tournamentWins,
+                })
+              )}
+            />
+            <LocationLeaderboardShareCard
               venueName={venueName}
               periodLabel={periodLabel}
               generatedDateLabel={generatedDateLabel}
@@ -350,9 +367,17 @@ export default async function LocationsPage({
             />
           </div>
         ) : (
-          <div key={venueId} className={`${cardClass} mb-6`}>
-            <h2 className="text-lg font-bold text-slate-900 mb-3">{venueName}</h2>
-            <EmptyState icon={<PaddleIcon />}>No matches played here yet {selectedMonthParam ? `in ${periodLabel.toLowerCase()}` : 'this month'}.</EmptyState>
+          <div
+            key={venueId}
+            className="mb-6 rounded-2xl p-6"
+            style={{ background: '#0c1830', border: '1px solid #2c4a7d' }}
+          >
+            <h2 className="text-lg font-bold text-white mb-3">{venueName}</h2>
+            <EmptyState icon={<PaddleIcon />}>
+              <span style={{ color: '#b8c8de' }}>
+                No matches played here yet {selectedMonthParam ? `in ${periodLabel.toLowerCase()}` : 'this month'}.
+              </span>
+            </EmptyState>
           </div>
         )
       )}
