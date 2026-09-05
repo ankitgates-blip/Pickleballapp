@@ -17,7 +17,7 @@ export default async function TeamsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase, organizer } = await requireOrganizer();
+  const { supabase, organizer, role } = await requireOrganizer();
 
   const { data: tournament } = await supabase
     .from('tournaments')
@@ -184,14 +184,16 @@ export default async function TeamsPage({
                     <ThreatBadge winPercentage={winPercentageForPlayerId(t.player_2_id)} />
                   </span>
                 </span>
-                <form action={removeTeamForTeam}>
-                  <SaveButton
-                    className="text-xs font-semibold text-navy-mid hover:text-red-600 transition-colors disabled:opacity-50"
-                    pendingLabel="Removing…"
-                  >
-                    Remove
-                  </SaveButton>
-                </form>
+                {role === 'owner' && (
+                  <form action={removeTeamForTeam}>
+                    <SaveButton
+                      className="text-xs font-semibold text-navy-mid hover:text-red-600 transition-colors disabled:opacity-50"
+                      pendingLabel="Removing…"
+                    >
+                      Remove
+                    </SaveButton>
+                  </form>
+                )}
               </li>
             );
           })}
