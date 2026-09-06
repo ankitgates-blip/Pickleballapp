@@ -655,11 +655,11 @@ export default async function PersonDetailPage({
           </div>
           <div className="flex flex-col gap-3">
             <div className="flex-1 rounded-2xl bg-slate-50 p-3 flex flex-col items-center justify-center text-center">
-              <div className="text-xl font-extrabold text-navy-mid">{thisMonth.gamesWon}</div>
+              <div className="stat-num text-xl font-extrabold text-navy-mid">{thisMonth.gamesWon}</div>
               <div className="text-[11px] text-slate-500">Games won</div>
             </div>
             <div className="flex-1 rounded-2xl bg-gradient-to-br from-[#fdf6e8] to-white border-2 border-gold/50 p-3 flex flex-col items-center justify-center text-center">
-              <div className="text-xl font-extrabold text-amber-600">
+              <div className="stat-num text-xl font-extrabold text-amber-600">
                 {thisMonth.tournamentsWon}
               </div>
               <div className="text-[11px] text-slate-500">Leagues won</div>
@@ -686,10 +686,10 @@ export default async function PersonDetailPage({
                 >
                   <span className="font-semibold text-slate-900">{l.location}</span>
                   <span className="text-right">
-                    <span className="font-bold text-navy-mid">
+                    <span className="stat-num font-bold text-navy-mid">
                       {l.count} match{l.count === 1 ? '' : 'es'}
                     </span>
-                    <span className="block text-xs text-slate-500">
+                    <span className="stat-num block text-xs text-slate-500">
                       {locationWinPercentage}%{' '}
                       <span className="text-gold-bright">
                         {renderStars(starRating(locationWinPercentage))}
@@ -809,7 +809,7 @@ export default async function PersonDetailPage({
                     <span className={`${pillClass} ${m.won ? 'bg-win/10 text-win' : 'bg-loss/10 text-loss'}`}>
                       {m.won ? 'W' : 'L'}
                     </span>
-                    <span className={m.won ? 'font-bold text-navy-mid' : 'font-bold text-muted'}>
+                    <span className={`stat-num ${m.won ? 'font-bold text-navy-mid' : 'font-bold text-muted'}`}>
                       {m.scoreFor}-{m.scoreAgainst}
                     </span>
                   </span>
