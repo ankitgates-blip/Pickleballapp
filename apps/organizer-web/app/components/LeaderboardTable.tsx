@@ -57,6 +57,7 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
   const Heading = headingLevel;
   const podiumRows = rows.filter((r) => r.rank <= 3);
   const bodyRows = rows.filter((r) => r.rank > 3);
+  const isPickleturf = title.trim().toLowerCase() === 'pickleturf';
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: NAVY_DEEP, border: `1px solid ${PLATE_STROKE}` }}>
@@ -74,9 +75,15 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
             {title}
           </Heading>
         </div>
-        <span className="font-heading font-bold text-sm" style={{ color: ON_NAVY_SECOND, letterSpacing: '1.5px' }}>
-          {kicker}
-        </span>
+        <div className="flex flex-col items-end gap-1.5">
+          {isPickleturf && (
+            // eslint-disable-next-line @next/next/no-img-element -- static brand mark, not content that needs Next/Image optimization
+            <img src="/pickleturf-logo.png" alt="Pickleturf" className="h-6 w-auto opacity-90" />
+          )}
+          <span className="font-heading font-bold text-sm" style={{ color: ON_NAVY_SECOND, letterSpacing: '1.5px' }}>
+            {kicker}
+          </span>
+        </div>
       </div>
 
       {podiumRows.map((row, i) => {
