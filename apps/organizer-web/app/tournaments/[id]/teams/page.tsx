@@ -85,7 +85,7 @@ export default async function TeamsPage({
     'rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-mid focus:border-navy-mid flex-1';
 
   return (
-    <OrganizerShell organizerName={organizer.name}>
+    <OrganizerShell organizerName={organizer.name} role={role}>
       <TournamentNav tournamentId={id} current="teams" />
       <div className="flex items-center justify-between mb-6">
         <h1 className={`text-2xl ${headingClass}`}>Pair Teams</h1>

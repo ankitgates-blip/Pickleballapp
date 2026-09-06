@@ -17,7 +17,7 @@ function PeopleIcon() {
 }
 
 export default async function PeopleListPage() {
-  const { supabase, organizer } = await requireOrganizer();
+  const { supabase, organizer, role } = await requireOrganizer();
 
   const { data: people } = await supabase
     .from('people')
@@ -26,7 +26,7 @@ export default async function PeopleListPage() {
     .order('name', { ascending: true });
 
   return (
-    <OrganizerShell organizerName={organizer.name}>
+    <OrganizerShell organizerName={organizer.name} role={role}>
       <h1 className={`text-2xl ${headingClass} mb-6`}>Player Profiles</h1>
 
       {(people ?? []).length === 0 && (

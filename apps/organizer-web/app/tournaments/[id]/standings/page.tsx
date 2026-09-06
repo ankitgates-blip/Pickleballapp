@@ -83,7 +83,7 @@ export default async function StandingsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase, organizer } = await requireOrganizer();
+  const { supabase, organizer, role } = await requireOrganizer();
 
   const { data: tournament } = await supabase
     .from('tournaments')
@@ -214,7 +214,7 @@ export default async function StandingsPage({
   const diffPrefix = (diff: number) => (diff > 0 ? '▲ ' : diff < 0 ? '▼ ' : '');
 
   return (
-    <OrganizerShell organizerName={organizer.name}>
+    <OrganizerShell organizerName={organizer.name} role={role}>
       <TournamentNav tournamentId={id} current="standings" />
       <div className="flex items-center justify-between mb-6">
         <h1 className={`text-2xl ${headingClass}`}>Standings</h1>

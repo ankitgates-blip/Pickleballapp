@@ -35,7 +35,8 @@ export type TournamentCardProps = {
   ctaLabel: string;
   cancelAction: () => Promise<void>;
   isCompleted?: boolean;
-  canCancel?: boolean;
+  // Owner-only; see docs/superpowers/specs/2026-09-04-guest-access-design.md
+  canCancel: boolean;
 };
 
 export default function TournamentCard({
@@ -53,7 +54,7 @@ export default function TournamentCard({
   ctaLabel,
   cancelAction,
   isCompleted = false,
-  canCancel = true,
+  canCancel,
 }: TournamentCardProps) {
   const meta = STATUS_META[status];
   const isPickleturf = venue.trim().toLowerCase() === 'pickleturf';

@@ -41,7 +41,7 @@ export default async function LocationsPage({
   searchParams: Promise<{ month?: string }>;
 }) {
   const { month } = await searchParams;
-  const { supabase, organizer } = await requireOrganizer();
+  const { supabase, organizer, role } = await requireOrganizer();
 
   const { data: venues } = await supabase.from('venues').select('id, name').order('name');
 
@@ -301,7 +301,7 @@ export default async function LocationsPage({
   });
 
   return (
-    <OrganizerShell organizerName={organizer.name}>
+    <OrganizerShell organizerName={organizer.name} role={role}>
       <h1 className={`text-2xl ${headingClass} mb-1`}>Leaderboard</h1>
       <p className="text-xs text-muted mb-3">
         10 pts per match win · 5 pts for a loss reaching 10–10 · +25 for a league win

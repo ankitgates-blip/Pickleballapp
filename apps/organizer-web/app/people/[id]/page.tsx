@@ -53,7 +53,7 @@ export default async function PersonDetailPage({
 
   if (!person) {
     return (
-      <OrganizerShell organizerName={organizer.name}>
+      <OrganizerShell organizerName={organizer.name} role={role}>
         <p className="text-slate-500">Person not found.</p>
       </OrganizerShell>
     );
@@ -383,7 +383,7 @@ export default async function PersonDetailPage({
   const displayName = person.nickname ? `${person.name} (${person.nickname})` : person.name;
 
   return (
-    <OrganizerShell organizerName={organizer.name}>
+    <OrganizerShell organizerName={organizer.name} role={role}>
       <div className="flex items-center gap-4 mb-1">
         <PersonAvatar photoUrl={person.photo_url} name={person.name} size={80} />
         <div className="flex items-center gap-2 flex-wrap">

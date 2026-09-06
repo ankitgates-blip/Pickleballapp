@@ -122,7 +122,7 @@ export default async function RosterPage({
     const confirmAddPlayersWithId = confirmAddPlayers.bind(null, id);
 
     return (
-      <OrganizerShell organizerName={organizer.name}>
+      <OrganizerShell organizerName={organizer.name} role={role}>
         <TournamentNav tournamentId={id} current="roster" />
         <h1 className={`text-2xl ${headingClass} mb-6`}>Review Roster Additions</h1>
 
@@ -180,7 +180,7 @@ export default async function RosterPage({
   const updateTournamentDetailsWithId = updateTournamentDetails.bind(null, id);
 
   return (
-    <OrganizerShell organizerName={organizer.name}>
+    <OrganizerShell organizerName={organizer.name} role={role}>
       <MarkRosterSeen tournamentId={id} playerCount={(players ?? []).length} />
       <TournamentNav tournamentId={id} current="roster" />
       <div className="flex items-center justify-between mb-6">
@@ -267,6 +267,12 @@ export default async function RosterPage({
             </SaveButton>
           </form>
         </div>
+      )}
+
+      {role !== 'owner' && (
+        <p className="text-sm text-muted mb-6">
+          📍 {venueName} · 🕐 {timeslotLabel(tournament?.timeslot ?? '')}
+        </p>
       )}
 
       {!isCompleted && !rosterFull && availablePeople.length > 0 && (

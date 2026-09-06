@@ -6,12 +6,13 @@ export default function EditableTournamentName({
   tournamentId,
   initialName,
   renameAction,
-  editable = true,
+  canRename,
 }: {
   tournamentId: string;
   initialName: string;
   renameAction: (tournamentId: string, formData: FormData) => Promise<{ name: string }>;
-  editable?: boolean;
+  // Owner-only; see docs/superpowers/specs/2026-09-04-guest-access-design.md
+  canRename: boolean;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(initialName);
@@ -33,7 +34,7 @@ export default function EditableTournamentName({
   };
 
   if (!isEditing) {
-    if (!editable) {
+    if (!canRename) {
       return <h1 className="mb-1 text-2xl font-bold text-slate-900">{name}</h1>;
     }
     return (

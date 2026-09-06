@@ -28,7 +28,7 @@ const MONTH_NAMES = [
 ];
 
 export default async function PlayerOfTheMonthPage() {
-  const { supabase, organizer } = await requireOrganizer();
+  const { supabase, organizer, role } = await requireOrganizer();
 
   await lockMissingPlayerOfTheMonthWinners(supabase, organizer.id);
 
@@ -244,7 +244,7 @@ export default async function PlayerOfTheMonthPage() {
   );
 
   return (
-    <OrganizerShell organizerName={organizer.name}>
+    <OrganizerShell organizerName={organizer.name} role={role}>
       <h1 className={`text-2xl ${headingClass} mb-6`}>Player of the Month</h1>
 
       {venueSections.map(({ venue, lastMonthRow, winnerPerson, winnerMatches, winnerWins, winnerLosses, winnerRating, race }) => (

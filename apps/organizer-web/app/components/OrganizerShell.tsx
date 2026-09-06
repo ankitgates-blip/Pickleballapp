@@ -97,7 +97,7 @@ export default function OrganizerShell({
 }: {
   children: React.ReactNode;
   organizerName?: string;
-  role?: 'owner' | 'guest';
+  role: 'owner' | 'guest';
 }) {
   const pathname = usePathname();
   const isLeaguesActive = pathname.startsWith('/tournaments');

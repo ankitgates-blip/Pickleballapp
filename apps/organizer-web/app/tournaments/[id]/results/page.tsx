@@ -49,7 +49,7 @@ export default async function ResultsPage({
 
   if (!tournament) {
     return (
-      <OrganizerShell organizerName={organizer.name}>
+      <OrganizerShell organizerName={organizer.name} role={role}>
         <p className="text-slate-500">League not found.</p>
       </OrganizerShell>
     );
@@ -241,13 +241,13 @@ export default async function ResultsPage({
   };
 
   return (
-    <OrganizerShell organizerName={organizer.name}>
+    <OrganizerShell organizerName={organizer.name} role={role}>
       <TournamentNav tournamentId={id} current="results" />
       <EditableTournamentName
         tournamentId={id}
         initialName={tournament.name}
         renameAction={renameTournament}
-        editable={role === 'owner'}
+        canRename={role === 'owner'}
       />
       <p className="text-sm text-slate-500 mb-6">
         {tournament.date} · 📍 {venueName} · 🕐 {timeslotLabel(tournament.timeslot)} · {formatLabel(tournament.format)}

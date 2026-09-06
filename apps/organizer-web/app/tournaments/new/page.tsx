@@ -7,12 +7,12 @@ import FormatFields from './FormatFields';
 import SaveButton from '@/app/components/SaveButton';
 
 export default async function NewTournamentPage() {
-  const { supabase, organizer } = await requireOrganizer();
+  const { supabase, organizer, role } = await requireOrganizer();
 
   const { data: venues } = await supabase.from('venues').select('id, name').order('name');
 
   return (
-    <OrganizerShell organizerName={organizer.name}>
+    <OrganizerShell organizerName={organizer.name} role={role}>
       <h1 className={`text-2xl ${headingClass} mb-6`}>New League</h1>
       <div className={cardClass}>
         <form action={createTournament} className="space-y-4">
