@@ -33,6 +33,7 @@ import SharePlayerStatsButton from './SharePlayerStatsButton';
 import { computeTournamentChampionPersonIds } from '@/lib/tournament/champion';
 import { renderTrend, trendColorClass } from '@/lib/stats/trend';
 import type { RawMatch, RawTeam, TournamentWon } from '@/lib/stats/types';
+import ShareHint from '@/app/components/ShareHint';
 
 const MENTOR_GAP = 15; // percentage points a partner's overall win% must trail yours by to count as "carrying" them
 
@@ -627,9 +628,7 @@ export default async function PersonDetailPage({
           bestPartnerLabel={bestPartnerLabel}
           matchHistoryRows={matchHistoryRows}
         />
-        <p className="text-xs text-muted mt-1.5">
-          Opens your share sheet on mobile — downloads the file on desktop.
-        </p>
+        <ShareHint />
       </div>
 
       <div className={`${cardClass} mb-6`}>

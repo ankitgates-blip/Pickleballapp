@@ -19,6 +19,7 @@ import ShareRosterButton from './ShareRosterButton';
 import ShareLeagueInviteButton from './ShareLeagueInviteButton';
 import ShareSignupUpdateButton from './ShareSignupUpdateButton';
 import MarkRosterSeen from './MarkRosterSeen';
+import ShareHint from '@/app/components/ShareHint';
 import {
   startAddPlayers,
   confirmAddPlayers,
@@ -221,9 +222,7 @@ export default async function RosterPage({
           unpairedPlayerNames={unpairedPlayerNames}
           allPlayerNames={allPlayerNames}
         />
-        <p className="text-xs text-muted mt-1.5">
-          Opens your share sheet on mobile — downloads the file on desktop.
-        </p>
+        <ShareHint />
       </div>
 
       {!isCompleted && role === 'owner' && (

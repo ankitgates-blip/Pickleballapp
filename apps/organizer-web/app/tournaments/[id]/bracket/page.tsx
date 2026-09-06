@@ -20,6 +20,7 @@ import ScheduleCard from './ScheduleCard';
 import RegenerateLeagueRoundsButton from './RegenerateLeagueRoundsButton';
 import SaveButton from '@/app/components/SaveButton';
 import AlertBanner from '@/app/components/AlertBanner';
+import ShareHint from '@/app/components/ShareHint';
 
 export default async function BracketPage({
   params,
@@ -538,9 +539,7 @@ export default async function BracketPage({
               formatLabel={formatLabel(format)}
               matchGroups={exportMatchGroups}
             />
-            <p className="text-xs text-muted mt-1.5">
-              Opens your share sheet on mobile — downloads the file on desktop.
-            </p>
+            <ShareHint />
           </>
         )}
       </div>

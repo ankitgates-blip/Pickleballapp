@@ -23,6 +23,7 @@ import ShareResultsButton from './ShareResultsButton';
 import ChampionCard from './ChampionCard';
 import EditableTournamentName from './EditableTournamentName';
 import { renameTournament } from './actions';
+import ShareHint from '@/app/components/ShareHint';
 
 type LadderRoundResult = ClaimTheThroneRoundResult;
 
@@ -269,9 +270,7 @@ export default async function ResultsPage({
           standingsRows={exportStandingsRows}
           matchGroups={exportMatchGroups}
         />
-        <p className="text-xs text-muted mt-1.5">
-          Opens your share sheet on mobile — downloads the file on desktop.
-        </p>
+        <ShareHint />
       </div>
 
       {championName && (
