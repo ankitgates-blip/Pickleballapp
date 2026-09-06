@@ -387,7 +387,7 @@ export default async function PublicPersonPage({
                       </span>
                       <span className="block text-xs text-slate-500">
                         {locationWinPercentage}%{' '}
-                        <span className="text-amber-400">
+                        <span className="text-gold-bright">
                           {renderStars(starRating(locationWinPercentage))}
                         </span>
                       </span>
@@ -505,7 +505,7 @@ export default async function PublicPersonPage({
                   </span>
                   <span className="flex flex-col items-end gap-1">
                     <span className="flex items-center gap-2">
-                      <span className={`${pillClass} ${m.won ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      <span className={`${pillClass} ${m.won ? 'bg-win/10 text-win' : 'bg-loss/10 text-loss'}`}>
                         {m.won ? 'W' : 'L'}
                       </span>
                       <span className={m.won ? 'font-bold text-navy-mid' : 'font-bold text-muted'}>
