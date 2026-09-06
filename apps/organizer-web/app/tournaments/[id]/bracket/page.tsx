@@ -26,7 +26,7 @@ export default async function BracketPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase, organizer } = await requireOrganizer();
+  const { supabase, organizer, role } = await requireOrganizer();
 
   const { data: tournament } = await supabase
     .from('tournaments')
@@ -438,7 +438,7 @@ export default async function BracketPage({
                       </SaveButton>
                     </form>
                   )}
-                  {isCustom && !isComplete && (
+                  {isCustom && !isComplete && role === 'owner' && (
                     <form action={removeCustomMatchForMatch} className="mt-2 pl-1">
                       <SaveButton
                         className="text-xs font-semibold text-red-600 hover:text-red-800 underline"
@@ -456,7 +456,7 @@ export default async function BracketPage({
                   Final: {m.score_a}-{m.score_b}
                 </p>
               )}
-              {canEditTeamsValue && (
+              {canEditTeamsValue && role === 'owner' && (
                 <div className="mt-3 pl-1">
                   <p className="text-xs text-muted mb-2">
                     Standings recalculate automatically when you change a match&apos;s teams. Already-generated
@@ -502,7 +502,7 @@ export default async function BracketPage({
         </span>
       </div>
 
-      {tournament?.completed_at && (
+      {tournament?.completed_at && role === 'owner' && (
         <form
           action={tournament?.results_unlocked_at ? lockTournamentResultsWithId : unlockTournamentResultsWithId}
           className="mb-6"
@@ -788,7 +788,7 @@ export default async function BracketPage({
         </form>
       )}
 
-      {showRegenerateLeaguePlayoffsRounds && (
+      {showRegenerateLeaguePlayoffsRounds && role === 'owner' && (
         <div className={`${actionCardClass} text-center mb-6`}>
           <p className="text-slate-600 mb-4">
             Team roster changed? Regenerate the full {leaguePlayoffsRounds}-round schedule from
