@@ -411,7 +411,8 @@ export default async function BracketPage({
                       defaultValue={m.score_a ?? ''}
                       placeholder="Team A"
                       required
-                      className={`${inputClass} w-20 min-h-[48px] text-lg`}
+                      inputMode="numeric"
+                      className={`${inputClass} w-24 min-h-[56px] text-2xl`}
                     />
                     <span className="text-muted font-bold">–</span>
                     <input
@@ -420,7 +421,8 @@ export default async function BracketPage({
                       defaultValue={m.score_b ?? ''}
                       placeholder="Team B"
                       required
-                      className={`${inputClass} w-20 min-h-[48px] text-lg`}
+                      inputMode="numeric"
+                      className={`${inputClass} w-24 min-h-[56px] text-2xl`}
                     />
                     <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
                       Save

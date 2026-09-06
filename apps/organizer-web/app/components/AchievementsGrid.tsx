@@ -60,7 +60,7 @@ function BadgeMedallion({ achievement }: { achievement: Achievement }) {
         </span>
       )}
       {earned && tier && tier !== 'special' && <Notches tier={tier} />}
-      <span className={`text-[8.5px] mt-0.5 leading-tight ${earned ? 'text-muted' : 'text-slate-400'}`}>
+      <span className={`text-[10px] mt-0.5 leading-tight ${earned ? 'text-muted' : 'text-slate-400'}`}>
         {description}
       </span>
     </div>
@@ -84,7 +84,7 @@ export default function AchievementsGrid({ achievements }: { achievements: Achie
           <h3 className="text-xs font-extrabold text-gold uppercase tracking-[0.15em] mb-3">
             {CATEGORY_LABEL[g.category]}
           </h3>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
             {g.achievements.map((a) => (
               <BadgeMedallion key={a.key} achievement={a} />
             ))}
