@@ -747,9 +747,11 @@ Expected: all clean (the build step also confirms the deleted SVGs aren't refere
 - [ ] **Step 4: Commit**
 
 ```bash
-git add -A
+git add apps/organizer-web/app/components/LeaderboardTable.tsx apps/organizer-web/public/next.svg apps/organizer-web/public/vercel.svg apps/organizer-web/public/file.svg apps/organizer-web/public/globe.svg apps/organizer-web/public/window.svg
 git commit -m "feat: delete unused scaffold SVGs; add Pickleturf wordmark to LeaderboardTable"
 ```
+
+**Do not use `git add -A` or `git add .` for this or any commit in this plan.** This repo's working tree has ~28 pre-existing untracked plan docs and an unrelated `.gitignore` change sitting in it since before this plan started (confirmed at the start of this session) — a broad `git add` sweeps them into whatever commit runs next. Stage only the exact files each task's own commit step names.
 
 ---
 
@@ -1111,13 +1113,15 @@ npm run build
 ```
 Expected: `tsc` clean; full suite passes at the pre-existing count plus 2 new `AlertBanner` tests; `eslint` shows only the already-confirmed pre-existing unrelated errors on `people/[id]/page.tsx`/`bracket/page.tsx`/`roster/page.tsx`, no new ones; build clean; the temporary preview route absent from the build's route list.
 
-- [ ] **Step 5: Commit and push**
+- [ ] **Step 5: Push**
+
+The temporary preview route from Step 1 was never `git add`ed or committed at any point (created, viewed, then deleted with a plain `rm -rf`, all while untracked) — there is nothing to commit for its removal. Confirm `git status` shows it does not appear at all (neither as a tracked deletion nor an untracked file), then push directly:
 
 ```bash
 cd "C:\Users\ANKS\pickleball project"
-git add -A
-git commit -m "chore: remove temporary quick-wins preview route"
+git status --short apps/organizer-web/app/dev-preview-quick-wins
 git push origin main
 ```
+Expected: the `git status` line prints nothing (empty output) for that path; the push succeeds with the 11 commits from Tasks 1-11.
 
 Then poll `https://api.github.com/repos/ankitgates-blip/Pickleballapp/actions/runs?per_page=1` until the run for the pushed commit shows `"conclusion": "success"`.
