@@ -26,10 +26,18 @@ type PodiumEntry = {
 // inline styles are used rather than Tailwind classes. 1st is dramatically taller than
 // 2nd/3rd; 2nd is only slightly taller than 3rd, matching a real podium's proportions
 // rather than an even step down.
+// Colors match --color-silver-light/--color-silver and --color-bronze/
+// --color-bronze-dark in globals.css (inline hex here, not Tailwind classes,
+// since these feed a data-driven linear-gradient). The previous silver/bronze
+// values had bronze's highlight LIGHTER than silver's, so the podium read
+// gold/bronze/silver in greyscale -- these are reordered so silver is
+// genuinely brighter than bronze. Silver's new lighter background also needs
+// dark rank-number text instead of white (see textColor below), or the
+// numeral disappears against it.
 const PODIUM_BLOCK_STYLE = [
-  { height: 108, background: 'linear-gradient(180deg,#fde68a,#d4a017)' }, // 1st -- gold
-  { height: 56, background: 'linear-gradient(180deg,#cbd5e1,#94a3b8)' }, // 2nd -- silver
-  { height: 50, background: 'linear-gradient(180deg,#fdba74,#c2703d)' }, // 3rd -- bronze
+  { height: 108, background: 'linear-gradient(180deg,#fde68a,#d4a017)', textColor: 'text-white' }, // 1st -- gold
+  { height: 56, background: 'linear-gradient(180deg,#d7d7d7,#a7a7ad)', textColor: 'text-navy-deep' }, // 2nd -- silver
+  { height: 50, background: 'linear-gradient(180deg,#a77044,#824a02)', textColor: 'text-white' }, // 3rd -- bronze
 ];
 
 function Podium({ top3 }: { top3: PodiumEntry[] }) {
@@ -66,7 +74,7 @@ function Podium({ top3 }: { top3: PodiumEntry[] }) {
               className="w-20 rounded-t-lg flex items-start justify-center pt-1"
               style={{ height: style.height, background: style.background }}
             >
-              <span className={rank === 0 ? 'text-white font-black text-2xl' : 'text-white font-black text-lg'}>
+              <span className={`${style.textColor} font-black ${rank === 0 ? 'text-2xl' : 'text-lg'}`}>
                 {rank + 1}
               </span>
             </div>
