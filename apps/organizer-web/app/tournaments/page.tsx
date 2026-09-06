@@ -168,7 +168,7 @@ export default async function TournamentsPage() {
         >
           {upcoming.length > 0 && (
             <div className="mb-8">
-              <h2 className="text-xl font-bold text-white mb-3 font-heading">Upcoming Matches</h2>
+              <h2 className="text-xl font-bold text-white mb-3 font-heading">Upcoming Leagues</h2>
               <ul className="space-y-3">
                 {upcoming.map((t) => {
                   const playerCount = playerCountByTournament.get(t.id) ?? 0;
