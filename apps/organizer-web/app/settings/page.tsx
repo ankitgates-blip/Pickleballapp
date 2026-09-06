@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { requireOrganizer } from '@/lib/supabase/requireOrganizer';
 import OrganizerShell from '@/app/components/OrganizerShell';
 import SaveButton from '@/app/components/SaveButton';
+import { cardClass, inputClass, primaryButtonClass, headingClass } from '@/app/components/ui';
 import { addGuestInvite, removeGuestInvite, removeGuestMember } from './actions';
 
 export default async function SettingsPage() {
@@ -26,24 +27,21 @@ export default async function SettingsPage() {
 
   return (
     <OrganizerShell organizerName={organizer.name} role={role}>
-      <h1 className="text-xl font-bold mb-2">Guests</h1>
-      <p className="text-sm text-slate-600 mb-4">
+      <h1 className={`text-2xl ${headingClass} mb-2`}>Guests</h1>
+      <p className="text-sm text-muted mb-4">
         A guest can create tournaments and leagues, generate rounds, and enter scores —
         they can never delete or edit anything.
       </p>
 
-      <form action={addGuestInvite} className="flex gap-2 mb-6">
+      <form action={addGuestInvite} className={`${cardClass} flex gap-2 mb-6`}>
         <input
           type="email"
           name="email"
           required
           placeholder="guest@gmail.com"
-          className="flex-1 rounded border border-slate-300 px-3 py-2 text-sm"
+          className={`flex-1 ${inputClass}`}
         />
-        <SaveButton
-          className="rounded bg-slate-900 text-white px-4 py-2 text-sm font-semibold disabled:opacity-50"
-          pendingLabel="Adding…"
-        >
+        <SaveButton className={primaryButtonClass} pendingLabel="Adding…">
           Add guest
         </SaveButton>
       </form>
@@ -52,7 +50,7 @@ export default async function SettingsPage() {
         {(guests ?? []).map((g) => {
           const removeGuestMemberWithId = removeGuestMember.bind(null, g.id);
           return (
-            <div key={g.id} className="flex items-center justify-between rounded border border-slate-200 px-3 py-2">
+            <div key={g.id} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
               <span className="text-sm">{g.email}</span>
               <form action={removeGuestMemberWithId}>
                 <SaveButton className="text-sm text-red-600 font-semibold" pendingLabel="Removing…">
@@ -65,7 +63,7 @@ export default async function SettingsPage() {
         {(invites ?? []).map((i) => {
           const removeGuestInviteWithId = removeGuestInvite.bind(null, i.id);
           return (
-            <div key={i.id} className="flex items-center justify-between rounded border border-dashed border-slate-300 px-3 py-2">
+            <div key={i.id} className="flex items-center justify-between rounded-lg border border-dashed border-slate-300 px-3 py-2">
               <span className="text-sm text-slate-500">{i.email} (pending)</span>
               <form action={removeGuestInviteWithId}>
                 <SaveButton className="text-sm text-red-600 font-semibold" pendingLabel="Removing…">
