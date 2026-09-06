@@ -205,10 +205,11 @@ export default async function PublicTournamentPage({
             <tbody>
               {standings.map((s, i) => {
                 const medal = ['🥇', '🥈', '🥉'][i];
+                const medalLabel = ['1st place', '2nd place', '3rd place'][i];
                 return (
                   <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
                     <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                      {medal && <span className="mr-1.5">{medal}</span>}
+                      {medal && <span className="mr-1.5" aria-label={medalLabel}>{medal}</span>}
                       {teamById.get(s.teamId)}
                     </td>
                     <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>

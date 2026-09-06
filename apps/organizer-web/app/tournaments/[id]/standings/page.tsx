@@ -254,12 +254,13 @@ export default async function StandingsPage({
             {isLadderFormat
               ? ladderStandings.map((s, i) => {
                   const medal = ['🥇', '🥈', '🥉'][i];
+                  const medalLabel = ['1st place', '2nd place', '3rd place'][i];
                   const games = s.wins + s.losses;
                   const avgDiff = games > 0 ? (s.pointsFor - s.pointsAgainst) / games : 0;
                   return (
                     <tr key={s.playerId} className={rowClass(i)}>
                       <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                        {medal && <span className="mr-1.5">{medal}</span>}
+                        {medal && <span className="mr-1.5" aria-label={medalLabel}>{medal}</span>}
                         {playerById.get(s.playerId)}
                       </td>
                       <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.ladderPoints}</td>
@@ -280,11 +281,12 @@ export default async function StandingsPage({
               : isIndividualFormat
                 ? individualStandings.map((s, i) => {
                     const medal = ['🥇', '🥈', '🥉'][i];
+                    const medalLabel = ['1st place', '2nd place', '3rd place'][i];
                     const diff = s.pointsFor - s.pointsAgainst;
                     return (
                       <tr key={s.playerId} className={rowClass(i)}>
                         <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                          {medal && <span className="mr-1.5">{medal}</span>}
+                          {medal && <span className="mr-1.5" aria-label={medalLabel}>{medal}</span>}
                           {playerById.get(s.playerId)}
                         </td>
                         <td className="py-2 text-center">
@@ -303,11 +305,12 @@ export default async function StandingsPage({
                   })
                 : standings.map((s, i) => {
                     const medal = ['🥇', '🥈', '🥉'][i];
+                    const medalLabel = ['1st place', '2nd place', '3rd place'][i];
                     const diff = s.pointsFor - s.pointsAgainst;
                     return (
                       <tr key={s.teamId} className={rowClass(i)}>
                         <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                          {medal && <span className="mr-1.5">{medal}</span>}
+                          {medal && <span className="mr-1.5" aria-label={medalLabel}>{medal}</span>}
                           {teamById.get(s.teamId)}
                         </td>
                         <td className="py-2 text-center">

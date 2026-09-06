@@ -23,6 +23,7 @@ export default function TournamentNav({
           <Link
             key={step.key}
             href={`/tournaments/${tournamentId}/${step.key}`}
+            aria-current={isActive ? 'page' : undefined}
             className={
               isActive
                 ? 'flex-1 text-center pb-2.5 text-sm font-bold text-navy-deep border-b-2 border-brand-orange -mb-px'

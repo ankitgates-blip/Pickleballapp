@@ -338,12 +338,13 @@ export default async function ResultsPage({
             {isLadderFormat
               ? ladderStandings.map((s, i) => {
                   const medal = ['🥇', '🥈', '🥉'][i];
+                  const medalLabel = ['1st place', '2nd place', '3rd place'][i];
                   const games = s.wins + s.losses;
                   const avgDiff = games > 0 ? (s.pointsFor - s.pointsAgainst) / games : 0;
                   return (
                     <tr key={s.playerId} className="border-b border-slate-100 last:border-0">
                       <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                        {medal && <span className="mr-1.5">{medal}</span>}
+                        {medal && <span className="mr-1.5" aria-label={medalLabel}>{medal}</span>}
                         {playerById.get(s.playerId)}
                       </td>
                       <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.ladderPoints}</td>
@@ -359,10 +360,11 @@ export default async function ResultsPage({
               : isIndividualFormat
                 ? individualStandings.map((s, i) => {
                     const medal = ['🥇', '🥈', '🥉'][i];
+                    const medalLabel = ['1st place', '2nd place', '3rd place'][i];
                     return (
                       <tr key={s.playerId} className="border-b border-slate-100 last:border-0">
                         <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                          {medal && <span className="mr-1.5">{medal}</span>}
+                          {medal && <span className="mr-1.5" aria-label={medalLabel}>{medal}</span>}
                           {playerById.get(s.playerId)}
                         </td>
                         <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
@@ -376,10 +378,11 @@ export default async function ResultsPage({
                   })
                 : standings.map((s, i) => {
                     const medal = ['🥇', '🥈', '🥉'][i];
+                    const medalLabel = ['1st place', '2nd place', '3rd place'][i];
                     return (
                       <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
                         <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                          {medal && <span className="mr-1.5">{medal}</span>}
+                          {medal && <span className="mr-1.5" aria-label={medalLabel}>{medal}</span>}
                           {teamById.get(s.teamId)}
                         </td>
                         <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
