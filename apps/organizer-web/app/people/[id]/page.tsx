@@ -42,7 +42,7 @@ export default async function PersonDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase, organizer } = await requireOrganizer();
+  const { supabase, organizer, role } = await requireOrganizer();
 
   const { data: person } = await supabase
     .from('people')
@@ -450,166 +450,170 @@ export default async function PersonDetailPage({
         />
       </div>
 
-      <div className="mb-6">
-        <details>
-          <summary className="cursor-pointer text-sm font-bold text-navy-mid hover:text-navy-deep list-none mb-3">
-            ✏️ Edit Profile
-          </summary>
-          <div className={`${cardClass} flex flex-col gap-3 max-w-md mb-3`}>
-            <form action={uploadPersonPhotoWithId} className="flex items-center gap-2">
-              <label className="text-sm font-semibold text-slate-700 flex-1">
-                Photo
-                <input
-                  type="file"
-                  name="photo"
-                  accept="image/jpeg,image/png,image/webp"
-                  required
-                  className="text-sm block w-full mt-1"
-                />
-              </label>
-              <SaveButton className={primaryButtonClass} pendingLabel="Uploading…">
-                Upload
-              </SaveButton>
-            </form>
-            {person.photo_url && (
-              <form action={removePersonPhotoWithId}>
-                <SaveButton
-                  className="text-xs font-semibold text-red-600 hover:underline"
-                  pendingLabel="Removing…"
-                >
-                  Remove photo
+      {role === 'owner' && (
+        <div className="mb-6">
+          <details>
+            <summary className="cursor-pointer text-sm font-bold text-navy-mid hover:text-navy-deep list-none mb-3">
+              ✏️ Edit Profile
+            </summary>
+            <div className={`${cardClass} flex flex-col gap-3 max-w-md mb-3`}>
+              <form action={uploadPersonPhotoWithId} className="flex items-center gap-2">
+                <label className="text-sm font-semibold text-slate-700 flex-1">
+                  Photo
+                  <input
+                    type="file"
+                    name="photo"
+                    accept="image/jpeg,image/png,image/webp"
+                    required
+                    className="text-sm block w-full mt-1"
+                  />
+                </label>
+                <SaveButton className={primaryButtonClass} pendingLabel="Uploading…">
+                  Upload
                 </SaveButton>
               </form>
-            )}
-          </div>
-          <form action={updatePersonProfileWithId} className={`${cardClass} flex flex-col gap-3 max-w-md`}>
-            <label className="text-sm font-semibold text-slate-700">
-              Name
-              <input
-                type="text"
-                name="name"
-                defaultValue={person.name}
-                required
-                className={`${inputClass} mt-1`}
-              />
-            </label>
-            <label className="text-sm font-semibold text-slate-700">
-              Player No.
-              <input
-                type="text"
-                name="playerNumber"
-                defaultValue={person.player_number ?? ''}
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="e.g. 7"
-                className={`${inputClass} mt-1`}
-              />
-            </label>
-            <label className="text-sm font-semibold text-slate-700">
-              Nickname
-              <input
-                type="text"
-                name="nickname"
-                defaultValue={person.nickname ?? ''}
-                placeholder="e.g. Rocket"
-                className={`${inputClass} mt-1`}
-              />
-            </label>
-            <label className="text-sm font-semibold text-slate-700">
-              Handedness
-              <select name="handedness" defaultValue={person.handedness ?? ''} className={`${inputClass} mt-1`}>
-                <option value="">Not set</option>
-                {HANDEDNESS_OPTIONS.map((h) => (
-                  <option key={h.value} value={h.value}>
-                    {h.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-sm font-semibold text-slate-700">
-              Age
-              <input
-                type="number"
-                name="age"
-                defaultValue={person.age ?? ''}
-                min={1}
-                className={`${inputClass} mt-1`}
-              />
-            </label>
-            <label className="text-sm font-semibold text-slate-700">
-              Playing Style
-              <select name="playingStyle" defaultValue={person.playing_style ?? ''} className={`${inputClass} mt-1`}>
-                <option value="">Not set</option>
-                {PLAYING_STYLE_OPTIONS.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-sm font-semibold text-slate-700">
-              Paddle Brand
-              <select name="paddleBrand" defaultValue={person.paddle_brand ?? ''} className={`${inputClass} mt-1`}>
-                <option value="">Not set</option>
-                {PADDLE_BRAND_OPTIONS.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <fieldset>
-              <legend className="text-sm font-semibold text-slate-700 mb-1">
-                Signature Shot Badges (up to 4)
-              </legend>
-              <div className="flex flex-wrap gap-3">
-                {SIGNATURE_SHOT_OPTIONS.map((b) => (
-                  <label key={b.value} className="flex items-center gap-1.5 text-sm text-slate-600">
-                    <input
-                      type="checkbox"
-                      name="signatureShot"
-                      value={b.value}
-                      defaultChecked={signatureShotValues.includes(b.value)}
-                      className="accent-navy-mid"
-                    />
-                    {b.emoji} {b.skillName} — {b.funnyName}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend className="text-sm font-semibold text-slate-700 mb-1">Strengths</legend>
-              <div className="flex flex-wrap gap-3">
-                {STRENGTH_OPTIONS.map((s) => (
-                  <label key={s.value} className="flex items-center gap-1.5 text-sm text-slate-600">
-                    <input
-                      type="checkbox"
-                      name="strengths"
-                      value={s.value}
-                      defaultChecked={(person.strengths ?? []).includes(s.value)}
-                      className="accent-navy-mid"
-                    />
-                    {s.label}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-            <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
-              Save Profile
-            </SaveButton>
-          </form>
-        </details>
-      </div>
+              {person.photo_url && (
+                <form action={removePersonPhotoWithId}>
+                  <SaveButton
+                    className="text-xs font-semibold text-red-600 hover:underline"
+                    pendingLabel="Removing…"
+                  >
+                    Remove photo
+                  </SaveButton>
+                </form>
+              )}
+            </div>
+            <form action={updatePersonProfileWithId} className={`${cardClass} flex flex-col gap-3 max-w-md`}>
+              <label className="text-sm font-semibold text-slate-700">
+                Name
+                <input
+                  type="text"
+                  name="name"
+                  defaultValue={person.name}
+                  required
+                  className={`${inputClass} mt-1`}
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Player No.
+                <input
+                  type="text"
+                  name="playerNumber"
+                  defaultValue={person.player_number ?? ''}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="e.g. 7"
+                  className={`${inputClass} mt-1`}
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Nickname
+                <input
+                  type="text"
+                  name="nickname"
+                  defaultValue={person.nickname ?? ''}
+                  placeholder="e.g. Rocket"
+                  className={`${inputClass} mt-1`}
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Handedness
+                <select name="handedness" defaultValue={person.handedness ?? ''} className={`${inputClass} mt-1`}>
+                  <option value="">Not set</option>
+                  {HANDEDNESS_OPTIONS.map((h) => (
+                    <option key={h.value} value={h.value}>
+                      {h.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Age
+                <input
+                  type="number"
+                  name="age"
+                  defaultValue={person.age ?? ''}
+                  min={1}
+                  className={`${inputClass} mt-1`}
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Playing Style
+                <select name="playingStyle" defaultValue={person.playing_style ?? ''} className={`${inputClass} mt-1`}>
+                  <option value="">Not set</option>
+                  {PLAYING_STYLE_OPTIONS.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Paddle Brand
+                <select name="paddleBrand" defaultValue={person.paddle_brand ?? ''} className={`${inputClass} mt-1`}>
+                  <option value="">Not set</option>
+                  {PADDLE_BRAND_OPTIONS.map((p) => (
+                    <option key={p.value} value={p.value}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <fieldset>
+                <legend className="text-sm font-semibold text-slate-700 mb-1">
+                  Signature Shot Badges (up to 4)
+                </legend>
+                <div className="flex flex-wrap gap-3">
+                  {SIGNATURE_SHOT_OPTIONS.map((b) => (
+                    <label key={b.value} className="flex items-center gap-1.5 text-sm text-slate-600">
+                      <input
+                        type="checkbox"
+                        name="signatureShot"
+                        value={b.value}
+                        defaultChecked={signatureShotValues.includes(b.value)}
+                        className="accent-navy-mid"
+                      />
+                      {b.emoji} {b.skillName} — {b.funnyName}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend className="text-sm font-semibold text-slate-700 mb-1">Strengths</legend>
+                <div className="flex flex-wrap gap-3">
+                  {STRENGTH_OPTIONS.map((s) => (
+                    <label key={s.value} className="flex items-center gap-1.5 text-sm text-slate-600">
+                      <input
+                        type="checkbox"
+                        name="strengths"
+                        value={s.value}
+                        defaultChecked={(person.strengths ?? []).includes(s.value)}
+                        className="accent-navy-mid"
+                      />
+                      {s.label}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <SaveButton className={primaryButtonClass} pendingLabel="Saving…">
+                Save Profile
+              </SaveButton>
+            </form>
+          </details>
+        </div>
+      )}
 
-      <div className={`${cardClass} border-red-200 bg-red-50 mb-6 max-w-md`}>
-        <h2 className="text-sm font-bold text-red-800 mb-1">Danger Zone</h2>
-        <p className="text-xs text-red-700 mb-3">
-          Permanently deletes this player from the database — not just this profile, but
-          every tournament roster, team, and match they're part of. Use this to remove a
-          wrongly-created or misspelled player, not to undo a real result.
-        </p>
-        <DeletePersonButton personName={person.name} deleteAction={deletePersonWithId} />
-      </div>
+      {role === 'owner' && (
+        <div className={`${cardClass} border-red-200 bg-red-50 mb-6 max-w-md`}>
+          <h2 className="text-sm font-bold text-red-800 mb-1">Danger Zone</h2>
+          <p className="text-xs text-red-700 mb-3">
+            Permanently deletes this player from the database — not just this profile, but
+            every tournament roster, team, and match they're part of. Use this to remove a
+            wrongly-created or misspelled player, not to undo a real result.
+          </p>
+          <DeletePersonButton personName={person.name} deleteAction={deletePersonWithId} />
+        </div>
+      )}
 
       <div className="mb-6">
         <SharePlayerStatsButton
