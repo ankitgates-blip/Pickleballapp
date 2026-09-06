@@ -8,6 +8,7 @@ import ThreatBadge from '@/app/components/ThreatBadge';
 import PersonAvatar from '@/app/components/PersonAvatar';
 import SaveButton from '@/app/components/SaveButton';
 import { buildWinPercentageByPersonId } from '@/lib/stats/buildWinPercentageByPersonId';
+import AlertBanner from '@/app/components/AlertBanner';
 
 const LEAGUE_PLAYOFFS_TEAM_CAP = 8;
 
@@ -97,11 +98,11 @@ export default async function TeamsPage({
       </div>
 
       {isLeaguePlayoffs && hasLeagueMatches && (
-        <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6">
+        <AlertBanner tone="warning" className="mb-6">
           This tournament already has a generated schedule. Removing a team also deletes its
           existing matches and their scores. After changing teams, head to Bracket and use
           Regenerate All Rounds to rebuild a clean schedule from the current team list.
-        </div>
+        </AlertBanner>
       )}
 
       {tournament?.format === 'custom' && unpairedPlayers.length > 0 && (
@@ -118,9 +119,9 @@ export default async function TeamsPage({
           Bracket to generate the schedule.
         </div>
       ) : atCap ? (
-        <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6">
+        <AlertBanner tone="warning" className="mb-6">
           8/8 teams — maximum reached for this format.
-        </div>
+        </AlertBanner>
       ) : (
         <>
           {unpairedPlayers.length >= 2 && (

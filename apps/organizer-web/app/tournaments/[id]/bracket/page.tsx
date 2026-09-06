@@ -19,6 +19,7 @@ import ShareScheduleButton from './ShareScheduleButton';
 import ScheduleCard from './ScheduleCard';
 import RegenerateLeagueRoundsButton from './RegenerateLeagueRoundsButton';
 import SaveButton from '@/app/components/SaveButton';
+import AlertBanner from '@/app/components/AlertBanner';
 
 export default async function BracketPage({
   params,
@@ -545,19 +546,19 @@ export default async function BracketPage({
       </div>
 
       {!isSupported && (
-        <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6">
+        <AlertBanner tone="warning" className="mb-6">
           {formatLabel(format)} isn't available yet — bracket generation for this format is
           coming soon. Round Robin, League + Playoffs, Double Header, Popcorn, Gauntlet, Claim
           the Throne, Up and Down the River, and Custom League are the only formats that
           work today.
-        </div>
+        </AlertBanner>
       )}
 
       {isSupported && !hasLeagueMatches && isPopcorn && playerCount < 4 && (
-        <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
+        <AlertBanner tone="error" className="mb-6">
           Need at least 4 players to generate a Popcorn schedule — you have {playerCount}. Go
           back and add more players first.
-        </div>
+        </AlertBanner>
       )}
 
       {isSupported && !hasLeagueMatches && isPopcorn && playerCount >= 4 && (
@@ -572,10 +573,10 @@ export default async function BracketPage({
       )}
 
       {isSupported && !hasLeagueMatches && isGauntlet && playerCount < 4 && (
-        <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
+        <AlertBanner tone="error" className="mb-6">
           Need at least 4 players to generate a Gauntlet round — you have {playerCount}. Go
           back and add more players first.
-        </div>
+        </AlertBanner>
       )}
 
       {isSupported && !hasLeagueMatches && isGauntlet && playerCount >= 4 && (
@@ -615,10 +616,10 @@ export default async function BracketPage({
       )}
 
       {isSupported && !hasLeagueMatches && isClaimTheThrone && !claimTheThronePlayerCountValid && (
-        <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
+        <AlertBanner tone="error" className="mb-6">
           Claim the Throne needs a player count that's a multiple of 4 — you have {playerCount}.
           Go back and adjust the roster first.
-        </div>
+        </AlertBanner>
       )}
 
       {isSupported && !hasLeagueMatches && isClaimTheThrone && claimTheThronePlayerCountValid && (
@@ -664,10 +665,10 @@ export default async function BracketPage({
       )}
 
       {isSupported && !hasLeagueMatches && isUpAndDownRiver && !upAndDownRiverPlayerCountValid && (
-        <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
+        <AlertBanner tone="error" className="mb-6">
           Up and Down the River needs a player count that's a multiple of 4 — you have{' '}
           {playerCount}. Go back and adjust the roster first.
-        </div>
+        </AlertBanner>
       )}
 
       {isSupported && !hasLeagueMatches && isUpAndDownRiver && upAndDownRiverPlayerCountValid && (
@@ -724,10 +725,10 @@ export default async function BracketPage({
         !isLeaguePlayoffs &&
         !isCustom &&
         teamCount < 2 && (
-        <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
+        <AlertBanner tone="error" className="mb-6">
           Need at least 2 teams to generate a bracket — you have {teamCount}. Go back and
           pair more teams first.
-        </div>
+        </AlertBanner>
       )}
 
       {isSupported &&
@@ -750,10 +751,10 @@ export default async function BracketPage({
       )}
 
       {isSupported && !hasLeagueMatches && isLeaguePlayoffs && teamCount < 2 && (
-        <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
+        <AlertBanner tone="error" className="mb-6">
           Need at least 2 teams to generate a bracket — you have {teamCount}. Go back and
           pair more teams first.
-        </div>
+        </AlertBanner>
       )}
 
       {isSupported && !hasLeagueMatches && isLeaguePlayoffs && teamCount >= 2 && (

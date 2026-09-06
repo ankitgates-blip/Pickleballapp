@@ -9,6 +9,7 @@ import { TIME_SLOTS, timeslotLabel } from '@/lib/tournament/timeslots';
 import { formatLabel, isIndividualFormat } from '@/lib/tournament/formats';
 import { buildRosterTeams, buildUnpairedPlayerNames } from '@/lib/tournament/rosterExport';
 import { isRosterFull } from '@/lib/tournament/capacity';
+import AlertBanner from '@/app/components/AlertBanner';
 import ThreatBadge from '@/app/components/ThreatBadge';
 import PersonAvatar from '@/app/components/PersonAvatar';
 import { buildWinPercentageByPersonId } from '@/lib/stats/buildWinPercentageByPersonId';
@@ -151,10 +152,10 @@ export default async function RosterPage({
 
           {rosterFull ? (
             <div className="space-y-3">
-              <p className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 font-semibold">
+              <AlertBanner tone="warning">
                 All Slots Full — the roster filled up since you started this. These players can't
                 be added.
-              </p>
+              </AlertBanner>
               <Link href={`/tournaments/${id}/roster`} className={linkClass}>
                 Back to roster
               </Link>
@@ -319,9 +320,9 @@ export default async function RosterPage({
       )}
 
       {!isCompleted && rosterFull && (
-        <div className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-6 font-semibold">
+        <AlertBanner tone="warning" className="mb-6">
           All Slots Full — no more sign up.
-        </div>
+        </AlertBanner>
       )}
 
       <div className={cardClass}>
@@ -330,10 +331,10 @@ export default async function RosterPage({
           {tournament?.max_players ? `/${tournament.max_players}` : ''})
         </h2>
         {duplicateNames.size > 0 && (
-          <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+          <AlertBanner tone="warning" className="mb-3">
             ⚠ Duplicate name(s) — double-check pairing later:{' '}
             {Array.from(duplicateNames).join(', ')}
-          </p>
+          </AlertBanner>
         )}
         <ul className="space-y-2">
           {(players ?? []).map((p) => {
