@@ -6,10 +6,12 @@ export default function EditableTournamentName({
   tournamentId,
   initialName,
   renameAction,
+  editable = true,
 }: {
   tournamentId: string;
   initialName: string;
   renameAction: (tournamentId: string, formData: FormData) => Promise<{ name: string }>;
+  editable?: boolean;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(initialName);
@@ -31,6 +33,9 @@ export default function EditableTournamentName({
   };
 
   if (!isEditing) {
+    if (!editable) {
+      return <h1 className="mb-1 text-2xl font-bold text-slate-900">{name}</h1>;
+    }
     return (
       <h1 className="mb-1">
         <button

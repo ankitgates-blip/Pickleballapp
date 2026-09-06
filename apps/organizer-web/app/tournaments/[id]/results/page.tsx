@@ -38,7 +38,7 @@ export default async function ResultsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase, organizer } = await requireOrganizer();
+  const { supabase, organizer, role } = await requireOrganizer();
 
   const { data: tournament } = await supabase
     .from('tournaments')
@@ -243,7 +243,12 @@ export default async function ResultsPage({
   return (
     <OrganizerShell organizerName={organizer.name}>
       <TournamentNav tournamentId={id} current="results" />
-      <EditableTournamentName tournamentId={id} initialName={tournament.name} renameAction={renameTournament} />
+      <EditableTournamentName
+        tournamentId={id}
+        initialName={tournament.name}
+        renameAction={renameTournament}
+        editable={role === 'owner'}
+      />
       <p className="text-sm text-slate-500 mb-6">
         {tournament.date} · 📍 {venueName} · 🕐 {timeslotLabel(tournament.timeslot)} · {formatLabel(tournament.format)}
         {tournament.completed_at && (
