@@ -603,18 +603,6 @@ export default async function PersonDetailPage({
         </div>
       )}
 
-      {role === 'owner' && (
-        <div className={`${cardClass} border-red-200 bg-red-50 mb-6 max-w-md`}>
-          <h2 className="text-sm font-bold text-red-800 mb-1">Danger Zone</h2>
-          <p className="text-xs text-red-700 mb-3">
-            Permanently deletes this player from the database — not just this profile, but
-            every tournament roster, team, and match they're part of. Use this to remove a
-            wrongly-created or misspelled player, not to undo a real result.
-          </p>
-          <DeletePersonButton personName={person.name} deleteAction={deletePersonWithId} />
-        </div>
-      )}
-
       <div className="mb-6">
         <SharePlayerStatsButton
           personName={person.name}
@@ -849,6 +837,18 @@ export default async function PersonDetailPage({
           )}
         </ul>
       </div>
+
+      {role === 'owner' && (
+        <div className={`${cardClass} border-red-200 bg-red-50 mb-6 max-w-md`}>
+          <h2 className="text-sm font-bold text-red-800 mb-1">Danger Zone</h2>
+          <p className="text-xs text-red-700 mb-3">
+            Permanently deletes this player from the database — not just this profile, but
+            every tournament roster, team, and match they're part of. Use this to remove a
+            wrongly-created or misspelled player, not to undo a real result.
+          </p>
+          <DeletePersonButton personName={person.name} deleteAction={deletePersonWithId} />
+        </div>
+      )}
     </OrganizerShell>
   );
 }
