@@ -29,7 +29,7 @@ export default function ThreatBadge({ winPercentage, size = 'compact' }: ThreatB
   if (size === 'default') {
     return (
       <div
-        className="inline-flex items-center gap-3 rounded-lg border border-[#3f3f46] bg-[#1c1917] px-3 py-2"
+        className="inline-flex items-center gap-3 rounded-lg border border-[#3f3f46] bg-[#0c1830] px-3 py-2"
         role="img"
         aria-label={accessibleLabel}
         title={accessibleLabel}
@@ -55,7 +55,7 @@ export default function ThreatBadge({ winPercentage, size = 'compact' }: ThreatB
 
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full bg-[#1c1917] py-1 pl-1 pr-2"
+      className="inline-flex items-center gap-1.5 rounded-full bg-[#0c1830] py-1 pl-1 pr-2"
       role="img"
       aria-label={accessibleLabel}
       title={accessibleLabel}

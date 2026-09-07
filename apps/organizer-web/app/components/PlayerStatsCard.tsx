@@ -347,7 +347,7 @@ export default function PlayerStatsCard({
             PICKLERALLY DXB PLAYER CARD
           </text>
 
-          <rect x="18" y="114" width="118" height="60" rx="8" fill="#1c1917" stroke="#3f3f46" />
+          <rect x="18" y="114" width="118" height="60" rx="8" fill="#0c1830" stroke="#3f3f46" />
           <text x="77" y="142" fontSize="21" fontWeight="800" fill="#f8fafc" textAnchor="middle" fontFamily="Oswald, sans-serif">
             {rating.toFixed(2)}
           </text>
@@ -358,7 +358,7 @@ export default function PlayerStatsCard({
             {renderStarRow(starCount)}
           </text>
 
-          <rect x="144" y="114" width="118" height="60" rx="8" fill="#1c1917" stroke="#3f3f46" />
+          <rect x="144" y="114" width="118" height="60" rx="8" fill="#0c1830" stroke="#3f3f46" />
           <text x="203" y="142" fontSize="21" fontWeight="800" fill={palette.accent} textAnchor="middle" fontFamily="Oswald, sans-serif">
             {formPercentage}
           </text>
@@ -368,7 +368,7 @@ export default function PlayerStatsCard({
           <rect x="152" y="161" width="102" height="6" rx="3" fill="url(#heatScale)" />
           <rect x={formMarkerX} y="159" width="2.5" height="10" rx="1.25" fill="#ffffff" />
 
-          <rect x="270" y="114" width="118" height="60" rx="8" fill="#1c1917" stroke="#3f3f46" />
+          <rect x="270" y="114" width="118" height="60" rx="8" fill="#0c1830" stroke="#3f3f46" />
           <text x="329" y="142" fontSize="21" fontWeight="800" fill={palette.accent} textAnchor="middle" fontFamily="Oswald, sans-serif">
             {threatPercentage}
           </text>
