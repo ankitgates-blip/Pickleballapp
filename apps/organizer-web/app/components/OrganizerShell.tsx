@@ -237,10 +237,17 @@ export default function OrganizerShell({
           light ground, using dark navy text, in the same dead-space band the logo
           only partially fills (the logo's right edge sits at left-[30px]+140px =
           170px, so `ml-[170px]` clears it with a small gap -- margin, not padding,
-          so it doesn't eat into the `max-w-[190px]` budget meant for the text). */}
+          so it doesn't eat into the `max-w-[190px]` budget meant for the text).
+          `lg:ml-10`: past the `lg` breakpoint this wrapper's own `mx-auto` centering
+          has already inset its left edge by more than 170px minus the margin (at
+          least 128px at exactly 1024px wide, growing from there), so the full
+          170px margin is no longer needed to clear the logo (which stays pinned near
+          the true viewport edge regardless of this wrapper's width) -- a smaller
+          fixed margin keeps the text closer to the logo on wide screens instead of
+          drifting further right as the centered column grows. */}
       {contextStrip && (
-        <div className={`mx-auto px-4 pt-2 ${containerMaxWidthClass}`}>
-          <div className="ml-[170px] max-w-[190px] sm:max-w-sm">
+        <div className={`w-full mx-auto px-4 pt-2 ${containerMaxWidthClass}`}>
+          <div className="ml-[170px] lg:ml-10 max-w-[190px] sm:max-w-sm">
             <div className="font-heading font-bold text-sm sm:text-base text-navy-deep truncate">
               {contextStrip.title}
             </div>
@@ -250,7 +257,20 @@ export default function OrganizerShell({
           </div>
         </div>
       )}
-      <main className={`flex-1 w-full mx-auto px-4 pt-20 pb-24 ${containerMaxWidthClass}`}>{children}</main>
+      {/* pt-20 exists purely to clear the circular logo, which overhangs `main` by
+          70px below the header (half its 140px height, centered on the header/page
+          seam). When contextStrip is present, that in-flow block (pt-2 + ~2 lines,
+          ~44px tall) already covers most of that 70px clearance on its own, so main
+          only needs a smaller top padding to finish the job -- pt-20 unconditionally
+          here would double up on space the strip already spent, pushing content
+          ~44px lower than before this feature existed. pt-8 (32px) + the strip's own
+          ~44px lands main's content at the same ~276px from the top of the page as
+          the original bare pt-20 did. */}
+      <main
+        className={`flex-1 w-full mx-auto px-4 pb-24 ${containerMaxWidthClass} ${contextStrip ? 'pt-8' : 'pt-20'}`}
+      >
+        {children}
+      </main>
       <nav
         className="fixed bottom-0 left-0 right-0 flex text-white shadow-[0_-4px_12px_rgba(0,0,0,0.15)] z-20"
         style={{
