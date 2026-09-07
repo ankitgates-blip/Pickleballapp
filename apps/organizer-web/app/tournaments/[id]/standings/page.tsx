@@ -10,6 +10,7 @@ import OrganizerShell from '@/app/components/OrganizerShell';
 import TournamentNav from '@/app/components/TournamentNav';
 import PersonAvatar from '@/app/components/PersonAvatar';
 import { cardClass, headingClass } from '@/app/components/ui';
+import StandingsTable from '@/app/components/StandingsTable';
 import CopyLinkButton from './CopyLinkButton';
 
 type LadderRoundResult = ClaimTheThroneRoundResult;
@@ -212,14 +213,6 @@ export default async function StandingsPage({
           };
         });
 
-  const winPillClass =
-    'stat-num inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-full bg-navy-tint text-navy-deep font-extrabold';
-  const lossPillClass =
-    'stat-num inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-full bg-slate-100 text-slate-500 font-extrabold';
-  const rowClass = (rank: number) =>
-    rank === 0
-      ? 'border-b border-slate-100 last:border-0 bg-gradient-to-r from-amber-50 via-amber-50/50 to-transparent'
-      : 'border-b border-slate-100 last:border-0';
   const diffClass = (diff: number) =>
     diff > 0 ? 'text-win' : diff < 0 ? 'text-loss' : 'text-muted';
   // Glyph-first signal (▲/▼) so win/loss direction isn't carried by color alone.
@@ -240,99 +233,94 @@ export default async function StandingsPage({
       )}
 
       <div className={`${cardClass} overflow-x-auto`}>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-slate-500 border-b border-slate-200">
-              <th className="pb-2 font-semibold">{isIndividualFormat ? 'Player' : 'Team'}</th>
-              {isLadderFormat && (
-                <th className="pb-2 font-semibold text-center">Ladder Pts</th>
-              )}
-              <th className="pb-2 font-semibold text-center">W</th>
-              <th className="pb-2 font-semibold text-center">L</th>
-              <th className="pb-2 font-semibold text-center">
-                {isLadderFormat ? 'Avg Diff' : 'Point Diff'}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLadderFormat
-              ? ladderStandings.map((s, i) => {
-                  const medal = ['🥇', '🥈', '🥉'][i];
-                  const medalLabel = ['1st place', '2nd place', '3rd place'][i];
-                  const games = s.wins + s.losses;
-                  const avgDiff = games > 0 ? (s.pointsFor - s.pointsAgainst) / games : 0;
-                  return (
-                    <tr key={s.playerId} className={rowClass(i)}>
-                      <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                        {medal && <span className="mr-1.5" role="img" aria-label={medalLabel}>{medal}</span>}
-                        {playerById.get(s.playerId)}
-                      </td>
-                      <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.ladderPoints}</td>
-                      <td className="py-2 text-center">
-                        <span className={winPillClass}>{s.wins}</span>
-                      </td>
-                      <td className="py-2 text-center">
-                        <span className={lossPillClass}>{s.losses}</span>
-                      </td>
-                      <td className={`stat-num py-2 text-center font-bold ${diffClass(avgDiff)}`}>
+        <StandingsTable
+          nameColumnHeader={isIndividualFormat ? 'Player' : 'Team'}
+          winLossStyle="pill"
+          highlightFirstRow
+          columnsBeforeWL={
+            isLadderFormat
+              ? [
+                  {
+                    header: 'Ladder Pts',
+                    cells: ladderStandings.map((s) => (
+                      <span key={s.playerId} className="stat-num text-navy-mid font-extrabold">
+                        {s.ladderPoints}
+                      </span>
+                    )),
+                  },
+                ]
+              : []
+          }
+          columnsAfterWL={[
+            {
+              header: isLadderFormat ? 'Avg Diff' : 'Point Diff',
+              cells: isLadderFormat
+                ? ladderStandings.map((s) => {
+                    const games = s.wins + s.losses;
+                    const avgDiff = games > 0 ? (s.pointsFor - s.pointsAgainst) / games : 0;
+                    return (
+                      <span key={s.playerId} className={`stat-num font-bold ${diffClass(avgDiff)}`}>
                         {diffPrefix(avgDiff)}
                         {avgDiff > 0 ? '+' : ''}
                         {avgDiff.toFixed(1)}
-                      </td>
-                    </tr>
-                  );
-                })
-              : isIndividualFormat
-                ? individualStandings.map((s, i) => {
-                    const medal = ['🥇', '🥈', '🥉'][i];
-                    const medalLabel = ['1st place', '2nd place', '3rd place'][i];
-                    const diff = s.pointsFor - s.pointsAgainst;
-                    return (
-                      <tr key={s.playerId} className={rowClass(i)}>
-                        <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                          {medal && <span className="mr-1.5" role="img" aria-label={medalLabel}>{medal}</span>}
-                          {playerById.get(s.playerId)}
-                        </td>
-                        <td className="py-2 text-center">
-                          <span className={winPillClass}>{s.wins}</span>
-                        </td>
-                        <td className="py-2 text-center">
-                          <span className={lossPillClass}>{s.losses}</span>
-                        </td>
-                        <td className={`stat-num py-2 text-center font-bold ${diffClass(diff)}`}>
-                          {diffPrefix(diff)}
-                          {diff > 0 ? '+' : ''}
-                          {diff}
-                        </td>
-                      </tr>
+                      </span>
                     );
                   })
-                : standings.map((s, i) => {
-                    const medal = ['🥇', '🥈', '🥉'][i];
-                    const medalLabel = ['1st place', '2nd place', '3rd place'][i];
-                    const diff = s.pointsFor - s.pointsAgainst;
-                    return (
-                      <tr key={s.teamId} className={rowClass(i)}>
-                        <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                          {medal && <span className="mr-1.5" role="img" aria-label={medalLabel}>{medal}</span>}
-                          {teamById.get(s.teamId)}
-                        </td>
-                        <td className="py-2 text-center">
-                          <span className={winPillClass}>{s.wins}</span>
-                        </td>
-                        <td className="py-2 text-center">
-                          <span className={lossPillClass}>{s.losses}</span>
-                        </td>
-                        <td className={`stat-num py-2 text-center font-bold ${diffClass(diff)}`}>
+                : isIndividualFormat
+                  ? individualStandings.map((s) => {
+                      const diff = s.pointsFor - s.pointsAgainst;
+                      return (
+                        <span key={s.playerId} className={`stat-num font-bold ${diffClass(diff)}`}>
                           {diffPrefix(diff)}
                           {diff > 0 ? '+' : ''}
                           {diff}
-                        </td>
-                      </tr>
-                    );
-                  })}
-          </tbody>
-        </table>
+                        </span>
+                      );
+                    })
+                  : standings.map((s) => {
+                      const diff = s.pointsFor - s.pointsAgainst;
+                      return (
+                        <span key={s.teamId} className={`stat-num font-bold ${diffClass(diff)}`}>
+                          {diffPrefix(diff)}
+                          {diff > 0 ? '+' : ''}
+                          {diff}
+                        </span>
+                      );
+                    }),
+            },
+          ]}
+          rows={
+            isLadderFormat
+              ? ladderStandings.map((s, i) => ({
+                  key: s.playerId,
+                  name: playerById.get(s.playerId) ?? 'Unknown',
+                  wins: s.wins,
+                  losses: s.losses,
+                  medal: ['🥇', '🥈', '🥉'][i],
+                  medalLabel: ['1st place', '2nd place', '3rd place'][i],
+                  nameClassName: `${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`,
+                }))
+              : isIndividualFormat
+                ? individualStandings.map((s, i) => ({
+                    key: s.playerId,
+                    name: playerById.get(s.playerId) ?? 'Unknown',
+                    wins: s.wins,
+                    losses: s.losses,
+                    medal: ['🥇', '🥈', '🥉'][i],
+                    medalLabel: ['1st place', '2nd place', '3rd place'][i],
+                    nameClassName: `${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`,
+                  }))
+                : standings.map((s, i) => ({
+                    key: s.teamId,
+                    name: teamById.get(s.teamId) ?? 'Unknown',
+                    wins: s.wins,
+                    losses: s.losses,
+                    medal: ['🥇', '🥈', '🥉'][i],
+                    medalLabel: ['1st place', '2nd place', '3rd place'][i],
+                    nameClassName: `${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`,
+                  }))
+          }
+        />
       </div>
     </OrganizerShell>
   );
