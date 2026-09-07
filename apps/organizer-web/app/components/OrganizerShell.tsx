@@ -95,11 +95,13 @@ export default function OrganizerShell({
   organizerName,
   role,
   contextStrip,
+  containerWidth = 'default',
 }: {
   children: React.ReactNode;
   organizerName?: string;
   role: 'owner' | 'guest';
   contextStrip?: { title: string; dateLabel: string; venueName: string };
+  containerWidth?: 'default' | 'wide';
 }) {
   const pathname = usePathname();
   const isLeaguesActive = pathname.startsWith('/tournaments');
@@ -233,7 +235,11 @@ export default function OrganizerShell({
           </div>
         )}
       </div>
-      <main className="flex-1 w-full max-w-3xl mx-auto px-4 pt-20 pb-24">{children}</main>
+      <main
+        className={`flex-1 w-full mx-auto px-4 pt-20 pb-24 ${containerWidth === 'wide' ? 'max-w-5xl' : 'max-w-3xl'}`}
+      >
+        {children}
+      </main>
       <nav
         className="fixed bottom-0 left-0 right-0 flex text-white shadow-[0_-4px_12px_rgba(0,0,0,0.15)] z-20"
         style={{

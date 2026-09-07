@@ -26,7 +26,7 @@ export default async function PeopleListPage() {
     .order('name', { ascending: true });
 
   return (
-    <OrganizerShell organizerName={organizer.name} role={role}>
+    <OrganizerShell organizerName={organizer.name} role={role} containerWidth="wide">
       <h1 className={`text-2xl ${headingClass} mb-6`}>Player Profiles</h1>
 
       {(people ?? []).length === 0 && (
@@ -45,7 +45,7 @@ export default async function PeopleListPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {(people ?? []).map((person) => (
           <Link key={person.id} href={`/people/${person.id}`} className={playerCardClass}>
             <PersonAvatar photoUrl={person.photo_url} name={person.name} size={56} />

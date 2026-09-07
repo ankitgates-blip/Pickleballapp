@@ -142,7 +142,7 @@ export default async function TournamentsPage() {
   const hasAnyList = upcoming.length > 0 || recentlyCompleted.length > 0;
 
   return (
-    <OrganizerShell organizerName={organizer.name} role={role}>
+    <OrganizerShell organizerName={organizer.name} role={role} containerWidth="wide">
       {(tournaments ?? []).length === 0 && (
         <div className={cardClass}>
           <EmptyState
@@ -169,7 +169,7 @@ export default async function TournamentsPage() {
           {upcoming.length > 0 && (
             <div className="mb-8">
               <h2 className="text-xl font-bold text-white mb-3 font-heading">Upcoming Leagues</h2>
-              <ul className="space-y-3">
+              <ul className="grid gap-3 lg:grid-cols-2 lg:gap-4">
                 {upcoming.map((t) => {
                   const playerCount = playerCountByTournament.get(t.id) ?? 0;
                   const daysAway = Math.round(
@@ -207,7 +207,7 @@ export default async function TournamentsPage() {
           {recentlyCompleted.length > 0 && (
             <div>
               <h2 className="text-xl font-bold text-white mb-3 font-heading">Recently Completed</h2>
-              <ul className="space-y-3">
+              <ul className="grid gap-3 lg:grid-cols-2 lg:gap-4">
                 {recentlyCompleted.map((t) => {
                   const playerCount = playerCountByTournament.get(t.id) ?? 0;
                   const matches = matchesByTournament.get(t.id) ?? [];
