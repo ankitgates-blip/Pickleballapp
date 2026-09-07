@@ -17,6 +17,7 @@ function CalendarIcon() {
 import { timeslotLabel } from '@/lib/tournament/timeslots';
 import { formatLabel } from '@/lib/tournament/formats';
 import { computeTournamentChampionName, computeTournamentRunnerUpName } from '@/lib/tournament/champion';
+import { countPlayedMatches } from '@/lib/tournament/matchesCount';
 import { cancelTournament } from './actions';
 import TournamentCard from './TournamentCard';
 
@@ -239,7 +240,7 @@ export default async function TournamentsPage() {
                         runnerUp={runnerUpName}
                         venue={venueNameFor(t)}
                         playerCount={playerCount}
-                        matchesCount={matches.length}
+                        matchesCount={countPlayedMatches(matches)}
                         ctaHref={`/tournaments/${t.id}/results`}
                         ctaLabel="View results"
                         cancelAction={cancelTournament.bind(null, t.id)}
