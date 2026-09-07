@@ -21,6 +21,7 @@ import RegenerateLeagueRoundsButton from './RegenerateLeagueRoundsButton';
 import SaveButton from '@/app/components/SaveButton';
 import AlertBanner from '@/app/components/AlertBanner';
 import ShareHint from '@/app/components/ShareHint';
+import RoundActionCard from '@/app/components/RoundActionCard';
 
 export default async function BracketPage({
   params,
@@ -563,14 +564,14 @@ export default async function BracketPage({
       )}
 
       {isSupported && !hasLeagueMatches && isPopcorn && playerCount >= 4 && (
-        <form action={generatePopcornBracketWithId} className={`${actionCardClass} text-center mb-6`}>
+        <RoundActionCard formAction={generatePopcornBracketWithId}>
           <p className="text-slate-600 mb-4">
             {playerCount} players ready. Generate the Popcorn schedule ({tournament?.popcorn_rounds ?? 5} rounds).
           </p>
           <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Popcorn Schedule
           </SaveButton>
-        </form>
+        </RoundActionCard>
       )}
 
       {isSupported && !hasLeagueMatches && isGauntlet && playerCount < 4 && (
@@ -581,18 +582,18 @@ export default async function BracketPage({
       )}
 
       {isSupported && !hasLeagueMatches && isGauntlet && playerCount >= 4 && (
-        <form action={advanceGauntletRoundWithId} className={`${actionCardClass} text-center mb-6`}>
+        <RoundActionCard formAction={advanceGauntletRoundWithId}>
           <p className="text-slate-600 mb-4">
             {playerCount} players ready. Generate Round 1 of {gauntletRounds}.
           </p>
           <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Round 1
           </SaveButton>
-        </form>
+        </RoundActionCard>
       )}
 
       {showGenerateNextGauntletRound && (
-        <form action={advanceGauntletRoundWithId} className={`${actionCardClass} text-center mb-6`}>
+        <RoundActionCard formAction={advanceGauntletRoundWithId}>
           <p className="text-slate-600 mb-4">
             Round {currentGauntletRound} complete. Generate Round {currentGauntletRound + 1} of{' '}
             {gauntletRounds}.
@@ -600,11 +601,11 @@ export default async function BracketPage({
           <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Round {currentGauntletRound + 1}
           </SaveButton>
-        </form>
+        </RoundActionCard>
       )}
 
       {showSkipGauntletRound && (
-        <form action={advanceGauntletRoundWithId} className={`${actionCardClass} text-center mb-6`}>
+        <RoundActionCard formAction={advanceGauntletRoundWithId}>
           <p className="text-slate-600 mb-4">
             Round {currentGauntletRound} isn't finished yet. Skip it and generate Round{' '}
             {currentGauntletRound + 1} anyway — any unplayed matches in Round{' '}
@@ -613,7 +614,7 @@ export default async function BracketPage({
           <SaveButton className={outlineButtonClass} pendingLabel="Skipping…">
             Skip to Round {currentGauntletRound + 1}
           </SaveButton>
-        </form>
+        </RoundActionCard>
       )}
 
       {isSupported && !hasLeagueMatches && isClaimTheThrone && !claimTheThronePlayerCountValid && (
@@ -624,21 +625,18 @@ export default async function BracketPage({
       )}
 
       {isSupported && !hasLeagueMatches && isClaimTheThrone && claimTheThronePlayerCountValid && (
-        <form action={advanceClaimTheThroneRoundWithId} className={`${actionCardClass} text-center mb-6`}>
+        <RoundActionCard formAction={advanceClaimTheThroneRoundWithId}>
           <p className="text-slate-600 mb-4">
             {playerCount} players ready. Generate Round 1 of {claimTheThroneRounds}.
           </p>
           <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Round 1
           </SaveButton>
-        </form>
+        </RoundActionCard>
       )}
 
       {showGenerateNextClaimTheThroneRound && (
-        <form
-          action={advanceClaimTheThroneRoundWithId}
-          className={`${actionCardClass} text-center mb-6`}
-        >
+        <RoundActionCard formAction={advanceClaimTheThroneRoundWithId}>
           <p className="text-slate-600 mb-4">
             Round {currentClaimTheThroneRound} complete. Generate Round{' '}
             {currentClaimTheThroneRound + 1} of {claimTheThroneRounds}.
@@ -646,14 +644,11 @@ export default async function BracketPage({
           <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Round {currentClaimTheThroneRound + 1}
           </SaveButton>
-        </form>
+        </RoundActionCard>
       )}
 
       {showSkipClaimTheThroneRound && (
-        <form
-          action={advanceClaimTheThroneRoundWithId}
-          className={`${actionCardClass} text-center mb-6`}
-        >
+        <RoundActionCard formAction={advanceClaimTheThroneRoundWithId}>
           <p className="text-slate-600 mb-4">
             Round {currentClaimTheThroneRound} isn't finished yet. Skip it and generate Round{' '}
             {currentClaimTheThroneRound + 1} anyway — any unplayed matches in Round{' '}
@@ -662,7 +657,7 @@ export default async function BracketPage({
           <SaveButton className={outlineButtonClass} pendingLabel="Skipping…">
             Skip to Round {currentClaimTheThroneRound + 1}
           </SaveButton>
-        </form>
+        </RoundActionCard>
       )}
 
       {isSupported && !hasLeagueMatches && isUpAndDownRiver && !upAndDownRiverPlayerCountValid && (
@@ -673,24 +668,18 @@ export default async function BracketPage({
       )}
 
       {isSupported && !hasLeagueMatches && isUpAndDownRiver && upAndDownRiverPlayerCountValid && (
-        <form
-          action={advanceUpAndDownRiverRoundWithId}
-          className={`${actionCardClass} text-center mb-6`}
-        >
+        <RoundActionCard formAction={advanceUpAndDownRiverRoundWithId}>
           <p className="text-slate-600 mb-4">
             {playerCount} players ready. Generate Round 1 of {upAndDownRiverRounds}.
           </p>
           <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Round 1
           </SaveButton>
-        </form>
+        </RoundActionCard>
       )}
 
       {showGenerateNextUpAndDownRiverRound && (
-        <form
-          action={advanceUpAndDownRiverRoundWithId}
-          className={`${actionCardClass} text-center mb-6`}
-        >
+        <RoundActionCard formAction={advanceUpAndDownRiverRoundWithId}>
           <p className="text-slate-600 mb-4">
             Round {currentUpAndDownRiverRound} complete. Generate Round{' '}
             {currentUpAndDownRiverRound + 1} of {upAndDownRiverRounds}.
@@ -698,14 +687,11 @@ export default async function BracketPage({
           <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Round {currentUpAndDownRiverRound + 1}
           </SaveButton>
-        </form>
+        </RoundActionCard>
       )}
 
       {showSkipUpAndDownRiverRound && (
-        <form
-          action={advanceUpAndDownRiverRoundWithId}
-          className={`${actionCardClass} text-center mb-6`}
-        >
+        <RoundActionCard formAction={advanceUpAndDownRiverRoundWithId}>
           <p className="text-slate-600 mb-4">
             Round {currentUpAndDownRiverRound} isn't finished yet. Skip it and generate Round{' '}
             {currentUpAndDownRiverRound + 1} anyway — any unplayed matches in Round{' '}
@@ -714,7 +700,7 @@ export default async function BracketPage({
           <SaveButton className={outlineButtonClass} pendingLabel="Skipping…">
             Skip to Round {currentUpAndDownRiverRound + 1}
           </SaveButton>
-        </form>
+        </RoundActionCard>
       )}
 
       {isSupported &&
@@ -741,14 +727,14 @@ export default async function BracketPage({
         !isLeaguePlayoffs &&
         !isCustom &&
         teamCount >= 2 && (
-        <form action={generateBracketWithId} className={`${actionCardClass} text-center mb-6`}>
+        <RoundActionCard formAction={generateBracketWithId}>
           <p className="text-slate-600 mb-4">
             {teamCount} teams ready. Generate a round-robin league schedule.
           </p>
           <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate League Bracket
           </SaveButton>
-        </form>
+        </RoundActionCard>
       )}
 
       {isSupported && !hasLeagueMatches && isLeaguePlayoffs && teamCount < 2 && (
@@ -759,10 +745,7 @@ export default async function BracketPage({
       )}
 
       {isSupported && !hasLeagueMatches && isLeaguePlayoffs && teamCount >= 2 && (
-        <form
-          action={generateLeaguePlayoffsBracketWithId}
-          className={`${actionCardClass} text-center mb-6`}
-        >
+        <RoundActionCard formAction={generateLeaguePlayoffsBracketWithId}>
           <p className="text-slate-600 mb-4">
             {teamCount} teams ready. Generate the full League schedule.
           </p>
@@ -787,11 +770,11 @@ export default async function BracketPage({
           <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Full Schedule
           </SaveButton>
-        </form>
+        </RoundActionCard>
       )}
 
       {showRegenerateLeaguePlayoffsRounds && role === 'owner' && (
-        <div className={`${actionCardClass} text-center mb-6`}>
+        <RoundActionCard as="div">
           <p className="text-slate-600 mb-4">
             Team roster changed? Regenerate the full {leaguePlayoffsRounds}-round schedule from
             the current teams.
@@ -800,7 +783,7 @@ export default async function BracketPage({
             regenerateAction={regenerateLeaguePlayoffsBracketWithId}
             hasScoredMatches={hasScoredLeagueMatches}
           />
-        </div>
+        </RoundActionCard>
       )}
 
       {isCustom && canEditScoreValue && (
@@ -993,7 +976,7 @@ export default async function BracketPage({
       )}
 
       {showSkipToFinal && (
-        <div className={`${actionCardClass} text-center mb-6`}>
+        <RoundActionCard as="div">
           <p className="text-slate-600 mb-4">
             {allLeagueComplete
               ? "League complete. Generate the semifinals from the top 4 teams, or skip straight to the final if you're short on time."
@@ -1011,7 +994,7 @@ export default async function BracketPage({
               </SaveButton>
             </form>
           </div>
-        </div>
+        </RoundActionCard>
       )}
 
       {semifinalMatches.length > 0 && (
@@ -1024,12 +1007,12 @@ export default async function BracketPage({
       )}
 
       {showGenerateFinal && (
-        <form action={generateFinalMatchWithId} className={`${actionCardClass} text-center mb-6`}>
+        <RoundActionCard formAction={generateFinalMatchWithId}>
           <p className="text-slate-600 mb-4">Semifinals complete. Generate the final.</p>
           <SaveButton className={accentButtonClass} pendingLabel="Generating…">
             Generate Final
           </SaveButton>
-        </form>
+        </RoundActionCard>
       )}
 
       {finalMatches.length > 0 && (
