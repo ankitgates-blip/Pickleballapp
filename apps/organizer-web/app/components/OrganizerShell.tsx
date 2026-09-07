@@ -108,6 +108,11 @@ export default function OrganizerShell({
   const isPlayerProfileActive = pathname.startsWith('/people');
   const isLocationsActive = pathname.startsWith('/locations');
   const isPlayerOfTheMonthActive = pathname.startsWith('/player-of-the-month');
+  // Drives the header wordmark, the context strip, and `main` together so the three
+  // stay left-edge-aligned at every width -- previously only `main` widened for
+  // containerWidth="wide", leaving the header wordmark stuck at max-w-3xl and visibly
+  // misaligned from the wider content column beneath it on People/Tournaments.
+  const containerMaxWidthClass = containerWidth === 'wide' ? 'max-w-5xl' : 'max-w-3xl';
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -135,7 +140,7 @@ export default function OrganizerShell({
               header's bottom portion (it straddles the header/page seam at top-[196px]),
               so top-aligned text here never competes with it the way center-aligned text
               would; no left gutter needed. */}
-          <div className="relative max-w-3xl mx-auto px-4 pt-4 pb-2 min-h-[196px]">
+          <div className={`relative mx-auto px-4 pt-4 pb-2 min-h-[196px] ${containerMaxWidthClass}`}>
             <div className="inline-block">
               <span
                 className="font-heading italic text-2xl sm:text-4xl leading-tight whitespace-nowrap"
@@ -221,25 +226,31 @@ export default function OrganizerShell({
             className="rounded-full border-[5px] border-white shadow-xl object-cover"
           />
         </Link>
-        {contextStrip && (
-          <div
-            className="absolute z-10 left-[186px] top-[196px] -translate-y-1/2 max-w-[160px] sm:max-w-xs text-left"
-            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.7)' }}
-          >
-            <div className="font-heading font-bold text-sm sm:text-base text-white truncate">
+      </div>
+      {/* Sits in normal document flow, directly below the header+logo block -- NOT
+          absolutely positioned over the header. An earlier version centered this on
+          the logo's own `top-[196px] -translate-y-1/2` seam-straddling anchor, which
+          is correct for a circular photo (half "inside" the header, half over the
+          page) but wrong for text: half the box landed below the header, painting
+          light `text-[#dbe4f5]` on the light page background (~1.2:1 contrast,
+          effectively invisible). Placing it here keeps it entirely on the page's own
+          light ground, using dark navy text, in the same dead-space band the logo
+          only partially fills (the logo's right edge sits at left-[30px]+140px =
+          170px, so `ml-[170px]` clears it with a small gap -- margin, not padding,
+          so it doesn't eat into the `max-w-[190px]` budget meant for the text). */}
+      {contextStrip && (
+        <div className={`mx-auto px-4 pt-2 ${containerMaxWidthClass}`}>
+          <div className="ml-[170px] max-w-[190px] sm:max-w-sm">
+            <div className="font-heading font-bold text-sm sm:text-base text-navy-deep truncate">
               {contextStrip.title}
             </div>
-            <div className="text-xs text-[#dbe4f5] truncate">
+            <div className="text-xs text-muted truncate">
               {contextStrip.dateLabel} · 📍 {contextStrip.venueName}
             </div>
           </div>
-        )}
-      </div>
-      <main
-        className={`flex-1 w-full mx-auto px-4 pt-20 pb-24 ${containerWidth === 'wide' ? 'max-w-5xl' : 'max-w-3xl'}`}
-      >
-        {children}
-      </main>
+        </div>
+      )}
+      <main className={`flex-1 w-full mx-auto px-4 pt-20 pb-24 ${containerMaxWidthClass}`}>{children}</main>
       <nav
         className="fixed bottom-0 left-0 right-0 flex text-white shadow-[0_-4px_12px_rgba(0,0,0,0.15)] z-20"
         style={{
