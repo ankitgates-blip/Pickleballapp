@@ -124,7 +124,11 @@ export default async function RosterPage({
     const confirmAddPlayersWithId = confirmAddPlayers.bind(null, id);
 
     return (
-      <OrganizerShell organizerName={organizer.name} role={role}>
+      <OrganizerShell
+        organizerName={organizer.name}
+        role={role}
+        contextStrip={{ title: tournament?.name ?? '', dateLabel: tournament?.date ?? '', venueName }}
+      >
         <TournamentNav tournamentId={id} current="roster" />
         <h1 className={`text-2xl ${headingClass} mb-6`}>Review Roster Additions</h1>
 
@@ -182,7 +186,11 @@ export default async function RosterPage({
   const updateTournamentDetailsWithId = updateTournamentDetails.bind(null, id);
 
   return (
-    <OrganizerShell organizerName={organizer.name} role={role}>
+    <OrganizerShell
+      organizerName={organizer.name}
+      role={role}
+      contextStrip={{ title: tournament?.name ?? '', dateLabel: tournament?.date ?? '', venueName }}
+    >
       <MarkRosterSeen tournamentId={id} playerCount={(players ?? []).length} />
       <TournamentNav tournamentId={id} current="roster" />
       <div className="flex items-center justify-between mb-6">

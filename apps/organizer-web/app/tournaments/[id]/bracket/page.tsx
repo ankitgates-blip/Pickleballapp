@@ -499,7 +499,11 @@ export default async function BracketPage({
   );
 
   return (
-    <OrganizerShell organizerName={organizer.name} role={role}>
+    <OrganizerShell
+      organizerName={organizer.name}
+      role={role}
+      contextStrip={{ title: tournament?.name ?? '', dateLabel: tournament?.date ?? '', venueName }}
+    >
       <TournamentNav tournamentId={id} current="bracket" />
       <div className="flex items-center justify-between mb-6">
         <h1 className={`text-2xl ${headingClass}`}>Bracket</h1>

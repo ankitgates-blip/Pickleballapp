@@ -100,12 +100,15 @@ export default async function StandingsPage({
 
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('format')
+    .select('name, date, format, venues(name)')
     .eq('id', id)
     .single();
 
   const isLadderFormat = isLadderFormatCheck(tournament?.format ?? '');
   const isIndividualFormat = usesIndividualStandings(tournament?.format ?? '');
+
+  const venue = tournament?.venues as { name: string } | { name: string }[] | null;
+  const venueName = Array.isArray(venue) ? (venue[0]?.name ?? 'Pickleturf') : (venue?.name ?? 'Pickleturf');
 
   const { data: teams } = await supabase
     .from('teams')
@@ -219,7 +222,11 @@ export default async function StandingsPage({
   const diffPrefix = (diff: number) => (diff > 0 ? '▲ ' : diff < 0 ? '▼ ' : '');
 
   return (
-    <OrganizerShell organizerName={organizer.name} role={role}>
+    <OrganizerShell
+      organizerName={organizer.name}
+      role={role}
+      contextStrip={{ title: tournament?.name ?? '', dateLabel: tournament?.date ?? '', venueName }}
+    >
       <TournamentNav tournamentId={id} current="standings" />
       <div className="flex items-center justify-between mb-6">
         <h1 className={`text-2xl ${headingClass}`}>Standings</h1>

@@ -242,7 +242,11 @@ export default async function ResultsPage({
   };
 
   return (
-    <OrganizerShell organizerName={organizer.name} role={role}>
+    <OrganizerShell
+      organizerName={organizer.name}
+      role={role}
+      contextStrip={{ title: tournament.name, dateLabel: tournament.date, venueName }}
+    >
       <TournamentNav tournamentId={id} current="results" />
       <EditableTournamentName
         tournamentId={id}

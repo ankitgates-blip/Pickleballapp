@@ -22,12 +22,15 @@ export default async function TeamsPage({
 
   const { data: tournament } = await supabase
     .from('tournaments')
-    .select('format')
+    .select('name, date, format, venues(name)')
     .eq('id', id)
     .single();
 
   const isLeaguePlayoffs = tournament?.format === 'league_playoffs';
   const isAutoPaired = isIndividualFormat(tournament?.format ?? '');
+
+  const venue = tournament?.venues as { name: string } | { name: string }[] | null;
+  const venueName = Array.isArray(venue) ? (venue[0]?.name ?? 'Pickleturf') : (venue?.name ?? 'Pickleturf');
 
   const { data: players } = await supabase
     .from('players')
@@ -86,7 +89,11 @@ export default async function TeamsPage({
     'rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-mid focus:border-navy-mid flex-1';
 
   return (
-    <OrganizerShell organizerName={organizer.name} role={role}>
+    <OrganizerShell
+      organizerName={organizer.name}
+      role={role}
+      contextStrip={{ title: tournament?.name ?? '', dateLabel: tournament?.date ?? '', venueName }}
+    >
       <TournamentNav tournamentId={id} current="teams" />
       <div className="flex items-center justify-between mb-6">
         <h1 className={`text-2xl ${headingClass}`}>Pair Teams</h1>

@@ -94,10 +94,12 @@ export default function OrganizerShell({
   children,
   organizerName,
   role,
+  contextStrip,
 }: {
   children: React.ReactNode;
   organizerName?: string;
   role: 'owner' | 'guest';
+  contextStrip?: { title: string; dateLabel: string; venueName: string };
 }) {
   const pathname = usePathname();
   const isLeaguesActive = pathname.startsWith('/tournaments');
@@ -217,6 +219,19 @@ export default function OrganizerShell({
             className="rounded-full border-[5px] border-white shadow-xl object-cover"
           />
         </Link>
+        {contextStrip && (
+          <div
+            className="absolute z-10 left-[186px] top-[196px] -translate-y-1/2 max-w-[160px] sm:max-w-xs text-left"
+            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.7)' }}
+          >
+            <div className="font-heading font-bold text-sm sm:text-base text-white truncate">
+              {contextStrip.title}
+            </div>
+            <div className="text-xs text-[#dbe4f5] truncate">
+              {contextStrip.dateLabel} · 📍 {contextStrip.venueName}
+            </div>
+          </div>
+        )}
       </div>
       <main className="flex-1 w-full max-w-3xl mx-auto px-4 pt-20 pb-24">{children}</main>
       <nav
