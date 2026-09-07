@@ -12,6 +12,7 @@ import LeagueRsvpList from './LeagueRsvpList';
 import type { MatchResult } from '@/lib/types';
 import { cardClass } from '@/app/components/ui';
 import AlertBanner from '@/app/components/AlertBanner';
+import StandingsTable from '@/app/components/StandingsTable';
 
 const STAGE_LABELS: Record<string, string> = {
   league: 'League',
@@ -195,31 +196,18 @@ export default async function PublicTournamentPage({
           <h2 className="text-lg font-bold text-slate-900 mb-3">
             {isLeaguePlayoffs ? 'League Standings' : 'Standings'}
           </h2>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-slate-500 border-b border-slate-200">
-                <th className="pb-2 font-semibold">Team</th>
-                <th className="pb-2 font-semibold text-center">W</th>
-                <th className="pb-2 font-semibold text-center">L</th>
-              </tr>
-            </thead>
-            <tbody>
-              {standings.map((s, i) => {
-                const medal = ['🥇', '🥈', '🥉'][i];
-                const medalLabel = ['1st place', '2nd place', '3rd place'][i];
-                return (
-                  <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
-                    <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                      {medal && <span className="mr-1.5" role="img" aria-label={medalLabel}>{medal}</span>}
-                      {teamById.get(s.teamId)}
-                    </td>
-                    <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
-                    <td className="stat-num py-2 text-center text-muted font-semibold">{s.losses}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <StandingsTable
+            nameColumnHeader="Team"
+            rows={standings.map((s, i) => ({
+              key: s.teamId,
+              name: teamById.get(s.teamId) ?? 'Unknown',
+              wins: s.wins,
+              losses: s.losses,
+              medal: ['🥇', '🥈', '🥉'][i],
+              medalLabel: ['1st place', '2nd place', '3rd place'][i],
+              nameClassName: `${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`,
+            }))}
+          />
         </div>
 
         {stages.map((stage) => {

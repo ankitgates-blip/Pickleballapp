@@ -22,6 +22,7 @@ import SaveButton from '@/app/components/SaveButton';
 import AlertBanner from '@/app/components/AlertBanner';
 import ShareHint from '@/app/components/ShareHint';
 import RoundActionCard from '@/app/components/RoundActionCard';
+import StandingsTable from '@/app/components/StandingsTable';
 
 export default async function BracketPage({
   params,
@@ -1027,24 +1028,15 @@ export default async function BracketPage({
           <h2 className="text-sm font-bold text-navy-mid uppercase tracking-wide mb-2">
             {isCustom ? 'Team Standings (Playoff Seeding)' : 'League Standings'}
           </h2>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-slate-500 border-b border-slate-200">
-                <th className="pb-2 font-semibold">Team</th>
-                <th className="pb-2 font-semibold text-center">W</th>
-                <th className="pb-2 font-semibold text-center">L</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leagueStandings.map((s) => (
-                <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
-                  <td className="py-2 font-semibold text-slate-900">{teamById.get(s.teamId)}</td>
-                  <td className="py-2 text-center text-navy-mid font-bold">{s.wins}</td>
-                  <td className="py-2 text-center text-slate-500">{s.losses}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <StandingsTable
+            nameColumnHeader="Team"
+            rows={leagueStandings.map((s) => ({
+              key: s.teamId,
+              name: teamById.get(s.teamId) ?? '',
+              wins: s.wins,
+              losses: s.losses,
+            }))}
+          />
         </div>
       )}
 
