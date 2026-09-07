@@ -979,17 +979,17 @@ export default async function BracketPage({
       )}
 
       {supportsPlayoffs && allLeagueComplete && playoffTeamCount < 4 && (
-        <div className="rounded-lg bg-navy-tint border border-navy-mid/25 text-navy-deep text-sm px-4 py-3 mb-6">
+        <AlertBanner tone="info" className="mb-6">
           Fewer than 4 teams — no playoff stage. {isCustom ? 'Individual' : 'League'} standings decide
           the champion.
-        </div>
+        </AlertBanner>
       )}
 
       {isCustom && isDynamicMode && allLeagueComplete && (
-        <div className="rounded-lg bg-navy-tint border border-navy-mid/25 text-navy-deep text-sm px-4 py-3 mb-6">
+        <AlertBanner tone="info" className="mb-6">
           Playoffs need fixed teams for the whole league — this one used ad-hoc pairing, so
           there's no stable team to seed a bracket from. Individual standings decide the champion.
-        </div>
+        </AlertBanner>
       )}
 
       {showSkipToFinal && (

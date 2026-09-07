@@ -22,6 +22,7 @@ import {
 } from './leaderboardPalette';
 import { threatTierFor } from '@/lib/stats/threatLevel';
 import ThreatShieldBadge from './ThreatShieldBadge';
+import { isPickleturf } from './venue';
 
 export type LeaderboardTableRow = {
   rank: number;
@@ -57,7 +58,7 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
   const Heading = headingLevel;
   const podiumRows = rows.filter((r) => r.rank <= 3);
   const bodyRows = rows.filter((r) => r.rank > 3);
-  const isPickleturf = title.trim().toLowerCase() === 'pickleturf';
+  const isTitlePickleturf = isPickleturf(title);
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: NAVY_DEEP, border: `1px solid ${PLATE_STROKE}` }}>
@@ -76,7 +77,7 @@ export default function LeaderboardTable({ title, kicker, isLive = false, footer
           </Heading>
         </div>
         <div className="flex flex-col items-end gap-1.5">
-          {isPickleturf && (
+          {isTitlePickleturf && (
             // eslint-disable-next-line @next/next/no-img-element -- static brand mark, not content that needs Next/Image optimization
             <img src="/pickleturf-logo.png" alt="Pickleturf" className="h-6 w-auto opacity-90" />
           )}

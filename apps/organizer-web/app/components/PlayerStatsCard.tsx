@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { threatTierFor } from '@/lib/stats/threatLevel';
 import { shareOrDownloadFile, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
 import ThreatShieldBadge from './ThreatShieldBadge';
+import CardShareHint from './CardShareHint';
 
 export type PlayerStatsCardProps = {
   name: string;
@@ -528,7 +529,7 @@ export default function PlayerStatsCard({
           )}
         </svg>
       </button>
-      <p className="text-xs text-muted mt-1.5">Click the card to share or download it as an image.</p>
+      <CardShareHint />
       {status === 'error' && (
         <p className="text-xs text-red-600 mt-1">Couldn&apos;t generate the image. Try again.</p>
       )}

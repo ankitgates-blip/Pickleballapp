@@ -10,6 +10,7 @@
 import Link from 'next/link';
 import PlayerCountBadge from './PlayerCountBadge';
 import CancelTournamentButton from './CancelTournamentButton';
+import { isPickleturf } from '../components/venue';
 
 export type TournamentCardStatus = 'overdue' | 'today' | 'upcoming' | 'completed';
 
@@ -57,7 +58,7 @@ export default function TournamentCard({
   canCancel,
 }: TournamentCardProps) {
   const meta = STATUS_META[status];
-  const isPickleturf = venue.trim().toLowerCase() === 'pickleturf';
+  const isVenuePickleturf = isPickleturf(venue);
   return (
     <div className="flex rounded-2xl border overflow-hidden" style={{ background: '#16294e', borderColor: '#4a6ba8', boxShadow: '0 8px 24px rgba(0,0,0,0.45)' }}>
       <div className="w-1 flex-shrink-0" style={{ background: meta.rail }} />
@@ -108,7 +109,7 @@ export default function TournamentCard({
               <div className="text-sm font-semibold" style={{ color: '#e2e8f0' }}>{matchesCount}</div>
             </div>
           )}
-          {isPickleturf && (
+          {isVenuePickleturf && (
             // eslint-disable-next-line @next/next/no-img-element -- static brand mark, not content that needs Next/Image optimization
             <img
               src="/pickleturf-mark.png"

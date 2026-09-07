@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { shareOrDownloadFile, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
 import { courtLabel } from '@/lib/tournament/courts';
+import CardShareHint from '@/app/components/CardShareHint';
 import type { UpcomingStageGroup } from '@/lib/tournament/resultsExport';
 
 export type ScheduleCardTeam = {
@@ -626,7 +627,7 @@ export default function ScheduleCard({
           </text>
         </svg>
       </button>
-      <p className="text-xs text-muted mt-1.5">Click the card to share or download it as an image.</p>
+      <CardShareHint />
       {status === 'error' && (
         <p className="text-xs text-red-600 mt-1">Couldn&apos;t generate the image. Try again.</p>
       )}

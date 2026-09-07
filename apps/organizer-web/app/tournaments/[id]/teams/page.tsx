@@ -106,18 +106,18 @@ export default async function TeamsPage({
       )}
 
       {tournament?.format === 'custom' && unpairedPlayers.length > 0 && (
-        <div className="rounded-lg bg-navy-tint border border-navy-mid/25 text-navy-deep text-sm px-4 py-3 mb-6">
+        <AlertBanner tone="info" className="mb-6">
           {unpairedPlayers.length} player{unpairedPlayers.length === 1 ? '' : 's'} unpaired —
           nobody is stuck on the bench. Matches generated while anyone is unpaired pair players
           directly instead of using the teams below, so everyone still gets games.
-        </div>
+        </AlertBanner>
       )}
 
       {isAutoPaired ? (
-        <div className="rounded-lg bg-navy-tint border border-navy-mid/25 text-navy-deep text-sm px-4 py-3 mb-6">
+        <AlertBanner tone="info" className="mb-6">
           {formatLabel(tournament?.format ?? '')} auto-generates partners each round — head to
           Bracket to generate the schedule.
-        </div>
+        </AlertBanner>
       ) : atCap ? (
         <AlertBanner tone="warning" className="mb-6">
           8/8 teams — maximum reached for this format.

@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { shareOrDownloadFile, sanitizeFileNamePart } from '@/lib/pdf/pdfShare';
 import type { ExportStandingsRow, ExportMatchGroup } from '@/lib/tournament/resultsExport';
+import CardShareHint from '@/app/components/CardShareHint';
 
 export type ChampionCardProps = {
   tournamentName: string;
@@ -539,7 +540,7 @@ export default function ChampionCard({
           </text>
         </svg>
       </button>
-      <p className="text-xs text-muted mt-1.5">Click the card to share or download it as an image.</p>
+      <CardShareHint />
       {status === 'error' && (
         <p className="text-xs text-red-600 mt-1">Couldn&apos;t generate the image. Try again.</p>
       )}

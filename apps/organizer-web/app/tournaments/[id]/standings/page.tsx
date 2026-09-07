@@ -26,18 +26,22 @@ type PodiumEntry = {
 // inline styles are used rather than Tailwind classes. 1st is dramatically taller than
 // 2nd/3rd; 2nd is only slightly taller than 3rd, matching a real podium's proportions
 // rather than an even step down.
-// Colors match --color-silver-light/--color-silver and --color-bronze/
-// --color-bronze-dark in globals.css (inline hex here, not Tailwind classes,
-// since these feed a data-driven linear-gradient). The previous silver/bronze
-// values had bronze's highlight LIGHTER than silver's, so the podium read
-// gold/bronze/silver in greyscale -- these are reordered so silver is
-// genuinely brighter than bronze. Silver's new lighter background also needs
-// dark rank-number text instead of white (see textColor below), or the
-// numeral disappears against it.
+// Colors reference the app's --color-gold-*/--color-silver-*/--color-bronze-* tokens
+// (globals.css) via var(), not Tailwind classes, since these feed a data-driven
+// linear-gradient. Referencing the tokens (rather than duplicating their hex here)
+// keeps this podium in sync with globals.css by construction. This is a deliberately
+// separate palette from leaderboardPalette.ts's GOLD_DEEP/SILVER_DEEP/BRONZE_DEEP
+// (same core hues, different deep/light stops) -- that one is tuned for the on-navy
+// LeaderboardTable card family, this one for a white card, and the two are not meant
+// to converge. The previous silver/bronze values had bronze's highlight LIGHTER than
+// silver's, so the podium read gold/bronze/silver in greyscale -- these are reordered
+// so silver is genuinely brighter than bronze. Silver's lighter background also needs
+// dark rank-number text instead of white (see textColor below), or the numeral
+// disappears against it; gold needed the same fix for the same reason.
 const PODIUM_BLOCK_STYLE = [
-  { height: 108, background: 'linear-gradient(180deg,#fde68a,#d6af36)', textColor: 'text-navy-deep' }, // 1st -- gold (top stop is intentionally lighter than --color-gold-bright #d6af36 for a highlight effect; #d6af36 itself is used as the bottom stop to match the app's gold token)
-  { height: 56, background: 'linear-gradient(180deg,#d7d7d7,#a7a7ad)', textColor: 'text-navy-deep' }, // 2nd -- silver
-  { height: 50, background: 'linear-gradient(180deg,#a77044,#824a02)', textColor: 'text-white' }, // 3rd -- bronze
+  { height: 108, background: 'linear-gradient(180deg,var(--color-gold-highlight),var(--color-gold-bright))', textColor: 'text-navy-deep' }, // 1st -- gold
+  { height: 56, background: 'linear-gradient(180deg,var(--color-silver-light),var(--color-silver))', textColor: 'text-navy-deep' }, // 2nd -- silver
+  { height: 50, background: 'linear-gradient(180deg,var(--color-bronze),var(--color-bronze-dark))', textColor: 'text-white' }, // 3rd -- bronze
 ];
 
 function Podium({ top3 }: { top3: PodiumEntry[] }) {
