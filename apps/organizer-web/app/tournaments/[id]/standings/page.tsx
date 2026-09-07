@@ -35,7 +35,7 @@ type PodiumEntry = {
 // dark rank-number text instead of white (see textColor below), or the
 // numeral disappears against it.
 const PODIUM_BLOCK_STYLE = [
-  { height: 108, background: 'linear-gradient(180deg,#fde68a,#d4a017)', textColor: 'text-white' }, // 1st -- gold
+  { height: 108, background: 'linear-gradient(180deg,#fde68a,#d6af36)', textColor: 'text-navy-deep' }, // 1st -- gold (top stop is intentionally lighter than --color-gold-bright #d6af36 for a highlight effect; #d6af36 itself is used as the bottom stop to match the app's gold token)
   { height: 56, background: 'linear-gradient(180deg,#d7d7d7,#a7a7ad)', textColor: 'text-navy-deep' }, // 2nd -- silver
   { height: 50, background: 'linear-gradient(180deg,#a77044,#824a02)', textColor: 'text-white' }, // 3rd -- bronze
 ];
@@ -260,7 +260,7 @@ export default async function StandingsPage({
                   return (
                     <tr key={s.playerId} className={rowClass(i)}>
                       <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                        {medal && <span className="mr-1.5" aria-label={medalLabel}>{medal}</span>}
+                        {medal && <span className="mr-1.5" role="img" aria-label={medalLabel}>{medal}</span>}
                         {playerById.get(s.playerId)}
                       </td>
                       <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.ladderPoints}</td>
@@ -286,7 +286,7 @@ export default async function StandingsPage({
                     return (
                       <tr key={s.playerId} className={rowClass(i)}>
                         <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                          {medal && <span className="mr-1.5" aria-label={medalLabel}>{medal}</span>}
+                          {medal && <span className="mr-1.5" role="img" aria-label={medalLabel}>{medal}</span>}
                           {playerById.get(s.playerId)}
                         </td>
                         <td className="py-2 text-center">
@@ -310,7 +310,7 @@ export default async function StandingsPage({
                     return (
                       <tr key={s.teamId} className={rowClass(i)}>
                         <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                          {medal && <span className="mr-1.5" aria-label={medalLabel}>{medal}</span>}
+                          {medal && <span className="mr-1.5" role="img" aria-label={medalLabel}>{medal}</span>}
                           {teamById.get(s.teamId)}
                         </td>
                         <td className="py-2 text-center">

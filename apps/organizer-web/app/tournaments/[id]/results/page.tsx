@@ -343,7 +343,7 @@ export default async function ResultsPage({
                   return (
                     <tr key={s.playerId} className="border-b border-slate-100 last:border-0">
                       <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                        {medal && <span className="mr-1.5" aria-label={medalLabel}>{medal}</span>}
+                        {medal && <span className="mr-1.5" role="img" aria-label={medalLabel}>{medal}</span>}
                         {playerById.get(s.playerId)}
                       </td>
                       <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.ladderPoints}</td>
@@ -363,7 +363,7 @@ export default async function ResultsPage({
                     return (
                       <tr key={s.playerId} className="border-b border-slate-100 last:border-0">
                         <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                          {medal && <span className="mr-1.5" aria-label={medalLabel}>{medal}</span>}
+                          {medal && <span className="mr-1.5" role="img" aria-label={medalLabel}>{medal}</span>}
                           {playerById.get(s.playerId)}
                         </td>
                         <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
@@ -381,7 +381,7 @@ export default async function ResultsPage({
                     return (
                       <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
                         <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                          {medal && <span className="mr-1.5" aria-label={medalLabel}>{medal}</span>}
+                          {medal && <span className="mr-1.5" role="img" aria-label={medalLabel}>{medal}</span>}
                           {teamById.get(s.teamId)}
                         </td>
                         <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>

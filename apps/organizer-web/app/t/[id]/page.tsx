@@ -11,6 +11,7 @@ import JoinLeagueForm from './JoinLeagueForm';
 import LeagueRsvpList from './LeagueRsvpList';
 import type { MatchResult } from '@/lib/types';
 import { cardClass } from '@/app/components/ui';
+import AlertBanner from '@/app/components/AlertBanner';
 
 const STAGE_LABELS: Record<string, string> = {
   league: 'League',
@@ -152,9 +153,9 @@ export default async function PublicTournamentPage({
                     : `${playerCount} signed up so far`}
                 </p>
                 {rosterFull ? (
-                  <p className="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 font-semibold">
+                  <AlertBanner tone="warning">
                     This league is full ({playerCount}/{tournament.max_players}).
-                  </p>
+                  </AlertBanner>
                 ) : (
                   <JoinLeagueForm tournamentId={id} />
                 )}
@@ -209,7 +210,7 @@ export default async function PublicTournamentPage({
                 return (
                   <tr key={s.teamId} className="border-b border-slate-100 last:border-0">
                     <td className={`py-2 ${i === 0 ? 'font-extrabold text-base' : 'font-semibold'} text-slate-900`}>
-                      {medal && <span className="mr-1.5" aria-label={medalLabel}>{medal}</span>}
+                      {medal && <span className="mr-1.5" role="img" aria-label={medalLabel}>{medal}</span>}
                       {teamById.get(s.teamId)}
                     </td>
                     <td className="stat-num py-2 text-center text-navy-mid font-extrabold">{s.wins}</td>
